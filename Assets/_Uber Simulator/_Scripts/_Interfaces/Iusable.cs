@@ -1,16 +1,18 @@
 using UnityEngine;
 
-public class Iusable : MonoBehaviour
+namespace DeliverySim
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    /// <summary>
+    /// Yük alma/bırakma gibi "kullanım" eylemlerini destekleyen objeler bu arayüzü uygular.
+    /// IInteractable'dan farkı: bu, bir ön koşula bağlı olabilen (CanUse) aktif bir eylemi temsil eder.
+    /// Örnek: bir teslimat noktası, sadece oyuncu doğru paketi taşıyorsa "kullanılabilir" olur.
+    /// </summary>
+    public interface IUsable
     {
-        
-    }
+        /// <summary>Bu obje şu anda kullanıcı tarafından kullanılabilir mi?</summary>
+        bool CanUse(GameObject user);
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        /// <summary>Kullanım eylemini gerçekleştirir (ör. yükü teslim noktasına bırakma).</summary>
+        void Use(GameObject user);
     }
 }

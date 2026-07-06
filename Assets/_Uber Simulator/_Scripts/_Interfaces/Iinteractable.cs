@@ -1,16 +1,17 @@
 using UnityEngine;
 
-public class Iinteractable : MonoBehaviour
+namespace DeliverySim
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    /// <summary>
+    /// Oyuncunun raycast ile etkileşime girebileceği tüm objeler bu arayüzü uygular.
+    /// Forgotten Island projesindeki Interaction System ile aynı mantığı izler.
+    /// </summary>
+    public interface IInteractable
     {
-        
-    }
+        /// <summary>Etkileşim tetiklendiğinde çağrılır (ör. oyuncu E tuşuna bastığında).</summary>
+        void Interact(GameObject interactor);
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        /// <summary>Ekranda gösterilecek etkileşim ipucu metni (ör. "Paketi Al [E]").</summary>
+        string GetInteractionPrompt();
     }
 }
