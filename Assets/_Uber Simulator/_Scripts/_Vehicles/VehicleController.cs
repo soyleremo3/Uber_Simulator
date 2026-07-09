@@ -27,7 +27,7 @@ namespace DeliverySim
             float totalRatio = Math.Abs(gearRatios[currentGear] * finalDriveRatio);
             float transmissionRPM = averageWheelRPM * totalRatio;
             float targetRPM = Mathf.Max(idleRPM, transmissionRPM);
-            rpm = Mathf.Clamp(targetRPM, idleRPM, maxRPM);
+            this.rpm = Mathf.Clamp(targetRPM, idleRPM, maxRPM);
         }
 
         /// <summary>0-1 aralığında, RPM'e bağlı güç oranı döndürür.</summary>
@@ -35,6 +35,11 @@ namespace DeliverySim
         {
             if (switchingGears) return 0.3f; // Vites değişimi sırasında düşük güç
             return Mathf.Clamp01(rpm / maxRPM);
+        }
+
+        public float AngularVelocityToRPM(float angularVelocity)
+        {
+            return angularVelocity * 60f / (2f * Mathf.PI);
         }
 
         public void UpGear(MonoBehaviour context)

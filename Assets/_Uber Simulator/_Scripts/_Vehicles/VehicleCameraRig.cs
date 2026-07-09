@@ -17,7 +17,7 @@ namespace DeliverySim
         public Transform target;
 
         [Tooltip("Dönüş takibinin yumuşaklığı. Düşük değer = daha yumuşak/gecikmeli, yüksek değer = daha hızlı tepki.")]
-        public float yawSmoothSpeed = 5f;
+        public float yawSmoothSpeed = 100f;
 
         private void Update()
         {
