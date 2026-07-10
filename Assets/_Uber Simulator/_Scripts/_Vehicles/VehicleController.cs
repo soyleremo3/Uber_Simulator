@@ -143,14 +143,10 @@ namespace DeliverySim
     /// </summary>
     public class VehicleController : MonoBehaviour
     {
-        [Header("Araç Profili (Opsiyonel)")]
-        [Tooltip("Atanırsa Start()'ta bu asset'teki değerler motor/teker/süspansiyon ayarlarının üzerine yazılır.")]
-        public VehicleData vehicleData;
-
-        [Header("Motor")]
+        //[Header("Motor")]
         public VehicleEngine engine;
 
-        [Header("Tekerler")]
+        [Header("Wheels")]
         public GameObject skidMarkPrefab;
         public GameObject wheelPrefab;
         public VehicleWheel[] wheels;
@@ -190,11 +186,6 @@ namespace DeliverySim
             if (engine == null)
             {
                 engine = new VehicleEngine();
-            }
-
-            if (vehicleData != null)
-            {
-                vehicleData.ApplyTo(this);
             }
 
             foreach (var w in wheels)
