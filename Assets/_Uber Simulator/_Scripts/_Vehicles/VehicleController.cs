@@ -4,8 +4,8 @@ using UnityEngine;
 namespace DeliverySim
 {
     /// <summary>
-    /// Aracın motor/vites simülasyonunu tutar. RPM'e göre güç üretir,
-    /// otomatik vites değiştirir. VehicleData tarafından değerleri override edilebilir.
+    /// Handles the vehicle's engine/gearbox simulation. Produces power based on RPM
+    /// and shifts gears automatically.
     /// </summary>
     [System.Serializable]
     public class VehicleEngine
@@ -18,7 +18,7 @@ namespace DeliverySim
 
         private int currentGear = 0;
         private bool switchingGears = false;
-        private float gearChangeTime = 0.18f; // saniye cinsinden vites değiştirme süresi
+        private float gearChangeTime = 0.18f; // seconds to switch gears
         private float rpm = 0f;
 
         public void SetRPM(float averageWheelAngularVelocity)
@@ -27,19 +27,14 @@ namespace DeliverySim
             float totalRatio = Math.Abs(gearRatios[currentGear] * finalDriveRatio);
             float transmissionRPM = averageWheelRPM * totalRatio;
             float targetRPM = Mathf.Max(idleRPM, transmissionRPM);
-            this.rpm = Mathf.Clamp(targetRPM, idleRPM, maxRPM);
+            rpm = Mathf.Clamp(targetRPM, idleRPM, maxRPM);
         }
 
-        /// <summary>0-1 aralığında, RPM'e bağlı güç oranı döndürür.</summary>
+        /// <summary>Returns a 0-1 power ratio based on current RPM.</summary>
         public float GetCurrentPower(MonoBehaviour context)
         {
-            if (switchingGears) return 0.3f; // Vites değişimi sırasında düşük güç
+            if (switchingGears) return 0.3f; // Less power during gear switch
             return Mathf.Clamp01(rpm / maxRPM);
-        }
-
-        public float AngularVelocityToRPM(float angularVelocity)
-        {
-            return angularVelocity * 60f / (2f * Mathf.PI);
         }
 
         public void UpGear(MonoBehaviour context)
@@ -68,9 +63,10 @@ namespace DeliverySim
             switchingGears = false;
         }
 
+        /// <summary>Returns the current gear as a 1-based number (for display).</summary>
         public int GetCurrentGear()
         {
-            return currentGear + 1; // 1 tabanlı vites numarası (ekranda göstermek için)
+            return currentGear + 1;
         }
 
         public void CheckGearSwitching(MonoBehaviour context)
@@ -90,7 +86,7 @@ namespace DeliverySim
         public float GetRPM() => rpm;
         public bool IsSwitchingGears() => switchingGears;
 
-        /// <summary>Mevcut vites/RPM durumunu sıfırlar (araç değiştirildiğinde veya reset'te kullanılır).</summary>
+        /// <summary>Resets gear/RPM state (used when the vehicle is reset or swapped).</summary>
         public void ResetState()
         {
             currentGear = 0;
@@ -100,8 +96,8 @@ namespace DeliverySim
     }
 
     /// <summary>
-    /// Tek bir tekerin fiziksel durumunu ve ayarlarını tutar.
-    /// Her VehicleController en az 4 tane bu sınıftan bir dizi (wheels[]) içerir.
+    /// Holds the physical state and tuning values for a single wheel.
+    /// Every VehicleController has an array (wheels[]) of at least 4 of these.
     /// </summary>
     [Serializable]
     public class VehicleWheel
@@ -109,6 +105,7 @@ namespace DeliverySim
         [HideInInspector] public TrailRenderer skidTrail;
         [HideInInspector] public GameObject skidTrailGameObject;
 
+        public GameObject wheelPrefab;
         public Vector3 localPosition;
         public float turnAngle = 30f;
         public float suspensionLength = 0.5f;
@@ -133,25 +130,26 @@ namespace DeliverySim
         [HideInInspector] public Vector2 input = Vector2.zero;
         [HideInInspector] public float brake = 0;
         [HideInInspector] public float slipHistory = 0f;
-        [HideInInspector] public float tcsReduction = 0f; // Çekiş kontrolü (traction control) azaltma faktörü
+        [HideInInspector] public float tcsReduction = 0f; // Traction control reduction factor
     }
 
     /// <summary>
-    /// Aracın ana fizik ve sürüş kontrolcüsü. Raycast tabanlı süspansiyon/sürtünme
-    /// hesaplaması yapar (WheelCollider kullanmaz — bkz. sohbet açıklaması).
-    /// Opsiyonel olarak bir VehicleData ScriptableObject'inden ayar çekebilir.
+    /// Main vehicle physics and driving controller. Uses raycast-based suspension
+    /// (does NOT use WheelCollider — see project chat notes for why).
+    ///
+    /// NOTE: This controller no longer supports a VehicleData ScriptableObject.
+    /// All tuning values are set directly on this component's Inspector fields.
     /// </summary>
     public class VehicleController : MonoBehaviour
     {
-        //[Header("Motor")]
+        [Header("Engine")]
         public VehicleEngine engine;
 
         [Header("Wheels")]
         public GameObject skidMarkPrefab;
-        public GameObject wheelPrefab;
         public VehicleWheel[] wheels;
 
-        [Header("Fizik Ayarları")]
+        [Header("Physics Settings")]
         public float smoothTurn = 0.03f;
         private float coefStaticFriction = 1.95f;
         private float coefKineticFriction = 0.95f;
@@ -164,7 +162,7 @@ namespace DeliverySim
         public Vector3 centerOfMassOffset = new Vector3(0, -0.2f, 0);
         public float inertiaMultiplier = 1.2f;
 
-        [Header("Sürüş Yardımcıları")]
+        [Header("Driving Assists")]
         public bool steeringAssist = true;
         [Range(0f, 1f)] public float steeringAssistStrength = 0.2f;
         public bool throttleAssist = true;
@@ -173,9 +171,9 @@ namespace DeliverySim
         [HideInInspector] public Rigidbody rb;
         [HideInInspector] public bool forwards = true;
         [HideInInspector] public Vector2 userInput = Vector2.zero;
-        [HideInInspector] public float isBraking = 0f; // 0-1: UI/yakıt tüketimi gibi sistemler okuyabilir
+        [HideInInspector] public float isBraking = 0f; // 0-1: can be read by fuel/wear systems later
 
-        /// <summary>Aracın anlık hızı (km/s). UI ve ekonomi sistemleri için kullanılabilir.</summary>
+        /// <summary>Current speed in km/h. Useful for UI and economy systems.</summary>
         public float CurrentSpeedKph => rb != null ? rb.linearVelocity.magnitude * 3.6f : 0f;
 
         private void Start()
@@ -190,7 +188,7 @@ namespace DeliverySim
 
             foreach (var w in wheels)
             {
-                w.wheelObject = Instantiate(wheelPrefab, transform);
+                w.wheelObject = Instantiate(w.wheelPrefab, transform);
                 w.wheelObject.transform.localPosition = w.localPosition;
                 w.wheelObject.transform.eulerAngles = transform.eulerAngles;
                 w.wheelObject.transform.localScale = 2f * new Vector3(w.size, w.size, w.size);
@@ -218,14 +216,6 @@ namespace DeliverySim
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.R))
-            {
-                transform.rotation = Quaternion.identity;
-                transform.position += Vector3.up * 2f;
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-            }
-
             userInput.x = Mathf.Lerp(userInput.x, Input.GetAxisRaw("Horizontal") / (1 + rb.linearVelocity.magnitude / 28f), 0.2f);
             userInput.y = Mathf.Lerp(userInput.y, Input.GetAxisRaw("Vertical"), 0.2f);
 
@@ -307,7 +297,7 @@ namespace DeliverySim
                 w.angularVelocity += (w.torque - longitudinalFriction * w.size) / inertia * Time.fixedDeltaTime;
                 w.angularVelocity *= 1 - w.brake * w.brakeStrength * Time.fixedDeltaTime;
 
-                if (Input.GetKey(KeyCode.Space)) // El freni
+                if (Input.GetKey(KeyCode.Space)) // Handbrake
                 {
                     w.angularVelocity = 0;
                 }

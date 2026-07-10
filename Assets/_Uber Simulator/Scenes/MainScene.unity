@@ -1074,7 +1074,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d937e35815585c246a074c2b0e7aadb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeliverySim.VehicleController
-  vehicleData: {fileID: 0}
   engine:
     idleRPM: 2400
     maxRPM: 7000
@@ -1090,7 +1089,6 @@ MonoBehaviour:
     finalDriveRatio: 4
     automaticTransmission: 1
   skidMarkPrefab: {fileID: 0}
-  wheelPrefab: {fileID: 0}
   wheels: []
   smoothTurn: 0.03
   wheelGripX: 8
@@ -1357,7 +1355,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d937e35815585c246a074c2b0e7aadb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeliverySim.VehicleController
-  vehicleData: {fileID: 0}
   engine:
     idleRPM: 2400
     maxRPM: 7000
@@ -1373,10 +1370,10 @@ MonoBehaviour:
     finalDriveRatio: 4
     automaticTransmission: 1
   skidMarkPrefab: {fileID: 7672248575266630135, guid: a5c98985ea5044268afd301e480915a0, type: 3}
-  wheelPrefab: {fileID: 1669208848803404200, guid: 3a340254e6885404183e064169e53092, type: 3}
   wheels:
   - skidTrail: {fileID: 0}
     skidTrailGameObject: {fileID: 0}
+    wheelPrefab: {fileID: 1669208848803404200, guid: 3a340254e6885404183e064169e53092, type: 3}
     localPosition: {x: 0.78, y: 0.55, z: 1.7}
     turnAngle: 34
     suspensionLength: 0.18
@@ -1402,6 +1399,7 @@ MonoBehaviour:
     tcsReduction: 0
   - skidTrail: {fileID: 0}
     skidTrailGameObject: {fileID: 0}
+    wheelPrefab: {fileID: 1669208848803404200, guid: 3a340254e6885404183e064169e53092, type: 3}
     localPosition: {x: -0.78, y: 0.55, z: 1.7}
     turnAngle: 34
     suspensionLength: 0.18
@@ -1427,6 +1425,7 @@ MonoBehaviour:
     tcsReduction: 0
   - skidTrail: {fileID: 0}
     skidTrailGameObject: {fileID: 0}
+    wheelPrefab: {fileID: 1669208848803404200, guid: 3a340254e6885404183e064169e53092, type: 3}
     localPosition: {x: 0.78, y: 0.59, z: -1.7}
     turnAngle: 0
     suspensionLength: 0.18
@@ -1452,6 +1451,7 @@ MonoBehaviour:
     tcsReduction: 0
   - skidTrail: {fileID: 0}
     skidTrailGameObject: {fileID: 0}
+    wheelPrefab: {fileID: 1669208848803404200, guid: 3a340254e6885404183e064169e53092, type: 3}
     localPosition: {x: -0.78, y: 0.59, z: -1.7}
     turnAngle: 0
     suspensionLength: 0.18
