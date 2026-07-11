@@ -1,3 +1,4 @@
+using Unity.Cinemachine;
 using UnityEngine;
 
 namespace DeliverySim
@@ -10,19 +11,26 @@ namespace DeliverySim
 
     /// <summary>
     /// Toggles between the third-person chase camera and the first-person cockpit
-    /// camera when the player presses Tab. Cinemachine Brain automatically blends
-    /// between them based on which CinemachineCamera GameObject is active
-    /// (SetActive is used instead of Priority values so this works reliably
-    /// across Cinemachine versions).
+    /// camera when the player presses Tab.
+    ///
+    /// IMPORTANT: Both CinemachineCamera GameObjects must stay ACTIVE (enabled) at
+    /// all times in the Hierarchy. We never call SetActive(false) on them.
+    ///
+    /// Per Unity's official Cinemachine documentation, a disabled CinemachineCamera
+    /// enters the "Disabled" state and stops tracking its target entirely. When
+    /// re-enabled, its position is stale, so Cinemachine "warps" (instantly snaps)
+    /// to it before blending - this caused the "smooth then suddenly locks" bug.
+    ///
+    /// Instead, we call Prioritize() on the camera we want to become live. Since
+    /// both cameras stay active, the non-live one remains in "Standby" state,
+    /// continuously tracking its target in the background. This produces a fully
+    /// smooth blend with no snapping.
     /// </summary>
     public class CameraModeController : MonoBehaviour
     {
         [Header("Camera References")]
-        [Tooltip("The CinemachineCamera GameObject used for third-person chase view.")]
-        public GameObject thirdPersonCameraObject;
-
-        [Tooltip("The CinemachineCamera GameObject used for first-person cockpit view.")]
-        public GameObject firstPersonCameraObject;
+        public CinemachineCamera thirdPersonCamera;
+        public CinemachineCamera firstPersonCamera;
 
         public CameraMode CurrentMode { get; private set; } = CameraMode.ThirdPerson;
 
@@ -45,16 +53,19 @@ namespace DeliverySim
 
         private void ApplyMode()
         {
-            bool isThirdPerson = CurrentMode == CameraMode.ThirdPerson;
-
-            if (thirdPersonCameraObject != null)
+            if (CurrentMode == CameraMode.ThirdPerson)
             {
-                thirdPersonCameraObject.SetActive(isThirdPerson);
+                if (thirdPersonCamera != null)
+                {
+                    thirdPersonCamera.Prioritize();
+                }
             }
-
-            if (firstPersonCameraObject != null)
+            else
             {
-                firstPersonCameraObject.SetActive(!isThirdPerson);
+                if (firstPersonCamera != null)
+                {
+                    firstPersonCamera.Prioritize();
+                }
             }
         }
     }

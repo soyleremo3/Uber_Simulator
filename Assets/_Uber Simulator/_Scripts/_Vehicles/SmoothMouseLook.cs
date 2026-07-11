@@ -4,55 +4,56 @@ using UnityEngine;
 namespace DeliverySim
 {
     /// <summary>
-    /// Reads raw mouse input, smooths it using SmoothDamp (so a sudden fast mouse
-    /// flick does not cause an instant large camera jump), and feeds the smoothed
-    /// value into the CinemachinePanTilt component.
+    /// Converts raw mouse movement into orbit angle changes on Orbital Follow's
+    /// Horizontal and Vertical axes.
     ///
-    /// This script is the ONLY thing driving PanTilt's rotation. Do not also add
-    /// a Cinemachine Input Axis Controller to the same camera — having two
-    /// systems drive the same values at the same time causes exactly the
-    /// "fighting for control" feeling this script is designed to fix.
+    /// IMPORTANT DESIGN NOTE: This script deliberately does NOT smooth the input
+    /// itself anymore. Cinemachine's own Position Damping (on the Orbital Follow
+    /// component) and the Rotation Composer's damping are responsible for ALL
+    /// positional/rotational smoothing. Having two independent smoothing systems
+    /// stacked on top of each other (this script's old SmoothDamp + Cinemachine's
+    /// damping) caused compounding lag and jitter. Tune the feel by adjusting
+    /// sensitivity here AND Position Damping / Rotation Composer Damping in the
+    /// Inspector - never add smoothing back into this script.
     /// </summary>
-    [RequireComponent(typeof(CinemachinePanTilt))]
+    [RequireComponent(typeof(CinemachineOrbitalFollow))]
     public class SmoothMouseLook : MonoBehaviour
     {
         [Header("Sensitivity")]
-        [Tooltip("Higher = camera turns further per mouse movement unit.")]
+        [Tooltip("Higher = camera orbits further per unit of raw mouse movement.")]
         public float panSensitivity = 3f;
         public float tiltSensitivity = 3f;
 
-        [Header("Smoothing")]
-        [Tooltip("How long (in seconds) it takes the smoothed input to catch up to the raw mouse input. Lower = snappier, higher = smoother/heavier.")]
-        public float smoothTime = 0.08f;
+        [Header("Vertical Limits (Degrees)")]
+        [Tooltip("Check the Vertical Axis Range shown on Cinemachine Orbital Follow and match these to it.")]
+        public float minVerticalAngle = 5f;
+        public float maxVerticalAngle = 60f;
 
-        [Header("Tilt Limits (Degrees)")]
-        [Tooltip("How far down the camera can look.")]
-        public float minTiltAngle = -30f;
-        [Tooltip("How far up the camera can look.")]
-        public float maxTiltAngle = 40f;
-
-        private CinemachinePanTilt panTilt;
-        private Vector2 smoothedInput;
-        private Vector2 inputVelocity;
+        private CinemachineOrbitalFollow orbitalFollow;
 
         private void Awake()
         {
-            panTilt = GetComponent<CinemachinePanTilt>();
+            orbitalFollow = GetComponent<CinemachineOrbitalFollow>();
         }
 
         private void Update()
         {
-            Vector2 rawMouseInput = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
+            // GetAxisRaw already represents actual mouse movement since the last
+            // frame - it does NOT need to be multiplied by Time.deltaTime (doing
+            // so would make the camera feel slower at low framerates, which is
+            // the wrong direction).
+            float mouseX = Input.GetAxisRaw("Mouse X");
+            float mouseY = Input.GetAxisRaw("Mouse Y");
 
-            // SmoothDamp filters out sudden spikes in the raw mouse delta,
-            // producing a gradual, controlled turn instead of an instant snap.
-            smoothedInput = Vector2.SmoothDamp(smoothedInput, rawMouseInput, ref inputVelocity, smoothTime);
+            float horizontalDelta = mouseX * panSensitivity;
+            float verticalDelta = -mouseY * tiltSensitivity;
 
-            float panDelta = smoothedInput.x * panSensitivity;
-            float tiltDelta = -smoothedInput.y * tiltSensitivity;
-
-            panTilt.PanAxis.Value += panDelta;
-            panTilt.TiltAxis.Value = Mathf.Clamp(panTilt.TiltAxis.Value + tiltDelta, minTiltAngle, maxTiltAngle);
+            orbitalFollow.HorizontalAxis.Value += horizontalDelta;
+            orbitalFollow.VerticalAxis.Value = Mathf.Clamp(
+                orbitalFollow.VerticalAxis.Value + verticalDelta,
+                minVerticalAngle,
+                maxVerticalAngle
+            );
         }
     }
 }

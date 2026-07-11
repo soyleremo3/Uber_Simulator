@@ -284,8 +284,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.04924, y: 2.88, z: -5.83261}
+  m_LocalRotation: {x: 0.15212338, y: 0, z: 0, w: 0.98836154}
+  m_LocalPosition: {x: -0.04924, y: 2.583529, z: -4.601195}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -916,7 +916,7 @@ GameObject:
   - component: {fileID: 998960926}
   - component: {fileID: 998960925}
   - component: {fileID: 998960924}
-  - component: {fileID: 998960923}
+  - component: {fileID: 998960927}
   m_Layer: 0
   m_Name: FirstPersonCamera
   m_TagString: Untagged
@@ -924,19 +924,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &998960923
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 998960922}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4afa82ae3200b82408d605c3dbdd1e38, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineRotateWithFollowTarget
-  Damping: 0
 --- !u!114 &998960924
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1008,6 +995,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &998960927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 998960922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4afa82ae3200b82408d605c3dbdd1e38, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineRotateWithFollowTarget
+  Damping: 0
 --- !u!1 &1068225713
 GameObject:
   m_ObjectHideFlags: 0
@@ -1926,7 +1926,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2004000165}
   - component: {fileID: 2004000164}
-  - component: {fileID: 2004000166}
+  - component: {fileID: 2004000169}
   - component: {fileID: 2004000168}
   - component: {fileID: 2004000167}
   m_Layer: 0
@@ -1957,7 +1957,7 @@ MonoBehaviour:
   m_LegacyPriority: 0
   Target:
     TrackingTarget: {fileID: 2048876222}
-    LookAtTarget: {fileID: 2004000165}
+    LookAtTarget: {fileID: 2048876222}
     CustomLookAtTarget: 1
   Lens:
     FieldOfView: 60.000004
@@ -1987,39 +1987,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2004000163}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.04924, y: 2.88, z: -5.83261}
+  m_LocalRotation: {x: 0.15212338, y: 0, z: 0, w: 0.98836154}
+  m_LocalPosition: {x: -0.04924, y: 2.583529, z: -4.601195}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 27.558, y: 0, z: 0}
---- !u!114 &2004000166
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2004000163}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 625c14eee3ad46c99df7c7c891ef668a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineThirdPersonFollow
-  Damping: {x: 1, y: 1, z: 1}
-  ShoulderOffset: {x: 0, y: 0.3, z: 0}
-  VerticalArmLength: 1.5
-  CameraSide: 0.5
-  CameraDistance: 6
-  AvoidObstacles:
-    Enabled: 0
-    CollisionFilter:
-      serializedVersion: 2
-      m_Bits: 1
-    IgnoreTag: 
-    CameraRadius: 0.2
-    DampingIntoCollision: 0
-    DampingFromCollision: 0.5
 --- !u!114 &2004000167
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2035,8 +2009,8 @@ MonoBehaviour:
   panSensitivity: 3
   tiltSensitivity: 3
   smoothTime: 0.08
-  minTiltAngle: -30
-  maxTiltAngle: 40
+  minVerticalAngle: 5
+  maxVerticalAngle: 60
 --- !u!114 &2004000168
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2046,25 +2020,83 @@ MonoBehaviour:
   m_GameObject: {fileID: 2004000163}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62d54399b04b4fa48a73e121d4937dd4, type: 3}
+  m_Script: {fileID: 11500000, guid: f38bda98361e1de48a4ca2bd86ea3c17, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachinePanTilt
-  ReferenceFrame: 0
-  RecenterTarget: 0
-  PanAxis:
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineRotationComposer
+  Composition:
+    ScreenPosition: {x: 0, y: 0}
+    DeadZone:
+      Enabled: 0
+      Size: {x: 0.2, y: 0.2}
+    HardLimits:
+      Enabled: 0
+      Size: {x: 0.8, y: 0.8}
+      Offset: {x: 0, y: 0}
+  CenterOnActivate: 1
+  TargetOffset: {x: 0, y: 0, z: 0}
+  Damping: {x: 0.5, y: 0.5}
+  Lookahead:
+    Enabled: 0
+    Time: 0
+    Smoothing: 0
+    IgnoreY: 0
+--- !u!114 &2004000169
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2004000163}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b5d7c088409d9a40b7b09aa707777f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineOrbitalFollow
+  TargetOffset: {x: 0, y: 0, z: 0}
+  TrackerSettings:
+    BindingMode: 4
+    PositionDamping: {x: 1, y: 1, z: 1}
+    AngularDampingMode: 0
+    RotationDamping: {x: 1, y: 1, z: 1}
+    QuaternionDamping: 1
+  OrbitStyle: 0
+  Radius: 5
+  Orbits:
+    Top:
+      Radius: 2
+      Height: 5
+    Center:
+      Radius: 4
+      Height: 2.25
+    Bottom:
+      Radius: 2.5
+      Height: 0.1
+    SplineCurvature: 0.5
+  RecenteringTarget: 2
+  HorizontalAxis:
     Value: 0
     Center: 0
-    Range: {x: -30, y: 40}
+    Range: {x: -180, y: 180}
     Wrap: 1
     Recentering:
       Enabled: 0
       Wait: 1
       Time: 2
     Restrictions: 0
-  TiltAxis:
-    Value: 0
-    Center: 0
-    Range: {x: -70, y: 70}
+  VerticalAxis:
+    Value: 17.5
+    Center: 17.5
+    Range: {x: -10, y: 45}
+    Wrap: 0
+    Recentering:
+      Enabled: 0
+      Wait: 1
+      Time: 2
+    Restrictions: 0
+  RadialAxis:
+    Value: 1
+    Center: 1
+    Range: {x: 1, y: 1}
     Wrap: 0
     Recentering:
       Enabled: 0
