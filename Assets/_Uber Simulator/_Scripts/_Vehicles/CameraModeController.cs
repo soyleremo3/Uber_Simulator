@@ -14,23 +14,27 @@ namespace DeliverySim
     /// camera when the player presses Tab.
     ///
     /// IMPORTANT: Both CinemachineCamera GameObjects must stay ACTIVE (enabled) at
-    /// all times in the Hierarchy. We never call SetActive(false) on them.
+    /// all times in the Hierarchy - we never call SetActive(false) on them. We use
+    /// Prioritize() to choose which one is live (see notes below).
     ///
-    /// Per Unity's official Cinemachine documentation, a disabled CinemachineCamera
-    /// enters the "Disabled" state and stops tracking its target entirely. When
-    /// re-enabled, its position is stale, so Cinemachine "warps" (instantly snaps)
-    /// to it before blending - this caused the "smooth then suddenly locks" bug.
-    ///
-    /// Instead, we call Prioritize() on the camera we want to become live. Since
-    /// both cameras stay active, the non-live one remains in "Standby" state,
-    /// continuously tracking its target in the background. This produces a fully
-    /// smooth blend with no snapping.
+    /// ADDITIONAL FIX: While the third-person camera is not the active mode, we
+    /// disable its SmoothMouseLook script. Without this, mouse movement keeps
+    /// changing the third-person camera's orbit angles in the background even
+    /// while it is not being viewed. This creates an unstable "moving target" for
+    /// Cinemachine's blend system, which is a known trigger for snap/jump bugs
+    /// when switching cameras. Freezing the orbit angles the instant we leave
+    /// third-person mode keeps that camera in a stable, predictable state for
+    /// blending, both when leaving it and when returning to it.
     /// </summary>
     public class CameraModeController : MonoBehaviour
     {
         [Header("Camera References")]
         public CinemachineCamera thirdPersonCamera;
         public CinemachineCamera firstPersonCamera;
+
+        [Header("Third-Person Mouse Look")]
+        [Tooltip("The SmoothMouseLook component on the third-person camera. Automatically disabled while not in third-person mode.")]
+        public SmoothMouseLook thirdPersonMouseLook;
 
         public CameraMode CurrentMode { get; private set; } = CameraMode.ThirdPerson;
 
@@ -53,7 +57,9 @@ namespace DeliverySim
 
         private void ApplyMode()
         {
-            if (CurrentMode == CameraMode.ThirdPerson)
+            bool isThirdPerson = CurrentMode == CameraMode.ThirdPerson;
+
+            if (isThirdPerson)
             {
                 if (thirdPersonCamera != null)
                 {
@@ -66,6 +72,12 @@ namespace DeliverySim
                 {
                     firstPersonCamera.Prioritize();
                 }
+            }
+
+            // Freeze/unfreeze mouse-driven orbit changes based on which mode is active.
+            if (thirdPersonMouseLook != null)
+            {
+                thirdPersonMouseLook.enabled = isThirdPerson;
             }
         }
     }

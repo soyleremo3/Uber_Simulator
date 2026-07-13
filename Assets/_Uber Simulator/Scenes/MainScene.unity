@@ -182,6 +182,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeliverySim.CameraModeController
   thirdPersonCamera: {fileID: 2004000164}
   firstPersonCamera: {fileID: 998960925}
+  thirdPersonMouseLook: {fileID: 2004000167}
 --- !u!4 &94874216
 Transform:
   m_ObjectHideFlags: 0
@@ -936,7 +937,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36d1163fa822e8b418a0a603ec078d5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineHardLockToTarget
-  Damping: 0.1
+  Damping: 0
 --- !u!114 &998960925
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1007,7 +1008,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4afa82ae3200b82408d605c3dbdd1e38, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineRotateWithFollowTarget
-  Damping: 0.15
+  Damping: 0
 --- !u!1 &1068225713
 GameObject:
   m_ObjectHideFlags: 0
