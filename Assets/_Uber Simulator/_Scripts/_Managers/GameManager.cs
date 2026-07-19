@@ -9,7 +9,8 @@ namespace DeliverySim
         Playing,
         Paused,
         OrderActive,
-        GameOver
+        GameOver,
+        Shop
     }
 
     /// <summary>

@@ -4,9 +4,9 @@ namespace DeliverySim
 {
     public enum CargoType
     {
-        Yemek,
-        Paket,
-        Kirilabilir
+        Food,
+        Package,
+        Fragile
     }
 
     /// <summary>
@@ -34,8 +34,12 @@ namespace DeliverySim
         [SerializeField] private float timeLimitSeconds = 180f;
 
         [Header("Yük Bilgisi")]
-        [SerializeField] private CargoType cargoType = CargoType.Paket;
+        [SerializeField] private CargoType cargoType = CargoType.Package;
         [SerializeField][TextArea] private string description;
+
+        [Header("İtibar Kilidi")]
+        [Tooltip("Bu sipariş, oyuncunun itibarı en az bu kademedeyse havuza girer.")]
+        [SerializeField] private ReputationTier minReputationTier = ReputationTier.Bronze;
 
         public string OrderId => orderId;
         public string OrderName => orderName;
@@ -45,6 +49,7 @@ namespace DeliverySim
         public float TimeLimitSeconds => timeLimitSeconds;
         public CargoType CargoType => cargoType;
         public string Description => description;
+        public ReputationTier MinReputationTier => minReputationTier;
 
         private void OnValidate()
         {

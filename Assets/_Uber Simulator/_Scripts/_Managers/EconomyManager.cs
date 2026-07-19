@@ -78,6 +78,12 @@ namespace DeliverySim
             return true;
         }
 
+        /// <summary>Alias for SpendMoney — kept for API-spec compatibility.</summary>
+        public bool TrySpendMoney(float amount)
+        {
+            return SpendMoney(amount);
+        }
+
         public bool HasEnoughMoney(float amount)
         {
             return CurrentBalance >= amount;

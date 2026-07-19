@@ -173,6 +173,11 @@ namespace DeliverySim
         [HideInInspector] public Vector2 userInput = Vector2.zero;
         [HideInInspector] public float isBraking = 0f; // 0-1: can be read by fuel/wear systems later
 
+        /// <summary>Set by VehicleUpgradeApplier (Engine upgrade). Multiplies wheel torque.</summary>
+        [HideInInspector] public float upgradePowerMultiplier = 1f;
+        /// <summary>Set by VehicleFuel: 1 = has fuel, 0 = tank empty (engine cut).</summary>
+        [HideInInspector] public float fuelPowerMultiplier = 1f;
+
         /// <summary>Current speed in km/h. Useful for UI and economy systems.</summary>
         public float CurrentSpeedKph => rb != null ? rb.linearVelocity.magnitude * 3.6f : 0f;
 
@@ -282,7 +287,8 @@ namespace DeliverySim
                 Vector3 velocityAtWheel = rb.GetPointVelocity(w.wheelWorldPosition);
                 w.localVelocity = wheelObj.InverseTransformDirection(velocityAtWheel);
                 forwards = w.localVelocity.z > 0.1f;
-                w.torque = w.engineTorque * w.input.y * engine.GetCurrentPower(this);
+                w.torque = w.engineTorque * w.input.y * engine.GetCurrentPower(this)
+                    * upgradePowerMultiplier * fuelPowerMultiplier;
 
                 float inertia = w.mass * w.size * w.size / 2f;
                 float lateralVel = w.localVelocity.x;
