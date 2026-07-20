@@ -131,6 +131,8 @@ namespace DeliverySim
         [HideInInspector] public float brake = 0;
         [HideInInspector] public float slipHistory = 0f;
         [HideInInspector] public float tcsReduction = 0f; // Traction control reduction factor
+        [HideInInspector] public bool isGrounded = false;
+        [HideInInspector] public float suspensionCompression = 0f; // 0..1, normalized by suspensionLength
     }
 
     /// <summary>
@@ -167,6 +169,12 @@ namespace DeliverySim
         [Range(0f, 1f)] public float steeringAssistStrength = 0.2f;
         public bool throttleAssist = true;
         public bool brakeAssist = true;
+
+        [Header("Stability (Anti-Rollover)")]
+        [Tooltip("Anti-roll bar stiffness per axle. 0 = disabled. Realistic cars: high value relative to suspensionForce (see Setup 6 menu).")]
+        public float antiRollStiffness = 0f;
+        [Tooltip("Where the LATERAL grip force is applied: 0 = at the contact patch (max rollover torque), 1 = at center-of-mass height (no rollover torque). Realistic roll-center: ~0.6.")]
+        [Range(0f, 1f)] public float lateralForceHeight = 0.6f;
 
         [HideInInspector] public Rigidbody rb;
         [HideInInspector] public bool forwards = true;
@@ -273,7 +281,16 @@ namespace DeliverySim
 
         private void FixedUpdate()
         {
-            rb.AddForce(-transform.up * rb.linearVelocity.magnitude * downforce);
+            // IMPORTANT: all physics math reads rb.position / rb.rotation, NOT transform.
+            // With Rigidbody interpolation enabled (needed for a smooth camera), the
+            // Transform can show an interpolated RENDER pose during FixedUpdate; using
+            // it for suspension rays injects positional error into every step, which
+            // accumulates energy and flips the car. rb.* is always the true physics pose.
+            Quaternion bodyRotation = rb.rotation;
+            Vector3 bodyPosition = rb.position;
+            Vector3 bodyUp = bodyRotation * Vector3.up;
+
+            rb.AddForce(-bodyUp * rb.linearVelocity.magnitude * downforce);
             float averageWheelAngularVelocity = 0f;
 
             foreach (var w in wheels)
@@ -282,10 +299,15 @@ namespace DeliverySim
                 Transform wheelObj = w.wheelObject.transform;
                 Transform wheelVisual = wheelObj.GetChild(0);
 
+                // Steering rotation computed in physics space; the wheelObj transform
+                // below is only cosmetic (it lives under the interpolated parent).
+                Quaternion steerRotation = bodyRotation * Quaternion.Euler(0f, w.turnAngle * w.input.x, 0f);
+                Quaternion inverseSteer = Quaternion.Inverse(steerRotation);
                 wheelObj.localRotation = Quaternion.Euler(0, w.turnAngle * w.input.x, 0);
-                w.wheelWorldPosition = transform.TransformPoint(w.localPosition);
+
+                w.wheelWorldPosition = bodyPosition + bodyRotation * w.localPosition;
                 Vector3 velocityAtWheel = rb.GetPointVelocity(w.wheelWorldPosition);
-                w.localVelocity = wheelObj.InverseTransformDirection(velocityAtWheel);
+                w.localVelocity = inverseSteer * velocityAtWheel;
                 forwards = w.localVelocity.z > 0.1f;
                 w.torque = w.engineTorque * w.input.y * engine.GetCurrentPower(this)
                     * upgradePowerMultiplier * fuelPowerMultiplier;
@@ -296,10 +318,11 @@ namespace DeliverySim
                 // QueryTriggerInteraction.Ignore is CRITICAL: delivery/pickup points use big
                 // trigger spheres. Without this flag the suspension ray hits the invisible
                 // trigger shell, treats it as ground and catapults/flips the car on area entry.
-                bool grounded = Physics.Raycast(w.wheelWorldPosition, -transform.up, out RaycastHit hit, rayLen,
+                bool grounded = Physics.Raycast(w.wheelWorldPosition, -bodyUp, out RaycastHit hit, rayLen,
                     Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+                w.isGrounded = grounded;
                 Vector3 worldVelAtHit = rb.GetPointVelocity(hit.point);
-                float lateralHitVel = wheelObj.InverseTransformDirection(worldVelAtHit).x;
+                float lateralHitVel = (inverseSteer * worldVelAtHit).x;
 
                 float lateralFriction = -wheelGripX * lateralVel - 2f * lateralHitVel;
                 float longitudinalFriction = -wheelGripZ * (w.localVelocity.z - w.angularVelocity * w.size);
@@ -321,12 +344,15 @@ namespace DeliverySim
                 totalLocalForce = Vector3.ClampMagnitude(totalLocalForce, currentMaxFrictionForce);
                 totalLocalForce *= w.slidding ? (coefKineticFriction / coefStaticFriction) : 1;
 
-                Vector3 totalWorldForce = wheelObj.TransformDirection(totalLocalForce);
+                Vector3 totalWorldForce = steerRotation * totalLocalForce;
                 w.worldSlipDirection = totalWorldForce;
 
                 if (grounded)
                 {
                     float compression = rayLen - hit.distance;
+                    w.suspensionCompression = w.suspensionLength > 0f
+                        ? Mathf.Clamp01(compression / w.suspensionLength)
+                        : 0f;
                     float damping = (w.lastSuspensionLength - hit.distance) * dampAmount;
                     w.normalForce = (compression + damping) * suspensionForce;
                     w.normalForce = Mathf.Clamp(w.normalForce, 0f, suspensionForceClamp);
@@ -334,15 +360,28 @@ namespace DeliverySim
                     Vector3 springDir = hit.normal * w.normalForce;
                     w.suspensionForceDirection = springDir;
 
-                    rb.AddForceAtPosition(springDir + totalWorldForce, hit.point);
+                    // Roll-center: the LATERAL grip component is applied part-way up
+                    // toward center-of-mass height instead of at the contact patch.
+                    // At the patch every cornering force becomes maximum rollover
+                    // torque; real suspension geometry transfers it higher. Only the
+                    // HEIGHT changes — the horizontal point stays at the wheel, so
+                    // yaw (steering) response is unaffected.
+                    Vector3 lateralWorld = steerRotation * new Vector3(totalLocalForce.x, 0f, 0f);
+                    Vector3 longitudinalWorld = steerRotation * new Vector3(0f, 0f, totalLocalForce.z);
+                    float comHeight = Vector3.Dot(rb.worldCenterOfMass - hit.point, bodyUp);
+                    Vector3 lateralApplyPoint = hit.point + bodyUp * (Mathf.Max(0f, comHeight) * lateralForceHeight);
+
+                    rb.AddForceAtPosition(springDir + longitudinalWorld, hit.point);
+                    rb.AddForceAtPosition(lateralWorld, lateralApplyPoint);
                     w.lastSuspensionLength = hit.distance;
-                    wheelObj.position = hit.point + transform.up * w.size;
+                    wheelObj.position = hit.point + bodyUp * w.size;
 
                     UpdateSkidTrail(w, wheelObj, hit);
                 }
                 else
                 {
-                    wheelObj.position = w.wheelWorldPosition + transform.up * (w.size - rayLen);
+                    w.suspensionCompression = 0f;
+                    wheelObj.position = w.wheelWorldPosition + bodyUp * (w.size - rayLen);
                     StopSkidTrail(w);
                 }
 
@@ -355,8 +394,44 @@ namespace DeliverySim
                 );
             }
 
+            // Anti-roll bars: wheels 0-1 = front axle, 2-3 = rear axle
+            // (matches the scene wheel order: z=+1.7 front pair, z=-1.7 rear pair).
+            ApplyAntiRollBar(0, 1, bodyUp);
+            ApplyAntiRollBar(2, 3, bodyUp);
+
             averageWheelAngularVelocity /= wheels.Length;
             engine.SetRPM(averageWheelAngularVelocity);
+        }
+
+        /// <summary>
+        /// Standard anti-roll bar: pushes the body up on the compressed side and
+        /// down on the extended side, resisting roll in corners. Produces zero force
+        /// when both wheels of the axle compress equally (straight-line driving),
+        /// so it only affects cornering/rollover behavior.
+        /// </summary>
+        private void ApplyAntiRollBar(int indexA, int indexB, Vector3 up)
+        {
+            if (antiRollStiffness <= 0f || wheels == null || wheels.Length <= Mathf.Max(indexA, indexB))
+            {
+                return;
+            }
+
+            VehicleWheel a = wheels[indexA];
+            VehicleWheel b = wheels[indexB];
+
+            float travelA = a.isGrounded ? a.suspensionCompression : 0f;
+            float travelB = b.isGrounded ? b.suspensionCompression : 0f;
+            float force = (travelA - travelB) * antiRollStiffness;
+
+            if (a.isGrounded)
+            {
+                rb.AddForceAtPosition(up * force, a.wheelWorldPosition);
+            }
+
+            if (b.isGrounded)
+            {
+                rb.AddForceAtPosition(-up * force, b.wheelWorldPosition);
+            }
         }
 
         private void UpdateSkidTrail(VehicleWheel w, Transform wheelObj, RaycastHit hit)

@@ -57,6 +57,18 @@ Teşhis: araç ayarlarına (grip/tork/süspansiyon) dokunulmamıştı; iki yeni 
 
 Eski scriptler (`_CarScripts/Car.cs`, `Camera.cs`, `ui.cs`) kontrol edildi: yalnızca pasif objelerde, aktif araca etkileri yok.
 
+## Düzeltme Kaydı 2 (2026-07-20 — takla kök çözümü + gerçekçi sürüş)
+
+Derin teşhis (git geçmişi + sahne YAML + kod analizi):
+- Değerler oturumda değişmemişti (`git diff` temiz). Asıl sorun: aktif araç "PlayerVeichle Car" **1 kg kütle**, asistler kapalı, düşürülmüş grip/süspansiyon değerleriyle çalışıyordu — devrilme ataleti ~0.4 kg·m², her viraj kuvveti taklaya yetiyor. (Pasif eski "PlayerVehicle": 1500 kg + asistler açık.)
+- Kod eksikleri: yanal tutuş kuvveti zemin noktasından uygulanıyordu (maksimum devirme momenti), anti-roll bar yoktu, fizik `transform` okuyordu (Interpolation açıkken FixedUpdate'te ara-poz okunup süspansiyona hata karışıyordu).
+
+Uygulanan çözüm:
+1. `VehicleController.FixedUpdate` tamamen `rb.position/rb.rotation` tabanlı — **Interpolation artık AÇIK kalabiliyor** (kamera akıcı, fizik doğru). Setup 5 komutu tersine çevrildi: Interpolation'ı AÇIK garanti eder.
+2. Yeni mekanik: **anti-roll bar** (aks başına, `antiRollStiffness`, varsayılan 0=kapalı) + **roll-center** (`lateralForceHeight`, yanal kuvvet CoM yüksekliğine doğru uygulanır, varsayılan 0.6).
+3. **Setup 6 - Apply Realistic Vehicle Tuning**: 1200 kg + türetilmiş tutarlı set (suspensionForce 40000, clamp 15000, damp 4, gripX 8 / gripZ 42, engineTorque 1200, teker 20 kg, turnAngle 30, CoM -0.3, antiRoll 12000, asistler açık). Undo destekli; eski değerler uygulanmadan önce Console'a loglanır.
+4. Yan kazanım: kütle gerçekçi olunca `VehicleCondition` hasar eşiği (impulse 300) gerçekten çalışır oldu (1 kg'da hiç tetiklenmiyordu).
+
 ## Sonraki Oturum İçin
 
 - Kullanıcı MANUAL_STEPS B+C'yi uygulayıp test sonucunu bildirecek.

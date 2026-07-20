@@ -140,13 +140,30 @@ Emin değilsen kontrol: Hierarchy'nin üstündeki arama kutusuna `CM` yaz. "CM" 
 
 # BÖLÜM C — İLK OYUN TESTİ (adım adım senaryo)
 
-> **GÜNCELLEME (kontrol düzeltmesi):** İlk testte iki sorun bulundu ve kodda düzeltildi:
-> 1. Sipariş paneli tuşu **Tab → O** olarak değişti (Tab zaten kamera modu değiştiriyordu — çakışma sürüşü bozuyordu).
-> 2. Setup 2'nin Rigidbody Interpolation değişikliği geri alınmalı. Bunun için TEK TIK:
->    **DeliverySim → Setup → 5 - Fix Vehicle Physics (Interpolation Geri Al)** → sonra **Ctrl+S**.
->    Bu komut aynı zamanda araca **VehicleReset** ekler: takla atarsan **R** tuşu aracı düzeltir.
+> **GÜNCELLEME 2 (takla / gerçekçi sürüş düzeltmesi):** Takla sorununun kökü bulundu:
+> aktif araç 1 kg kütleyle çalışıyordu (!) ve kodda devrilmeyi frenleyecek mekanik yoktu.
+> Kod artık interpolation'dan bağımsız (kamera akıcılığı için **Interpolation AÇIK kalıyor** —
+> eski "Setup 5 ile None yap" talimatı GEÇERSİZ, o komut artık tam tersine interpolation'ı açık garanti eder)
+> ve anti-roll bar + roll-center mekaniği eklendi. Yapman gereken TEK ŞEY:
+>
+> 1. Unity'de derlemenin bitmesini bekle.
+> 2. Üst menü → **DeliverySim → Setup → 6 - Apply Realistic Vehicle Tuning** → tıkla.
+>    (Console'a önce ESKİ değerler loglanır — beğenmezsen Ctrl+Z veya o değerleri elle geri girersin.)
+> 3. **Ctrl+S** ile sahneyi kaydet → Play → test et.
 >
 > **Güncel tuş listesi:** WASD sür • Space el freni • F etkileşim • **O sipariş paneli** • B mağaza • **R aracı düzelt** • **Tab kamera modu (1./3. şahıs)** • Esc duraklat • E/Q vites
+>
+> **Sürüş hissi ayar rehberi** (Inspector → PlayerVeichle Car → Vehicle Controller):
+>
+> | Ne değiştirmek istiyorsun | Hangi alan | Yönü |
+> |---|---|---|
+> | Devrilme direnci | `Anti Roll Stiffness`, `Lateral Force Height`, `Center Of Mass Offset.y` | Artır / artır / daha negatif = daha stabil |
+> | Süspansiyon sertliği | `Suspension Force` | Artır = sert |
+> | Zıplama/sallanma sönümü | `Damp Amount` | Artır = daha çabuk oturur |
+> | Hızlanma gücü | teker başına `Engine Torque` | Artır = güçlü |
+> | Viraj tutuşu | `Wheel Grip X` | Artır = daha çok tutar (aşırısı devirmeye zorlar) |
+> | Direksiyon açısı | ön tekerlerde `Turn Angle` | Azalt = yüksek hızda daha stabil |
+> | Araç ağırlık hissi | Rigidbody `Mass` | 1200 = sedan; büyük araçta 2000+ |
 
 Şimdi oyunu oynayarak çekirdek döngüyü doğrulayacağız.
 
@@ -357,7 +374,8 @@ Mağazadaki "MAKS" yazısının sebebi katalogun boş olması. Dolduralım. Örn
 | Sipariş paneli açılınca kamera değişiyor | Eski sürümde ikisi de Tab'daydı | Düzeltildi: siparişler **O**, kamera **Tab**. Unity'de scriptler yeniden derlensin |
 | Araç takla attı, ters kaldı | Normal kaza | **R** tuşu aracı olduğu yerde düzeltir (Setup 5 veya Setup 2'yi bir kez çalıştırmış olman gerekir) |
 | Sipariş ALANINA GİRERKEN araç fırlıyor/takla atıyor | Süspansiyon ışını görünmez trigger küresine çarpıyordu | Kodda düzeltildi (trigger'lar yok sayılıyor) — scriptler derlensin, ekstra adım yok |
-| Sürüş eskisinden kötü/sarsak | Rigidbody Interpolation değişmişti | **DeliverySim → Setup → 5** çalıştır → Ctrl+S |
+| Araç virajda devriliyor | Gerçekçi profil uygulanmamış | **DeliverySim → Setup → 6** çalıştır → Ctrl+S. Hâlâ devriliyorsa `Anti Roll Stiffness` artır |
+| Kamera sarsak/titriyor | Rigidbody Interpolation kapalı kalmış | **DeliverySim → Setup → 5** çalıştır (Interpolation'ı AÇIK yapar) → Ctrl+S |
 | DeliverySim menüsü yok | Derleme bitmedi veya hata var | Console'daki kırmızı satırı bana gönder |
 | Play'de UI görünmüyor | UIBootstrap kapalı veya `_UI` yok | B3'ü tekrar çalıştır, Build On Start işaretli mi bak |
 | "Yükü Al [F]" hiç çıkmıyor | Noktada trigger collider yok / araçta VehicleInteractor yok | B4 ve B6'yı tekrar çalıştır (güvenli, kopya üretmez) |

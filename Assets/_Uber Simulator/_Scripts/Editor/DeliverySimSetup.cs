@@ -65,7 +65,10 @@ namespace DeliverySim.EditorTools
         }
 
         // ------------------------------------------------------------------
-        [MenuItem("DeliverySim/Setup/5 - Fix Vehicle Physics (Interpolation Geri Al)")]
+        // NOTE: The physics math in VehicleController is interpolation-proof now
+        // (reads rb.position/rb.rotation, not transform), so Interpolate can and
+        // SHOULD stay ON — the camera depends on it.
+        [MenuItem("DeliverySim/Setup/5 - Fix Vehicle Physics (Interpolation AÇIK)")]
         public static void FixVehiclePhysics()
         {
             VehicleController vehicle = Object.FindFirstObjectByType<VehicleController>();
@@ -76,19 +79,95 @@ namespace DeliverySim.EditorTools
             }
 
             Rigidbody rb = vehicle.GetComponent<Rigidbody>();
-            if (rb != null && rb.interpolation != RigidbodyInterpolation.None)
+            if (rb != null && rb.interpolation != RigidbodyInterpolation.Interpolate)
             {
-                Undo.RecordObject(rb, "Restore Rigidbody Interpolation");
-                rb.interpolation = RigidbodyInterpolation.None;
-                Debug.Log($"[Setup] '{vehicle.name}' Rigidbody interpolation None yapıldı (eski, test edilmiş ayar).");
+                Undo.RecordObject(rb, "Enable Rigidbody Interpolation");
+                rb.interpolation = RigidbodyInterpolation.Interpolate;
+                Debug.Log($"[Setup] '{vehicle.name}' Rigidbody interpolation AÇIK yapıldı (kamera akıcılığı; fizik artık interpolation'dan etkilenmiyor).");
             }
             else
             {
-                Debug.Log("[Setup] Interpolation zaten None — değişiklik gerekmedi.");
+                Debug.Log("[Setup] Interpolation zaten açık — değişiklik gerekmedi.");
             }
 
             AddIfMissing<VehicleReset>(vehicle.gameObject);
             Selection.activeGameObject = vehicle.gameObject;
+        }
+
+        // ------------------------------------------------------------------
+        [MenuItem("DeliverySim/Setup/6 - Apply Realistic Vehicle Tuning")]
+        public static void ApplyRealisticTuning()
+        {
+            VehicleController vehicle = Object.FindFirstObjectByType<VehicleController>();
+            if (vehicle == null)
+            {
+                Debug.LogError("[Setup] Sahnede VehicleController bulunamadı.");
+                return;
+            }
+
+            Rigidbody rb = vehicle.GetComponent<Rigidbody>();
+
+            // Log the OLD values first so the user can restore them by hand if needed.
+            string oldWheel = vehicle.wheels != null && vehicle.wheels.Length > 0
+                ? $"engineTorque={vehicle.wheels[0].engineTorque}, wheelMass={vehicle.wheels[0].mass}, turnAngle(ön)={vehicle.wheels[0].turnAngle}"
+                : "(teker yok)";
+            Debug.Log("[Setup] ESKİ DEĞERLER (geri dönmek istersen): " +
+                $"mass={(rb != null ? rb.mass : 0f)}, angularDamping={(rb != null ? rb.angularDamping : 0f)}, " +
+                $"gripX={vehicle.wheelGripX}, gripZ={vehicle.wheelGripZ}, suspensionForce={vehicle.suspensionForce}, " +
+                $"clamp={vehicle.suspensionForceClamp}, damp={vehicle.dampAmount}, downforce={vehicle.downforce}, " +
+                $"comY={vehicle.centerOfMassOffset.y}, antiRoll={vehicle.antiRollStiffness}, latHeight={vehicle.lateralForceHeight}, " +
+                $"assists=({vehicle.steeringAssist}/{vehicle.throttleAssist}/{vehicle.brakeAssist}), {oldWheel}");
+
+            Undo.RecordObject(vehicle, "Apply Realistic Vehicle Tuning");
+
+            if (rb != null)
+            {
+                Undo.RecordObject(rb, "Apply Realistic Vehicle Tuning");
+                rb.mass = 1200f;                                        // Real sedan mass
+                rb.angularDamping = 0.3f;                               // Mild rotational settling
+                rb.interpolation = RigidbodyInterpolation.Interpolate;  // Smooth camera; physics is rb-pose based
+            }
+
+            // Suspension: 300 kg/corner, ~1.8 Hz natural frequency, damping ratio ~0.45.
+            vehicle.suspensionForce = 40000f;
+            vehicle.suspensionForceClamp = 15000f;
+            vehicle.dampAmount = 4f;
+
+            // Grip slopes from the original proven profile; friction clamp (μN) does the limiting.
+            vehicle.wheelGripX = 8f;
+            vehicle.wheelGripZ = 42f;
+
+            vehicle.downforce = 0.1f;
+            vehicle.centerOfMassOffset = new Vector3(0f, -0.3f, 0f);    // CoM ~0.2 m above ground
+            vehicle.inertiaMultiplier = 1.2f;
+
+            // Rollover resistance (the actual anti-flip layer).
+            vehicle.antiRollStiffness = 12000f;
+            vehicle.lateralForceHeight = 0.6f;
+
+            // Assists on, like the original tuned profile.
+            vehicle.steeringAssist = true;
+            vehicle.steeringAssistStrength = 0.2f;
+            vehicle.throttleAssist = true;
+            vehicle.brakeAssist = true;
+
+            if (vehicle.wheels != null)
+            {
+                foreach (VehicleWheel wheel in vehicle.wheels)
+                {
+                    wheel.mass = 20f;            // Real wheel+tire
+                    wheel.engineTorque = 1200f;  // ~14 kN total thrust target for 1200 kg
+                    if (wheel.turnAngle > 0f)
+                    {
+                        wheel.turnAngle = 30f;   // 34 was overly aggressive at speed
+                    }
+                }
+            }
+
+            AddIfMissing<VehicleReset>(vehicle.gameObject);
+            EditorUtility.SetDirty(vehicle);
+            Selection.activeGameObject = vehicle.gameObject;
+            Debug.Log("[Setup] Gerçekçi araç profili uygulandı (1200 kg). Beğenmezsen: Ctrl+Z veya yukarıda loglanan eski değerleri Inspector'a elle gir. Sahneyi kaydetmeyi unutma (Ctrl+S).");
         }
 
         // ------------------------------------------------------------------
