@@ -54,17 +54,41 @@ namespace DeliverySim.EditorTools
             AddIfMissing<VehicleCondition>(go);
             AddIfMissing<VehicleInteractor>(go);
             AddIfMissing<VehicleUpgradeApplier>(go);
+            AddIfMissing<VehicleReset>(go);
 
-            Rigidbody rb = go.GetComponent<Rigidbody>();
-            if (rb != null && rb.interpolation == RigidbodyInterpolation.None)
-            {
-                Undo.RecordObject(rb, "Set Rigidbody Interpolation");
-                // Camera anti-jitter (bug #1): interpolate the physics body.
-                rb.interpolation = RigidbodyInterpolation.Interpolate;
-            }
+            // NOTE: Rigidbody interpolation is deliberately NOT touched here.
+            // The custom raycast-suspension controller was tuned with
+            // interpolation = None; enabling Interpolate destabilized handling.
 
             Selection.activeGameObject = go;
-            Debug.Log($"[Setup] '{go.name}' araç bileşenleri tamam (yakıt, hasar, etkileşim, yükseltme).");
+            Debug.Log($"[Setup] '{go.name}' araç bileşenleri tamam (yakıt, hasar, etkileşim, yükseltme, reset).");
+        }
+
+        // ------------------------------------------------------------------
+        [MenuItem("DeliverySim/Setup/5 - Fix Vehicle Physics (Interpolation Geri Al)")]
+        public static void FixVehiclePhysics()
+        {
+            VehicleController vehicle = Object.FindFirstObjectByType<VehicleController>();
+            if (vehicle == null)
+            {
+                Debug.LogError("[Setup] Sahnede VehicleController bulunamadı.");
+                return;
+            }
+
+            Rigidbody rb = vehicle.GetComponent<Rigidbody>();
+            if (rb != null && rb.interpolation != RigidbodyInterpolation.None)
+            {
+                Undo.RecordObject(rb, "Restore Rigidbody Interpolation");
+                rb.interpolation = RigidbodyInterpolation.None;
+                Debug.Log($"[Setup] '{vehicle.name}' Rigidbody interpolation None yapıldı (eski, test edilmiş ayar).");
+            }
+            else
+            {
+                Debug.Log("[Setup] Interpolation zaten None — değişiklik gerekmedi.");
+            }
+
+            AddIfMissing<VehicleReset>(vehicle.gameObject);
+            Selection.activeGameObject = vehicle.gameObject;
         }
 
         // ------------------------------------------------------------------

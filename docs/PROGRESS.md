@@ -47,6 +47,16 @@ Son güncelleme: 2026-07-19 (kesintisiz tam kodlama oturumu)
 - `_UI/`: UIFactory, UIBootstrap, HUDController, OrderPanelController, ShopPanelController, PauseMenuController, MainMenuController, InteractionPromptUI, NotificationUI
 - `Editor/`: DeliverySimSetup (4 kurulum MenuItem'ı)
 
+## Düzeltme Kaydı (2026-07-20 — "araç kontrolü bozuldu" raporu)
+
+Teşhis: araç ayarlarına (grip/tork/süspansiyon) dokunulmamıştı; iki yeni etkileşim sorunu vardı:
+1. **Tab çakışması:** OrderPanelController ve CameraModeController ikisi de Tab kullanıyordu — panel açarken kamera first-person'a geçiyordu. Çözüm: sipariş paneli **O** tuşuna taşındı.
+2. **Rigidbody Interpolation:** Setup 2 komutu None→Interpolate yapmıştı; mass=1'lik hassas özel fizik bununla dengesizleşti. Çözüm: Setup artık interpolation'a dokunmuyor + **Setup 5** menü komutu eski ayara (None) döndürüyor.
+3. **Yeni:** `VehicleReset` (R tuşu) — takla sonrası aracı olduğu yerde düzeltir. Setup 2 ve 5 otomatik ekler.
+4. **ASIL TAKLA SEBEBİ (kullanıcı tespiti doğrulandı):** Nokta trigger'ları 5m yarıçaplı küre; süspansiyon raycast'i varsayılan ayarla trigger'lara da çarpıyordu → alana girişte tekerlek ışını görünmez küre kabuğunu zemin sanıp aracı fırlatıyordu. Çözüm: süspansiyon raycast'ine `QueryTriggerInteraction.Ignore` eklendi (VehicleController.FixedUpdate).
+
+Eski scriptler (`_CarScripts/Car.cs`, `Camera.cs`, `ui.cs`) kontrol edildi: yalnızca pasif objelerde, aktif araca etkileri yok.
+
 ## Sonraki Oturum İçin
 
 - Kullanıcı MANUAL_STEPS B+C'yi uygulayıp test sonucunu bildirecek.

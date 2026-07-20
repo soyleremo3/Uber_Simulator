@@ -105,7 +105,7 @@ namespace DeliverySim
             RectTransform panel = UIFactory.CreatePanel(root, "OrderPanel", new Color(0.05f, 0.06f, 0.09f, 0.92f));
             UIFactory.Place(panel, new Vector2(1f, 0.5f), new Vector2(-14f, 0f), new Vector2(470f, 480f));
 
-            Text title = UIFactory.CreateText(panel, "Title", "SİPARİŞLER [Tab]", 24, TextAnchor.MiddleCenter, Color.white);
+            Text title = UIFactory.CreateText(panel, "Title", "SİPARİŞLER [O]", 24, TextAnchor.MiddleCenter, Color.white);
             UIFactory.Place((RectTransform)title.transform, new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(440f, 36f));
 
             var listGo = new GameObject("OfferList", typeof(RectTransform));
@@ -164,7 +164,7 @@ namespace DeliverySim
         private void BuildHelpText(Transform root)
         {
             Text help = UIFactory.CreateText(root, "HelpText",
-                "WASD: Sür  |  Space: El freni  |  F: Etkileşim  |  Tab: Siparişler  |  B: Mağaza  |  Esc: Duraklat",
+                "WASD: Sür  |  Space: El freni  |  F: Etkileşim  |  O: Siparişler  |  B: Mağaza  |  R: Aracı Düzelt  |  Tab: Kamera  |  Esc: Duraklat",
                 16, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.55f));
             UIFactory.Place((RectTransform)help.transform, new Vector2(0.5f, 0f), new Vector2(0f, 8f), new Vector2(1000f, 24f));
         }

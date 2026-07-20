@@ -140,6 +140,14 @@ Emin değilsen kontrol: Hierarchy'nin üstündeki arama kutusuna `CM` yaz. "CM" 
 
 # BÖLÜM C — İLK OYUN TESTİ (adım adım senaryo)
 
+> **GÜNCELLEME (kontrol düzeltmesi):** İlk testte iki sorun bulundu ve kodda düzeltildi:
+> 1. Sipariş paneli tuşu **Tab → O** olarak değişti (Tab zaten kamera modu değiştiriyordu — çakışma sürüşü bozuyordu).
+> 2. Setup 2'nin Rigidbody Interpolation değişikliği geri alınmalı. Bunun için TEK TIK:
+>    **DeliverySim → Setup → 5 - Fix Vehicle Physics (Interpolation Geri Al)** → sonra **Ctrl+S**.
+>    Bu komut aynı zamanda araca **VehicleReset** ekler: takla atarsan **R** tuşu aracı düzeltir.
+>
+> **Güncel tuş listesi:** WASD sür • Space el freni • F etkileşim • **O sipariş paneli** • B mağaza • **R aracı düzelt** • **Tab kamera modu (1./3. şahıs)** • Esc duraklat • E/Q vites
+
 Şimdi oyunu oynayarak çekirdek döngüyü doğrulayacağız.
 
 ## ADIM C1 — Oyunu başlat
@@ -149,13 +157,13 @@ Emin değilsen kontrol: Hierarchy'nin üstündeki arama kutusuna `CM` yaz. "CM" 
 
 **✓ KONTROL:** Ekranda şunlar otomatik belirir:
 - SOL ALTTA yarı saydam siyah panel: hız, para (₺ 100), yakıt, durum, ★ puan, "Sipariş yok".
-- EN ALTTA yardım satırı: `WASD: Sür | Space: El freni | F: Etkileşim | Tab: Siparişler | B: Mağaza | Esc: Duraklat`
+- EN ALTTA yardım satırı: `WASD: Sür | Space: El freni | F: Etkileşim | O: Siparişler | B: Mağaza | R: Aracı Düzelt | Tab: Kamera | Esc: Duraklat`
 
 **✗ SORUN:** Bu yazılar YOKSA → Play'i durdur, Hierarchy'de `_UI` objesini seç, Inspector'da **UI Bootstrap** bileşeninde **Build On Start** kutusunun İŞARETLİ olduğunu doğrula.
 
 ## ADIM C2 — Sipariş kabul et
 
-1. Klavyeden **Tab** tuşuna bas.
+1. Klavyeden **O** tuşuna bas. (Tab DEĞİL — Tab kamera modunu değiştirir.)
 2. Ekranın sağında "SİPARİŞLER" paneli açılır. İçinde 3 sipariş kartı var (isim, ücret, süre + Kabul/Reddet butonları).
 3. İlk siparişin **Kabul** butonuna FARE ile tıkla.
 
@@ -165,7 +173,7 @@ Emin değilsen kontrol: Hierarchy'nin üstündeki arama kutusuna `CM` yaz. "CM" 
 - Zeminde araçtan o noktaya giden MAVİ ÇİZGİ (GPS rotası) var.
 - Sol alt panelde "Alım bekleniyor: ..." yazıyor.
 
-**NOT:** Panel açıkken araba tuşları çalışmaya devam eder. Paneli kapatmak için tekrar **Tab**.
+**NOT:** Panel açıkken araba tuşları çalışmaya devam eder. Paneli kapatmak için tekrar **O**.
 
 ## ADIM C3 — Yükü al
 
@@ -346,6 +354,10 @@ Mağazadaki "MAKS" yazısının sebebi katalogun boş olması. Dolduralım. Örn
 
 | Belirti | Muhtemel sebep | Çözüm |
 |---|---|---|
+| Sipariş paneli açılınca kamera değişiyor | Eski sürümde ikisi de Tab'daydı | Düzeltildi: siparişler **O**, kamera **Tab**. Unity'de scriptler yeniden derlensin |
+| Araç takla attı, ters kaldı | Normal kaza | **R** tuşu aracı olduğu yerde düzeltir (Setup 5 veya Setup 2'yi bir kez çalıştırmış olman gerekir) |
+| Sipariş ALANINA GİRERKEN araç fırlıyor/takla atıyor | Süspansiyon ışını görünmez trigger küresine çarpıyordu | Kodda düzeltildi (trigger'lar yok sayılıyor) — scriptler derlensin, ekstra adım yok |
+| Sürüş eskisinden kötü/sarsak | Rigidbody Interpolation değişmişti | **DeliverySim → Setup → 5** çalıştır → Ctrl+S |
 | DeliverySim menüsü yok | Derleme bitmedi veya hata var | Console'daki kırmızı satırı bana gönder |
 | Play'de UI görünmüyor | UIBootstrap kapalı veya `_UI` yok | B3'ü tekrar çalıştır, Build On Start işaretli mi bak |
 | "Yükü Al [F]" hiç çıkmıyor | Noktada trigger collider yok / araçta VehicleInteractor yok | B4 ve B6'yı tekrar çalıştır (güvenli, kopya üretmez) |

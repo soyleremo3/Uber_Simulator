@@ -19,7 +19,8 @@ namespace DeliverySim
         [SerializeField] private RectTransform listContainer;
 
         [Header("Input")]
-        [SerializeField] private KeyCode toggleKey = KeyCode.Tab;
+        // NOT Tab: CameraModeController already uses Tab for camera mode switching.
+        [SerializeField] private KeyCode toggleKey = KeyCode.O;
 
         [Header("Layout")]
         [SerializeField] private float rowHeight = 84f;

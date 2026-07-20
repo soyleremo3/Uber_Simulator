@@ -293,7 +293,11 @@ namespace DeliverySim
                 float inertia = w.mass * w.size * w.size / 2f;
                 float lateralVel = w.localVelocity.x;
 
-                bool grounded = Physics.Raycast(w.wheelWorldPosition, -transform.up, out RaycastHit hit, rayLen);
+                // QueryTriggerInteraction.Ignore is CRITICAL: delivery/pickup points use big
+                // trigger spheres. Without this flag the suspension ray hits the invisible
+                // trigger shell, treats it as ground and catapults/flips the car on area entry.
+                bool grounded = Physics.Raycast(w.wheelWorldPosition, -transform.up, out RaycastHit hit, rayLen,
+                    Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
                 Vector3 worldVelAtHit = rb.GetPointVelocity(hit.point);
                 float lateralHitVel = wheelObj.InverseTransformDirection(worldVelAtHit).x;
 
