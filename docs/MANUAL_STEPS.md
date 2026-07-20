@@ -151,7 +151,31 @@ Emin değilsen kontrol: Hierarchy'nin üstündeki arama kutusuna `CM` yaz. "CM" 
 >    (Console'a önce ESKİ değerler loglanır — beğenmezsen Ctrl+Z veya o değerleri elle geri girersin.)
 > 3. **Ctrl+S** ile sahneyi kaydet → Play → test et.
 >
-> **Güncel tuş listesi:** WASD sür • Space el freni • F etkileşim • **O sipariş paneli** • B mağaza • **R aracı düzelt** • **Tab kamera modu (1./3. şahıs)** • Esc duraklat • E/Q vites
+> **GÜNCELLEME 3 (pro kontroller + kamera + noktalar):** Tuş düzeni sürüş oyunu standardına çekildi,
+> kamera hissi/geçişleri profesyonelleştirildi, noktalara kalıcı işaret + katı kiosk eklendi,
+> teslimat süresi artık gerçek mesafeden hesaplanıyor. Derleme sonrası TEK SEFERLİK iki tık:
+>
+> 1. **DeliverySim → Setup → 7 - Pro Controls + Camera Feel** (etkileşim tuşunu E yapar,
+>    kamerayı araç dönüşünü takip eden pro moda alır, mod geçiş blend'ini 0.8 sn yapar).
+> 2. **DeliverySim → Setup → 8 - Upgrade Point Visuals** (tüm noktalara her zaman görünür
+>    renkli işaret — yeşil=alım, turuncu=teslim — + aktif hedef zemin halkası + içinden
+>    geçilemeyen katı kiosk; istasyon küpleri de katılaşır).
+> 3. **Ctrl+S**.
+>
+> **GÜNCEL TUŞ DÜZENİ (sürüş oyunu standardı):**
+>
+> | Tuş | İşlev |
+> |---|---|
+> | **WASD** | Gaz / fren / direksiyon |
+> | **Space** | El freni |
+> | **E** | Etkileşim (yük al/ver, yakıt, tamir) |
+> | **Tab** | Telefon / Sipariş paneli |
+> | **C** | Kamera modu (1./3. şahıs) |
+> | **B** | Mağaza |
+> | **R** | Aracı düzelt (takla sonrası) |
+> | **LShift / LCtrl** | Vites yukarı / aşağı (manuel müdahale; otomatik vites zaten aktif) |
+> | **Esc** | Duraklat |
+> | **Fare** | Kamerayı çevir — bırakınca ~1 sn sonra kendiliğinden aracın arkasına döner |
 >
 > **Sürüş hissi ayar rehberi** (Inspector → PlayerVeichle Car → Vehicle Controller):
 >
@@ -174,13 +198,13 @@ Emin değilsen kontrol: Hierarchy'nin üstündeki arama kutusuna `CM` yaz. "CM" 
 
 **✓ KONTROL:** Ekranda şunlar otomatik belirir:
 - SOL ALTTA yarı saydam siyah panel: hız, para (₺ 100), yakıt, durum, ★ puan, "Sipariş yok".
-- EN ALTTA yardım satırı: `WASD: Sür | Space: El freni | F: Etkileşim | O: Siparişler | B: Mağaza | R: Aracı Düzelt | Tab: Kamera | Esc: Duraklat`
+- EN ALTTA yardım satırı: `WASD: Sür | Space: El freni | E: Etkileşim | Tab: Siparişler | B: Mağaza | C: Kamera | R: Aracı Düzelt | LShift/LCtrl: Vites | Esc: Duraklat`
 
 **✗ SORUN:** Bu yazılar YOKSA → Play'i durdur, Hierarchy'de `_UI` objesini seç, Inspector'da **UI Bootstrap** bileşeninde **Build On Start** kutusunun İŞARETLİ olduğunu doğrula.
 
 ## ADIM C2 — Sipariş kabul et
 
-1. Klavyeden **O** tuşuna bas. (Tab DEĞİL — Tab kamera modunu değiştirir.)
+1. Klavyeden **Tab** tuşuna bas. (Kamera modu artık **C** tuşunda.)
 2. Ekranın sağında "SİPARİŞLER" paneli açılır. İçinde 3 sipariş kartı var (isim, ücret, süre + Kabul/Reddet butonları).
 3. İlk siparişin **Kabul** butonuna FARE ile tıkla.
 
@@ -190,13 +214,13 @@ Emin değilsen kontrol: Hierarchy'nin üstündeki arama kutusuna `CM` yaz. "CM" 
 - Zeminde araçtan o noktaya giden MAVİ ÇİZGİ (GPS rotası) var.
 - Sol alt panelde "Alım bekleniyor: ..." yazıyor.
 
-**NOT:** Panel açıkken araba tuşları çalışmaya devam eder. Paneli kapatmak için tekrar **O**.
+**NOT:** Panel açıkken araba tuşları çalışmaya devam eder. Paneli kapatmak için tekrar **Tab**.
 
 ## ADIM C3 — Yükü al
 
 1. **W A S D** ile arabayı sür, mavi çizgiyi takip et, beyaz silindirli noktaya git.
-2. Noktaya ~5 metre yaklaşınca ekranın alt ortasında SARI yazı belirir: **"Yükü Al [F]"**.
-3. Dur ve **F** tuşuna bas.
+2. Noktaya ~5 metre yaklaşınca ekranın alt ortasında SARI yazı belirir: **"Yükü Al [E]"**.
+3. Dur ve **E** tuşuna bas. (Ortadaki kiosk küpü katıdır — içinden geçemezsin, yanına park et.)
 
 **✓ KONTROL:**
 - Bildirim: "Yük alındı! Teslimat için ... saniyen var."
@@ -207,7 +231,7 @@ Emin değilsen kontrol: Hierarchy'nin üstündeki arama kutusuna `CM` yaz. "CM" 
 ## ADIM C4 — Teslim et
 
 1. Mavi çizgiyi takip ederek teslim noktasına sür.
-2. Yaklaşınca **"Teslim Et [F]"** yazısı çıkar → **F** bas.
+2. Yaklaşınca **"Teslim Et [E]"** yazısı çıkar → **E** bas.
 
 **✓ KONTROL:**
 - Bildirim: "Teslimat tamamlandı! +35 para, 5.0 yıldız." (geç kaldıysan daha az).
@@ -220,7 +244,7 @@ Emin değilsen kontrol: Hierarchy'nin üstündeki arama kutusuna `CM` yaz. "CM" 
 ## ADIM C5 — Yakıt istasyonunu dene (opsiyonel)
 
 1. Sahnede sarı gizmo'lu `FuelStation_Main` küpüne sür (koordinat ~ x=12, z=-25).
-2. Yaklaşınca **"Yakıt Al [F] (3.0/litre)"** çıkar → **F** bas.
+2. Yaklaşınca **"Yakıt Al [E] (3.0/litre)"** çıkar → **E** bas.
 
 **✓ KONTROL:** "X litre yakıt alındı (-Y para)" bildirimi + sol altta yakıt arttı, para azaldı. (Depo doluysa "Depo zaten dolu." der — normal.)
 
@@ -371,7 +395,10 @@ Mağazadaki "MAKS" yazısının sebebi katalogun boş olması. Dolduralım. Örn
 
 | Belirti | Muhtemel sebep | Çözüm |
 |---|---|---|
-| Sipariş paneli açılınca kamera değişiyor | Eski sürümde ikisi de Tab'daydı | Düzeltildi: siparişler **O**, kamera **Tab**. Unity'de scriptler yeniden derlensin |
+| Sipariş paneli açılınca kamera değişiyor | Eski sürümde tuşlar çakışıyordu | Düzeltildi: siparişler **Tab**, kamera **C**. Setup 7'yi çalıştırdığından emin ol |
+| E'ye basınca yük alınmıyor | Sahnedeki etkileşim tuşu hâlâ F | **DeliverySim → Setup → 7** çalıştır (interactKey'i E yapar) → Ctrl+S |
+| Kamera araç dönünce arkaya geçmiyor | Orbital binding hâlâ World Space | **DeliverySim → Setup → 7** çalıştır → Ctrl+S |
+| Noktalar görünmüyor / alınca kayboluyor | Setup 8 çalıştırılmamış | **DeliverySim → Setup → 8** çalıştır → Ctrl+S |
 | Araç takla attı, ters kaldı | Normal kaza | **R** tuşu aracı olduğu yerde düzeltir (Setup 5 veya Setup 2'yi bir kez çalıştırmış olman gerekir) |
 | Sipariş ALANINA GİRERKEN araç fırlıyor/takla atıyor | Süspansiyon ışını görünmez trigger küresine çarpıyordu | Kodda düzeltildi (trigger'lar yok sayılıyor) — scriptler derlensin, ekstra adım yok |
 | Araç virajda devriliyor | Gerçekçi profil uygulanmamış | **DeliverySim → Setup → 6** çalıştır → Ctrl+S. Hâlâ devriliyorsa `Anti Roll Stiffness` artır |

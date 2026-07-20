@@ -40,6 +40,18 @@ namespace DeliverySim
         [Tooltip("Seconds between automatic offer refills.")]
         [SerializeField] private float offerRefreshInterval = 15f;
 
+        [Header("Time Limit (distance-based)")]
+        [Tooltip("When on, the delivery time limit is computed from the real pickup->delivery distance instead of OrderData's fixed value.")]
+        [SerializeField] private bool useDistanceBasedTimeLimit = true;
+        [Tooltip("Average speed the player is expected to sustain (km/h).")]
+        [SerializeField] private float averageSpeedKmh = 40f;
+        [Tooltip("Straight-line distance is multiplied by this to account for winding roads.")]
+        [SerializeField] private float routeFactor = 1.4f;
+        [Tooltip("Flat extra seconds for stopping, turning around, parking.")]
+        [SerializeField] private float timeBufferSeconds = 20f;
+        [Tooltip("No order gets less time than this.")]
+        [SerializeField] private float minTimeLimitSeconds = 45f;
+
         [Header("Scoring")]
         [Tooltip("Extra late time allowed before the order fails, as a fraction of the time limit. 0.5 = half the limit again.")]
         [SerializeField] private float lateGraceFactor = 0.5f;
@@ -52,6 +64,7 @@ namespace DeliverySim
         private OrderData activeOrder;
         private OrderPhase phase = OrderPhase.None;
         private float remainingTime;
+        private float activeTimeLimit; // Resolved at accept time (distance-based or OrderData fallback)
         private float offerTimer;
 
         public event Action<IReadOnlyList<OrderData>> OnOffersChanged;
@@ -117,12 +130,38 @@ namespace DeliverySim
                 remainingTime -= Time.deltaTime;
                 OnTimerTick?.Invoke(remainingTime);
 
-                float failThreshold = -activeOrder.TimeLimitSeconds * lateGraceFactor;
+                float failThreshold = -activeTimeLimit * lateGraceFactor;
                 if (remainingTime < failThreshold)
                 {
                     FailActiveOrder("Süre doldu, sipariş iptal edildi!");
                 }
             }
+        }
+
+        /// <summary>
+        /// Time limit for an order: real pickup->delivery distance / expected speed
+        /// (+ buffer), clamped to a minimum. Falls back to OrderData's fixed value
+        /// when disabled or when the scene points can't be resolved. Also used by
+        /// the order panel to show the estimate on offer cards.
+        /// </summary>
+        public float GetEstimatedTimeLimit(OrderData order)
+        {
+            if (order == null)
+            {
+                return 0f;
+            }
+
+            if (!useDistanceBasedTimeLimit ||
+                !InteractionPoint.TryGetPoint(order.PickupPointId, out InteractionPoint pickup) ||
+                !InteractionPoint.TryGetPoint(order.DeliveryPointId, out InteractionPoint delivery))
+            {
+                return order.TimeLimitSeconds;
+            }
+
+            float distance = Vector3.Distance(pickup.transform.position, delivery.transform.position);
+            float speedMs = Mathf.Max(1f, averageSpeedKmh / 3.6f);
+            float travelTime = distance * routeFactor / speedMs;
+            return Mathf.Max(minTimeLimitSeconds, travelTime + timeBufferSeconds);
         }
 
         // ---------- Offers ----------
@@ -195,6 +234,7 @@ namespace DeliverySim
 
             activeOrder = order;
             phase = OrderPhase.AwaitingPickup;
+            activeTimeLimit = GetEstimatedTimeLimit(order);
             currentOffers.Remove(order);
 
             pickup.SetMarkerActive(true);
@@ -244,7 +284,7 @@ namespace DeliverySim
             }
 
             phase = OrderPhase.Delivering;
-            remainingTime = activeOrder.TimeLimitSeconds;
+            remainingTime = activeTimeLimit;
 
             point.SetMarkerActive(false);
             if (InteractionPoint.TryGetPoint(activeOrder.DeliveryPointId, out InteractionPoint delivery))
@@ -279,7 +319,7 @@ namespace DeliverySim
             else
             {
                 // Linear falloff across the late-grace window.
-                float lateWindow = Mathf.Max(0.01f, activeOrder.TimeLimitSeconds * lateGraceFactor);
+                float lateWindow = Mathf.Max(0.01f, activeTimeLimit * lateGraceFactor);
                 float lateT = Mathf.Clamp01(-remainingTime / lateWindow);
                 stars = Mathf.Lerp(maxStars, minStars, lateT);
                 payFactor = Mathf.Lerp(1f, latePayFraction, lateT);
@@ -364,6 +404,7 @@ namespace DeliverySim
             activeOrder = null;
             phase = OrderPhase.None;
             remainingTime = 0f;
+            activeTimeLimit = 0f;
         }
 
         private InteractionPoint GetCurrentTargetPoint()

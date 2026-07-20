@@ -170,6 +170,12 @@ namespace DeliverySim
         public bool throttleAssist = true;
         public bool brakeAssist = true;
 
+        [Header("Input Keys")]
+        [Tooltip("Manual gear override keys. Racing standard: LShift up / LCtrl down. Automatic shifting stays active.")]
+        [SerializeField] private KeyCode gearUpKey = KeyCode.LeftShift;
+        [SerializeField] private KeyCode gearDownKey = KeyCode.LeftControl;
+        [SerializeField] private KeyCode handbrakeKey = KeyCode.Space;
+
         [Header("Stability (Anti-Rollover)")]
         [Tooltip("Anti-roll bar stiffness per axle. 0 = disabled. Realistic cars: high value relative to suspensionForce (see Setup 6 menu).")]
         public float antiRollStiffness = 0f;
@@ -273,8 +279,8 @@ namespace DeliverySim
                     w.input.y = 0f;
             }
 
-            if (Input.GetKeyDown(KeyCode.E)) engine.UpGear(this);
-            else if (Input.GetKeyDown(KeyCode.Q)) engine.DownGear(this);
+            if (Input.GetKeyDown(gearUpKey)) engine.UpGear(this);
+            else if (Input.GetKeyDown(gearDownKey)) engine.DownGear(this);
 
             engine.CheckGearSwitching(this);
         }
@@ -330,7 +336,7 @@ namespace DeliverySim
                 w.angularVelocity += (w.torque - longitudinalFriction * w.size) / inertia * Time.fixedDeltaTime;
                 w.angularVelocity *= 1 - w.brake * w.brakeStrength * Time.fixedDeltaTime;
 
-                if (Input.GetKey(KeyCode.Space)) // Handbrake
+                if (Input.GetKey(handbrakeKey)) // Handbrake
                 {
                     w.angularVelocity = 0;
                 }

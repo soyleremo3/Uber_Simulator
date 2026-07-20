@@ -25,7 +25,7 @@ namespace DeliverySim
         {
             if (OrderManager.Instance != null && OrderManager.Instance.IsCurrentPickupTarget(this))
             {
-                return "Yükü Al [F]";
+                return "Yükü Al [E]";
             }
 
             return string.Empty;

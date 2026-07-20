@@ -19,8 +19,8 @@ namespace DeliverySim
         [SerializeField] private RectTransform listContainer;
 
         [Header("Input")]
-        // NOT Tab: CameraModeController already uses Tab for camera mode switching.
-        [SerializeField] private KeyCode toggleKey = KeyCode.O;
+        // Tab = phone/menu standard. Camera mode moved to C (CameraModeController).
+        [SerializeField] private KeyCode toggleKey = KeyCode.Tab;
 
         [Header("Layout")]
         [SerializeField] private float rowHeight = 84f;
@@ -129,8 +129,12 @@ namespace DeliverySim
                 new Vector2(0f, -(index * (rowHeight + rowSpacing)) - rowSpacing),
                 new Vector2(440f, rowHeight));
 
-            int timeLimitMinutes = Mathf.FloorToInt(order.TimeLimitSeconds / 60f);
-            int timeLimitSeconds = Mathf.FloorToInt(order.TimeLimitSeconds % 60f);
+            // Distance-based estimate (falls back to OrderData's fixed value when disabled).
+            float estimatedLimit = OrderManager.Instance != null
+                ? OrderManager.Instance.GetEstimatedTimeLimit(order)
+                : order.TimeLimitSeconds;
+            int timeLimitMinutes = Mathf.FloorToInt(estimatedLimit / 60f);
+            int timeLimitSeconds = Mathf.FloorToInt(estimatedLimit % 60f);
             Text info = UIFactory.CreateText(row, "Info",
                 $"{order.OrderName}  ({order.CargoType})\n₺{order.PaymentAmount:F0}  •  Süre: {timeLimitMinutes:00}:{timeLimitSeconds:00}",
                 18, TextAnchor.UpperLeft, Color.white);

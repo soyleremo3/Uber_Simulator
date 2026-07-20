@@ -18,7 +18,8 @@ namespace DeliverySim
         [SerializeField] private LayerMask interactMask = ~0;
 
         [Header("Input")]
-        [SerializeField] private KeyCode interactKey = KeyCode.F;
+        // E = industry-standard interact. Gears moved to LShift/LCtrl to free it up.
+        [SerializeField] private KeyCode interactKey = KeyCode.E;
 
         private readonly Collider[] scanBuffer = new Collider[16];
         private IInteractable currentInteractable;

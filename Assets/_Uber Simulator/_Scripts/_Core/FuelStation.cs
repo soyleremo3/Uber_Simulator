@@ -58,7 +58,7 @@ namespace DeliverySim
 
         public string GetInteractionPrompt()
         {
-            return $"Yakıt Al [F] ({pricePerLiter:F1}/litre)";
+            return $"Yakıt Al [E] ({pricePerLiter:F1}/litre)";
         }
 
         private void OnDrawGizmos()

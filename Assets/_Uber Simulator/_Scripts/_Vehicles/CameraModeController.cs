@@ -36,6 +36,10 @@ namespace DeliverySim
         [Tooltip("The SmoothMouseLook component on the third-person camera. Automatically disabled while not in third-person mode.")]
         public SmoothMouseLook thirdPersonMouseLook;
 
+        [Header("Input")]
+        // C = racing-game standard camera toggle. Tab now opens the order panel.
+        [SerializeField] private KeyCode toggleKey = KeyCode.C;
+
         public CameraMode CurrentMode { get; private set; } = CameraMode.ThirdPerson;
 
         private void Start()
@@ -45,7 +49,7 @@ namespace DeliverySim
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Tab))
+            if (Input.GetKeyDown(toggleKey))
             {
                 CurrentMode = CurrentMode == CameraMode.ThirdPerson
                     ? CameraMode.FirstPerson

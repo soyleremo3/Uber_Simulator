@@ -44,7 +44,7 @@ namespace DeliverySim
 
         public string GetInteractionPrompt()
         {
-            return $"Tamir Et [F] ({costPerConditionPoint:F1}/puan)";
+            return $"Tamir Et [E] ({costPerConditionPoint:F1}/puan)";
         }
 
         private void OnDrawGizmos()

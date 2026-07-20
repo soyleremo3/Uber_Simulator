@@ -25,7 +25,7 @@ namespace DeliverySim
         {
             if (OrderManager.Instance != null && OrderManager.Instance.IsCurrentDeliveryTarget(this))
             {
-                return "Teslim Et [F]";
+                return "Teslim Et [E]";
             }
 
             return string.Empty;

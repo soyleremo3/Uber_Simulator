@@ -16,8 +16,10 @@ namespace DeliverySim
         [SerializeField] private string pointId;
 
         [Header("Visuals")]
-        [Tooltip("Optional marker object (beacon/arrow) toggled while this point is the active target.")]
+        [Tooltip("ACTIVE-TARGET highlight (e.g. bright ground ring). Toggled on while this point is the current order target.")]
         [SerializeField] private GameObject markerVisual;
+        [Tooltip("ALWAYS-VISIBLE beacon (colored pillar). Never hidden — players can always see where pickup/delivery locations are.")]
+        [SerializeField] private GameObject permanentBeacon;
 
         private static readonly Dictionary<string, InteractionPoint> registry = new Dictionary<string, InteractionPoint>();
 
@@ -47,6 +49,13 @@ namespace DeliverySim
 
             registry[pointId] = this;
             SetMarkerActive(false);
+
+            // The permanent beacon must ALWAYS stay visible (design rule: locations
+            // never disappear, even after pickup/delivery).
+            if (permanentBeacon != null)
+            {
+                permanentBeacon.SetActive(true);
+            }
         }
 
         protected virtual void OnDisable()

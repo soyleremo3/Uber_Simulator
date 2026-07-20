@@ -69,6 +69,14 @@ Uygulanan çözüm:
 3. **Setup 6 - Apply Realistic Vehicle Tuning**: 1200 kg + türetilmiş tutarlı set (suspensionForce 40000, clamp 15000, damp 4, gripX 8 / gripZ 42, engineTorque 1200, teker 20 kg, turnAngle 30, CoM -0.3, antiRoll 12000, asistler açık). Undo destekli; eski değerler uygulanmadan önce Console'a loglanır.
 4. Yan kazanım: kütle gerçekçi olunca `VehicleCondition` hasar eşiği (impulse 300) gerçekten çalışır oldu (1 kg'da hiç tetiklenmiyordu).
 
+## Düzeltme Kaydı 3 (2026-07-20 — pro kontroller, kamera hissi, nokta fiziği, mesafe-bazlı süre)
+
+1. **Tuş düzeni sürüş oyunu standardına çekildi:** E=etkileşim (F yerine; sahne değeri Setup 7 ile güncellenir), Tab=siparişler, C=kamera modu, LShift/LCtrl=vites (E/Q yerine), Space/R/B/Esc aynı. Tüm tuşlar artık serialize alan (Inspector'dan değiştirilebilir).
+2. **Kamera hissi:** Ana bulgu — OrbitalFollow "World Space" binding'deydi, kamera araç dönüşünü takip etmiyordu. Setup 7: binding → LockToTargetWithWorldUp (yaw-yumuşatmalı rig ile döner), PositionDamping (0.3, 0.8, 0.3), RotationComposer (0.4), rig yaw 6. `SmoothMouseLook`'a otomatik recentering eklendi (1.2 sn boşta → arkaya süzülür, kapatılabilir).
+3. **Kamera geçişleri:** Brain DefaultBlend = EaseInOut 0.8 sn (2 sn gevşek varsayılan yerine). First-person'a mikro-titreşim filtresi (HardLock 0.08 / RotateWith 0.15 damping).
+4. **Nokta fiziği + görünürlük (Setup 8):** Her noktaya katı Kiosk küpü (içinden geçilemez — görünür gerçek engel, trigger-fırlatma bug'ıyla ilgisiz), her zaman görünür renkli işaret (yeşil=alım, turuncu=teslim; `permanentBeacon` alanı, asla gizlenmez), aktif hedefte yanan zemin halkası (`markerVisual`). İstasyon küpleri katılaştı. URP Lit materyalleri `Art/Materials/` altına asset olarak üretilir.
+5. **Mesafe-bazlı süre:** OrderManager `GetEstimatedTimeLimit` — pickup→teslim mesafesi × routeFactor(1.4) / ortalama hız(40 km/s) + tampon(20 sn), min 45 sn. Kabulde hesaplanır (`activeTimeLimit`), sayaç/başarısızlık/puan bu değeri kullanır; teklif kartı tahmini gösterir. OrderData.timeLimitSeconds fallback olarak durur.
+
 ## Sonraki Oturum İçin
 
 - Kullanıcı MANUAL_STEPS B+C'yi uygulayıp test sonucunu bildirecek.

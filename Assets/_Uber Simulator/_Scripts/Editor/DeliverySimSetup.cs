@@ -300,8 +300,273 @@ namespace DeliverySim.EditorTools
         }
 
         // ------------------------------------------------------------------
+        [MenuItem("DeliverySim/Setup/7 - Pro Controls + Camera Feel")]
+        public static void ApplyProControlsAndCamera()
+        {
+            // --- Interact key: scene serialized it as F; switch to E (industry standard). ---
+            VehicleInteractor interactor = Object.FindFirstObjectByType<VehicleInteractor>();
+            if (interactor != null)
+            {
+                var interactorSo = new SerializedObject(interactor);
+                SerializedProperty keyProp = interactorSo.FindProperty("interactKey");
+                if (keyProp != null && keyProp.intValue != (int)KeyCode.E)
+                {
+                    keyProp.intValue = (int)KeyCode.E;
+                    interactorSo.ApplyModifiedProperties();
+                    Debug.Log("[Setup] Etkileşim tuşu F -> E yapıldı.");
+                }
+            }
+
+            // --- Find the two Cinemachine cameras (prefer CameraModeController refs). ---
+            CameraModeController modeController = Object.FindFirstObjectByType<CameraModeController>();
+            CinemachineCamera thirdCam = modeController != null ? modeController.thirdPersonCamera : null;
+            CinemachineCamera firstCam = modeController != null ? modeController.firstPersonCamera : null;
+
+            if (thirdCam == null)
+            {
+                GameObject go = GameObject.Find("VehicleFollowCamera");
+                if (go != null) thirdCam = go.GetComponent<CinemachineCamera>();
+            }
+
+            if (firstCam == null)
+            {
+                GameObject go = GameObject.Find("FirstPersonCamera");
+                if (go != null) firstCam = go.GetComponent<CinemachineCamera>();
+            }
+
+            // --- Third person: orbit frame rotates with the yaw-smoothed rig, so the
+            //     camera settles behind the car on turns (pro driving-cam behavior). ---
+            if (thirdCam != null)
+            {
+                CinemachineOrbitalFollow orbital = thirdCam.GetComponent<CinemachineOrbitalFollow>();
+                if (orbital != null)
+                {
+                    Undo.RecordObject(orbital, "Pro Camera Feel");
+                    var tracker = orbital.TrackerSettings;
+                    Debug.Log($"[Setup] ESKİ orbital ayarları: binding={tracker.BindingMode}, damping={tracker.PositionDamping}");
+                    tracker.BindingMode = Unity.Cinemachine.TargetTracking.BindingMode.LockToTargetWithWorldUp;
+                    tracker.PositionDamping = new Vector3(0.3f, 0.8f, 0.3f);
+                    orbital.TrackerSettings = tracker;
+                    EditorUtility.SetDirty(orbital);
+                }
+
+                CinemachineRotationComposer composer = thirdCam.GetComponent<CinemachineRotationComposer>();
+                if (composer != null)
+                {
+                    Undo.RecordObject(composer, "Pro Camera Feel");
+                    composer.Damping = new Vector2(0.4f, 0.4f);
+                    EditorUtility.SetDirty(composer);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[Setup] 3. şahıs kamera (VehicleFollowCamera) bulunamadı — orbital ayarları atlandı.");
+            }
+
+            // --- First person: tiny damping filters engine/suspension micro-shake. ---
+            if (firstCam != null)
+            {
+                CinemachineHardLockToTarget hardLock = firstCam.GetComponent<CinemachineHardLockToTarget>();
+                if (hardLock != null)
+                {
+                    Undo.RecordObject(hardLock, "Pro Camera Feel");
+                    hardLock.Damping = 0.08f;
+                    EditorUtility.SetDirty(hardLock);
+                }
+
+                CinemachineRotateWithFollowTarget rotateWith = firstCam.GetComponent<CinemachineRotateWithFollowTarget>();
+                if (rotateWith != null)
+                {
+                    Undo.RecordObject(rotateWith, "Pro Camera Feel");
+                    rotateWith.Damping = 0.15f;
+                    EditorUtility.SetDirty(rotateWith);
+                }
+            }
+
+            // --- Rig: slightly snappier yaw follow. ---
+            VehicleCameraRig rig = Object.FindFirstObjectByType<VehicleCameraRig>();
+            if (rig != null)
+            {
+                Undo.RecordObject(rig, "Pro Camera Feel");
+                rig.yawSmoothSpeed = 6f;
+                EditorUtility.SetDirty(rig);
+            }
+
+            // --- Brain: crisp professional mode-switch blend (default 2 s is sluggish). ---
+            Camera mainCamera = Camera.main;
+            CinemachineBrain brain = mainCamera != null ? mainCamera.GetComponent<CinemachineBrain>() : null;
+            if (brain != null)
+            {
+                Undo.RecordObject(brain, "Pro Camera Feel");
+                brain.DefaultBlend = new CinemachineBlendDefinition(CinemachineBlendDefinition.Styles.EaseInOut, 0.8f);
+                EditorUtility.SetDirty(brain);
+            }
+
+            Debug.Log("[Setup] Pro kontroller + kamera hissi uygulandı. Tuşlar: E etkileşim, Tab siparişler, C kamera, LShift/LCtrl vites, R düzelt.");
+        }
+
+        // ------------------------------------------------------------------
+        [MenuItem("DeliverySim/Setup/8 - Upgrade Point Visuals (Kalıcı İşaret + Katı Kiosk)")]
+        public static void UpgradePointVisuals()
+        {
+            const string materialsFolder = "Assets/_Uber Simulator/Art/Materials";
+            EnsureFolder(materialsFolder);
+
+            Material pickupMat = EnsureMaterial($"{materialsFolder}/PickupGreen.mat", new Color(0.15f, 0.85f, 0.3f), true);
+            Material deliveryMat = EnsureMaterial($"{materialsFolder}/DeliveryOrange.mat", new Color(1f, 0.5f, 0.1f), true);
+            Material stationMat = EnsureMaterial($"{materialsFolder}/StationGray.mat", new Color(0.5f, 0.55f, 0.62f), false);
+
+            InteractionPoint[] points = Object.FindObjectsByType<InteractionPoint>(FindObjectsSortMode.None);
+            foreach (InteractionPoint point in points)
+            {
+                UpgradeSinglePoint(point, point is PickupPoint ? pickupMat : deliveryMat);
+            }
+
+            foreach (FuelStation station in Object.FindObjectsByType<FuelStation>(FindObjectsSortMode.None))
+            {
+                EnsureStationSolid(station.gameObject, stationMat);
+            }
+
+            foreach (RepairStation station in Object.FindObjectsByType<RepairStation>(FindObjectsSortMode.None))
+            {
+                EnsureStationSolid(station.gameObject, stationMat);
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[Setup] {points.Length} nokta güncellendi: kalıcı renkli işaret (hep görünür) + aktif hedef halkası + katı kiosk. İstasyonlar katılaştırıldı. Sahneyi kaydet (Ctrl+S).");
+        }
+
+        // ------------------------------------------------------------------
         // Helpers
         // ------------------------------------------------------------------
+
+        private static Material EnsureMaterial(string path, Color color, bool emissive)
+        {
+            Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+                if (shader == null)
+                {
+                    shader = Shader.Find("Standard"); // Fallback for non-URP setups
+                }
+
+                mat = new Material(shader);
+                AssetDatabase.CreateAsset(mat, path);
+            }
+
+            mat.color = color;
+            if (emissive)
+            {
+                mat.EnableKeyword("_EMISSION");
+                mat.SetColor("_EmissionColor", color * 1.2f);
+            }
+
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        private static void UpgradeSinglePoint(InteractionPoint point, Material mat)
+        {
+            Transform root = point.transform;
+            var so = new SerializedObject(point);
+            SerializedProperty markerProp = so.FindProperty("markerVisual");
+            SerializedProperty beaconProp = so.FindProperty("permanentBeacon");
+
+            // Permanent beacon: reuse the original tall "Marker" cylinder when present.
+            GameObject beacon = beaconProp.objectReferenceValue as GameObject;
+            if (beacon == null)
+            {
+                Transform existing = root.Find("Marker");
+                beacon = existing != null ? existing.gameObject : null;
+            }
+
+            if (beacon == null)
+            {
+                beacon = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                beacon.name = "Marker";
+                Object.DestroyImmediate(beacon.GetComponent<Collider>());
+                beacon.transform.SetParent(root, false);
+                beacon.transform.localPosition = new Vector3(0f, 6f, 0f);
+                beacon.transform.localScale = new Vector3(1.5f, 6f, 1.5f);
+                Undo.RegisterCreatedObjectUndo(beacon, "Create Beacon");
+            }
+
+            beacon.SetActive(true); // Always visible — never hidden again.
+            ApplyMaterial(beacon, mat);
+
+            // Active-target highlight: flat bright ring on the ground, toggled by OrderManager.
+            GameObject ring = FindChild(root, "HighlightRing");
+            if (ring == null)
+            {
+                ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                ring.name = "HighlightRing";
+                Object.DestroyImmediate(ring.GetComponent<Collider>());
+                ring.transform.SetParent(root, false);
+                ring.transform.localPosition = new Vector3(0f, 0.05f, 0f);
+                ring.transform.localScale = new Vector3(9f, 0.05f, 9f);
+                Undo.RegisterCreatedObjectUndo(ring, "Create HighlightRing");
+            }
+
+            ApplyMaterial(ring, mat);
+            ring.SetActive(false);
+
+            // Solid kiosk: the car physically cannot drive through the location center.
+            // (This is a REAL visible obstacle — unrelated to the old invisible-trigger
+            // catapult bug, which was about raycasts hitting the trigger shell.)
+            GameObject kiosk = FindChild(root, "Kiosk");
+            if (kiosk == null)
+            {
+                kiosk = GameObject.CreatePrimitive(PrimitiveType.Cube); // Keeps its SOLID BoxCollider on purpose
+                kiosk.name = "Kiosk";
+                kiosk.transform.SetParent(root, false);
+                kiosk.transform.localPosition = new Vector3(0f, 0.8f, 0f);
+                kiosk.transform.localScale = new Vector3(1.2f, 1.6f, 1.2f);
+                Undo.RegisterCreatedObjectUndo(kiosk, "Create Kiosk");
+            }
+
+            ApplyMaterial(kiosk, mat);
+
+            markerProp.objectReferenceValue = ring;
+            beaconProp.objectReferenceValue = beacon;
+            so.ApplyModifiedProperties();
+        }
+
+        private static void EnsureStationSolid(GameObject stationRoot, Material mat)
+        {
+            GameObject visual = FindChild(stationRoot.transform, "Visual");
+            if (visual == null)
+            {
+                visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                visual.name = "Visual";
+                visual.transform.SetParent(stationRoot.transform, false);
+                visual.transform.localPosition = new Vector3(0f, 1.5f, 0f);
+                visual.transform.localScale = new Vector3(2f, 3f, 2f);
+                Undo.RegisterCreatedObjectUndo(visual, "Create Station Visual");
+            }
+
+            if (visual.GetComponent<Collider>() == null)
+            {
+                visual.AddComponent<BoxCollider>(); // Solid: can't drive through the pump/lift
+            }
+
+            ApplyMaterial(visual, mat);
+        }
+
+        private static GameObject FindChild(Transform root, string childName)
+        {
+            Transform child = root.Find(childName);
+            return child != null ? child.gameObject : null;
+        }
+
+        private static void ApplyMaterial(GameObject go, Material mat)
+        {
+            MeshRenderer meshRenderer = go.GetComponent<MeshRenderer>();
+            if (meshRenderer != null && mat != null)
+            {
+                meshRenderer.sharedMaterial = mat;
+            }
+        }
 
         private static GameObject FindOrCreate(string name)
         {
