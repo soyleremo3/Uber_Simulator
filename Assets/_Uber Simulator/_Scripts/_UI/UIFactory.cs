@@ -136,22 +136,24 @@ namespace DeliverySim
         {
             RectTransform background = CreatePanel(parent, name, backgroundColor);
 
+            // Mask (not a stretched sprite) clips the fill to the background's
+            // own rounded silhouette. A Filled+RoundedSprite fill instead would
+            // stretch that 64x64 texture non-uniformly onto a short wide rect,
+            // squashing the corner curve — this is what caused the "basık" look.
+            Mask mask = background.gameObject.AddComponent<Mask>();
+            mask.showMaskGraphic = true;
+
             var fillGo = new GameObject("Fill", typeof(RectTransform), typeof(Image));
             fillGo.transform.SetParent(background, false);
 
             Image fill = fillGo.GetComponent<Image>();
-            fill.sprite = RoundedSprite;
             fill.type = Image.Type.Filled;
             fill.fillMethod = Image.FillMethod.Horizontal;
             fill.fillOrigin = (int)Image.OriginHorizontal.Left;
             fill.color = fillColor;
             fill.fillAmount = 1f;
 
-            RectTransform fillRect = (RectTransform)fill.transform;
-            Stretch(fillRect);
-            // Small inset so the fill never pokes out past the background's rounded border.
-            fillRect.offsetMin = new Vector2(2f, 2f);
-            fillRect.offsetMax = new Vector2(-2f, -2f);
+            Stretch((RectTransform)fill.transform);
 
             return fill;
         }

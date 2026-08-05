@@ -33,6 +33,8 @@ namespace DeliverySim
         [SerializeField] private LayerMask groundLayerMask = ~0;
         [SerializeField] private float raycastStartHeight = 20f;
         [SerializeField] private float raycastMaxDistance = 100f;
+        [Tooltip("Used when the raycast finds no ground (missing/wrong-layer collider) — without this the line falls back to the source point's raw Y (e.g. the car's chassis pivot) and visibly floats.")]
+        [SerializeField] private float fallbackGroundY = 0f;
 
         private LineRenderer line;
         private Material lineMaterial;
@@ -220,6 +222,13 @@ namespace DeliverySim
                     groundLayerMask, QueryTriggerInteraction.Ignore))
                 {
                     point.y = hit.point.y;
+                }
+                else
+                {
+                    // No collider under this point (missing/wrong-layer road collider) — fall
+                    // back to a known ground height instead of leaving the point's raw Y
+                    // (which for the vehicle end is its chassis pivot, well above the road).
+                    point.y = fallbackGroundY;
                 }
             }
 

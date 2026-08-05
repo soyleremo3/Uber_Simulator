@@ -4338,6 +4338,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 69d9f316ceff4dc58c13315a39051d5c, type: 2}
   - {fileID: 11400000, guid: d7d2e287aacb44eba77fcaa5d3b51635, type: 2}
   - {fileID: 11400000, guid: 7138b57d04704109a1991af615402ebe, type: 2}
+  - {fileID: 11400000, guid: ea81c3d4fa4245ec8f2623aec517c69c, type: 2}
+  - {fileID: 11400000, guid: 5ed2213e5ef546038c492f2158db6218, type: 2}
+  - {fileID: 11400000, guid: e19b4693dfc44762b9719ac4e878626f, type: 2}
   maxOffers: 3
   offerRefreshInterval: 15
   useDistanceBasedTimeLimit: 1

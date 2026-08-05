@@ -266,9 +266,11 @@ namespace DeliverySim.EditorTools
             CreateStation<FuelStation>("FuelStation_Main", new Vector3(12f, 0f, -25f));
             CreateStation<RepairStation>("RepairStation_Main", new Vector3(-14f, 0f, -25f));
 
-            // Order assets. Every pickup/delivery combo is covered so the offer
-            // pool (6) stays bigger than maxOffers (3) — otherwise the same
-            // orders show up every single time.
+            // Order assets. Every pickup/delivery combo gets multiple cargo/payment
+            // variants so the offer pool (9) stays well bigger than maxOffers (3)
+            // — otherwise the same orders show up every single time. OrderManager
+            // also periodically rotates untouched offers (RotateOffers), so a
+            // bigger pool actually gets seen instead of just sitting on 3 forever.
             var orders = new List<OrderData>
             {
                 CreateOrderAsset("order_food_a", "Sıcak Yemek Siparişi", "pickup_restaurant", "delivery_house_a", 35f, 150f, CargoType.Food),
@@ -276,7 +278,10 @@ namespace DeliverySim.EditorTools
                 CreateOrderAsset("order_fragile_a", "Kırılabilir Eşya", "pickup_depot", "delivery_office", 70f, 200f, CargoType.Fragile),
                 CreateOrderAsset("order_food_b", "Ofise Yemeği", "pickup_restaurant", "delivery_office", 40f, 170f, CargoType.Food),
                 CreateOrderAsset("order_package_b", "Uzak Mahalle Kargosu", "pickup_restaurant", "delivery_house_b", 55f, 240f, CargoType.Package),
-                CreateOrderAsset("order_fragile_b", "Kırılabilir Eşya (Depo)", "pickup_depot", "delivery_house_a", 65f, 210f, CargoType.Fragile)
+                CreateOrderAsset("order_fragile_b", "Kırılabilir Eşya (Depo)", "pickup_depot", "delivery_house_a", 65f, 210f, CargoType.Fragile),
+                CreateOrderAsset("order_food_c", "Depo Catering Siparişi", "pickup_depot", "delivery_house_b", 45f, 230f, CargoType.Food),
+                CreateOrderAsset("order_package_c", "Ekspres Kargo", "pickup_restaurant", "delivery_house_a", 60f, 130f, CargoType.Package),
+                CreateOrderAsset("order_fragile_c", "Acil Kırılabilir Eşya", "pickup_depot", "delivery_office", 85f, 160f, CargoType.Fragile)
             };
 
             // Push the pool into the scene OrderManager.
@@ -293,7 +298,7 @@ namespace DeliverySim.EditorTools
                 }
 
                 so.ApplyModifiedProperties();
-                Debug.Log("[Setup] OrderManager.orderPool 6 örnek siparişle dolduruldu.");
+                Debug.Log("[Setup] OrderManager.orderPool 9 örnek siparişle dolduruldu.");
             }
             else
             {
@@ -301,7 +306,7 @@ namespace DeliverySim.EditorTools
             }
 
             AssetDatabase.SaveAssets();
-            Debug.Log("[Setup] Örnek içerik hazır: 2 alım, 3 teslim noktası, yakıt+tamir istasyonu, 6 sipariş asset'i.");
+            Debug.Log("[Setup] Örnek içerik hazır: 2 alım, 3 teslim noktası, yakıt+tamir istasyonu, 9 sipariş asset'i.");
         }
 
         // ------------------------------------------------------------------

@@ -61,8 +61,8 @@ namespace DeliverySim
         [Range(0f, 1f)][SerializeField] private float latePayFraction = 0.4f;
 
         [Header("Variety")]
-        [Tooltip("How many recently accepted orders are avoided when refilling offers (as long as other candidates exist).")]
-        [SerializeField] private int recentHistoryLimit = 2;
+        [Tooltip("How many recently accepted/rotated-out orders are avoided when refilling offers (as long as other candidates exist).")]
+        [SerializeField] private int recentHistoryLimit = 3;
 
         private readonly List<OrderData> currentOffers = new List<OrderData>();
         private readonly List<OrderData> recentHistory = new List<OrderData>();
@@ -124,12 +124,14 @@ namespace DeliverySim
 
         private void Update()
         {
-            // Periodic offer refill so the phone screen never stays empty.
+            // Periodic rotation so the board keeps moving even if the player
+            // never accepts/rejects anything — RefreshOffers alone only fills
+            // empty slots, so untouched offers would otherwise sit forever.
             offerTimer -= Time.deltaTime;
             if (offerTimer <= 0f)
             {
                 offerTimer = offerRefreshInterval;
-                RefreshOffers();
+                RotateOffers();
             }
 
             if (phase == OrderPhase.Delivering && activeOrder != null)
@@ -229,6 +231,29 @@ namespace DeliverySim
 
             if (changed)
             {
+                OnOffersChanged?.Invoke(currentOffers);
+            }
+        }
+
+        /// <summary>Retires the longest-standing offer and tries to replace it with a fresh candidate. Called on a timer, independent of player accept/reject.</summary>
+        public void RotateOffers()
+        {
+            if (currentOffers.Count == 0)
+            {
+                RefreshOffers();
+                return;
+            }
+
+            OrderData rotatedOut = currentOffers[0];
+            currentOffers.RemoveAt(0);
+            RememberRecent(rotatedOut);
+
+            RefreshOffers();
+
+            if (currentOffers.Count < maxOffers)
+            {
+                // No fresh candidate available (small pool) — keep the offer count stable.
+                currentOffers.Add(rotatedOut);
                 OnOffersChanged?.Invoke(currentOffers);
             }
         }
