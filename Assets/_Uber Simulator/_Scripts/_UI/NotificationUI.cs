@@ -11,6 +11,7 @@ namespace DeliverySim
     public class NotificationUI : MonoBehaviour
     {
         [SerializeField] private Text notificationText;
+        [SerializeField] private Image backdrop;
         [SerializeField] private float displaySeconds = 3f;
         [SerializeField] private float fadeSeconds = 0.6f;
 
@@ -19,6 +20,12 @@ namespace DeliverySim
         public void SetText(Text text)
         {
             notificationText = text;
+        }
+
+        /// <summary>Optional pill background that fades in/out together with the toast text.</summary>
+        public void SetBackdrop(Image backdropImage)
+        {
+            backdrop = backdropImage;
         }
 
         private void OnEnable()
@@ -33,10 +40,7 @@ namespace DeliverySim
 
         private void Start()
         {
-            if (notificationText != null)
-            {
-                notificationText.enabled = false;
-            }
+            SetVisualsEnabled(false);
         }
 
         private void HandleNotification(string message)
@@ -57,11 +61,8 @@ namespace DeliverySim
         private IEnumerator ShowRoutine(string message)
         {
             notificationText.text = message;
-            notificationText.enabled = true;
-
-            Color baseColor = notificationText.color;
-            baseColor.a = 1f;
-            notificationText.color = baseColor;
+            SetVisualsEnabled(true);
+            SetAlpha(1f);
 
             // Realtime wait so toasts still work while the game is paused (timeScale 0).
             yield return new WaitForSecondsRealtime(displaySeconds);
@@ -70,17 +71,43 @@ namespace DeliverySim
             while (elapsed < fadeSeconds)
             {
                 elapsed += Time.unscaledDeltaTime;
-                Color color = notificationText.color;
-                color.a = Mathf.Lerp(1f, 0f, elapsed / fadeSeconds);
-                notificationText.color = color;
+                SetAlpha(Mathf.Lerp(1f, 0f, elapsed / fadeSeconds));
                 yield return null;
             }
 
-            notificationText.enabled = false;
-            Color reset = notificationText.color;
-            reset.a = 1f;
-            notificationText.color = reset;
+            SetVisualsEnabled(false);
+            SetAlpha(1f);
             activeRoutine = null;
+        }
+
+        private void SetVisualsEnabled(bool visible)
+        {
+            if (notificationText != null)
+            {
+                notificationText.enabled = visible;
+            }
+
+            if (backdrop != null)
+            {
+                backdrop.enabled = visible;
+            }
+        }
+
+        private void SetAlpha(float alpha)
+        {
+            if (notificationText != null)
+            {
+                Color color = notificationText.color;
+                color.a = alpha;
+                notificationText.color = color;
+            }
+
+            if (backdrop != null)
+            {
+                Color color = backdrop.color;
+                color.a = alpha * 0.85f;
+                backdrop.color = color;
+            }
         }
     }
 }

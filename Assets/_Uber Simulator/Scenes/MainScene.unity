@@ -4316,7 +4316,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DeliverySim.RouteManager
   routeStart: {fileID: 0}
   lineWidth: 0.6
-  lineHeightOffset: 0.3
+  lineHeightOffset: 0.05
   lineColor: {r: 0.1, g: 0.6, b: 1, a: 0.9}
   updateInterval: 0.25
 --- !u!114 &1850967584
@@ -4335,6 +4335,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 556fcb5aec991324ebb0d8c51fd2c8fa, type: 2}
   - {fileID: 11400000, guid: 436d48a9d242ad344a13d72bb8ce4604, type: 2}
   - {fileID: 11400000, guid: d3bf0049a7583c8448ec580182e0c377, type: 2}
+  - {fileID: 11400000, guid: 69d9f316ceff4dc58c13315a39051d5c, type: 2}
+  - {fileID: 11400000, guid: d7d2e287aacb44eba77fcaa5d3b51635, type: 2}
+  - {fileID: 11400000, guid: 7138b57d04704109a1991af615402ebe, type: 2}
   maxOffers: 3
   offerRefreshInterval: 15
   useDistanceBasedTimeLimit: 1

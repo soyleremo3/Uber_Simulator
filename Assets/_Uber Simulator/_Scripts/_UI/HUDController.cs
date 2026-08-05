@@ -21,6 +21,11 @@ namespace DeliverySim
         [SerializeField] private Text cargoText;
         [SerializeField] private Text reputationText;
 
+        [Header("Bars (all optional)")]
+        [SerializeField] private Image fuelBar;
+        [SerializeField] private Image conditionBar;
+        [SerializeField] private Image timerBar;
+
         [Header("Refresh")]
         [Tooltip("Seconds between speed/distance refreshes.")]
         [SerializeField] private float continuousRefreshInterval = 0.1f;
@@ -41,6 +46,13 @@ namespace DeliverySim
             distanceText = distance;
             cargoText = cargo;
             reputationText = reputation;
+        }
+
+        public void SetBars(Image fuel, Image condition, Image timer)
+        {
+            fuelBar = fuel;
+            conditionBar = condition;
+            timerBar = timer;
         }
 
         private void Start()
@@ -175,9 +187,19 @@ namespace DeliverySim
             }
 
             RefreshCargoState();
+            ResetTimerDisplay();
+        }
+
+        private void ResetTimerDisplay()
+        {
             if (timerText != null)
             {
                 timerText.text = string.Empty;
+            }
+
+            if (timerBar != null)
+            {
+                timerBar.fillAmount = 0f;
             }
         }
 
@@ -193,22 +215,47 @@ namespace DeliverySim
 
         private void HandleFuelChanged(float current, float capacity)
         {
+            float ratio = capacity > 0f ? Mathf.Clamp01(current / capacity) : 0f;
+
             if (fuelText != null)
             {
                 fuelText.text = $"Yakıt: {current:F1} / {capacity:F0} L";
+            }
+
+            if (fuelBar != null)
+            {
+                fuelBar.fillAmount = ratio;
+                fuelBar.color = UIFactory.BarColorForRatio(ratio);
             }
         }
 
         private void HandleConditionChanged(float current, float max)
         {
+            float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
+
             if (conditionText != null)
             {
-                conditionText.text = $"Durum: %{(max > 0f ? current / max * 100f : 0f):F0}";
+                conditionText.text = $"Durum: %{ratio * 100f:F0}";
+            }
+
+            if (conditionBar != null)
+            {
+                conditionBar.fillAmount = ratio;
+                conditionBar.color = UIFactory.BarColorForRatio(ratio);
             }
         }
 
         private void HandleTimerTick(float remaining)
         {
+            float limit = OrderManager.Instance != null ? OrderManager.Instance.ActiveTimeLimit : 0f;
+            float ratio = limit > 0f ? Mathf.Clamp01(remaining / limit) : 0f;
+
+            if (timerBar != null)
+            {
+                timerBar.fillAmount = ratio;
+                timerBar.color = remaining < 0f ? UIFactory.BarDangerColor : UIFactory.BarColorForRatio(ratio);
+            }
+
             if (timerText == null)
             {
                 return;
@@ -236,10 +283,7 @@ namespace DeliverySim
         private void HandleOrderCompleted(DeliveryResult result)
         {
             RefreshCargoState();
-            if (timerText != null)
-            {
-                timerText.text = string.Empty;
-            }
+            ResetTimerDisplay();
         }
 
         private void HandleReputationChanged(float average, ReputationTier tier)
@@ -268,9 +312,9 @@ namespace DeliverySim
                 ? $"Alım bekleniyor: {order.OrderName}"
                 : $"Yük: {order.OrderName} ({order.CargoType})";
 
-            if (timerText != null && OrderManager.Instance.Phase == OrderPhase.AwaitingPickup)
+            if (OrderManager.Instance.Phase == OrderPhase.AwaitingPickup)
             {
-                timerText.text = string.Empty;
+                ResetTimerDisplay();
             }
         }
     }

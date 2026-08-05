@@ -49,63 +49,91 @@ namespace DeliverySim
 
         private void BuildHud(Transform root)
         {
-            RectTransform hudPanel = UIFactory.CreatePanel(root, "HUD", new Color(0f, 0f, 0f, 0.35f));
-            UIFactory.Place(hudPanel, new Vector2(0f, 0f), new Vector2(10f, 10f), new Vector2(320f, 190f));
+            // Stats card: top-left, money/reputation prominent, fuel+condition as bars.
+            RectTransform hudPanel = UIFactory.CreatePanel(root, "HUD", UIFactory.PanelColor);
+            UIFactory.Place(hudPanel, new Vector2(0f, 0f), new Vector2(14f, 14f), new Vector2(300f, 200f));
 
-            Text speed = CreateHudLine(hudPanel, "SpeedText", 0);
-            Text money = CreateHudLine(hudPanel, "MoneyText", 1);
-            Text fuel = CreateHudLine(hudPanel, "FuelText", 2);
-            Text condition = CreateHudLine(hudPanel, "ConditionText", 3);
-            Text reputation = CreateHudLine(hudPanel, "ReputationText", 4);
-            Text cargo = CreateHudLine(hudPanel, "CargoText", 5);
+            Text money = UIFactory.CreateText(hudPanel, "MoneyText", string.Empty, 24, TextAnchor.MiddleLeft,
+                new Color(0.45f, 0.95f, 0.55f));
+            UIFactory.Place((RectTransform)money.transform, new Vector2(0f, 1f), new Vector2(14f, -12f), new Vector2(150f, 32f));
 
-            // Timer + distance: top center, big and visible while driving.
+            Text reputation = UIFactory.CreateText(hudPanel, "ReputationText", string.Empty, 16, TextAnchor.MiddleRight,
+                new Color(1f, 0.85f, 0.4f));
+            UIFactory.Place((RectTransform)reputation.transform, new Vector2(1f, 1f), new Vector2(-14f, -16f), new Vector2(120f, 28f));
+
+            Image fuelFill = UIFactory.CreateBar(hudPanel, "FuelBar", UIFactory.BarBackgroundColor, UIFactory.BarGoodColor);
+            RectTransform fuelBarRoot = (RectTransform)fuelFill.transform.parent;
+            UIFactory.Place(fuelBarRoot, new Vector2(0f, 1f), new Vector2(14f, -58f), new Vector2(272f, 22f));
+            Text fuel = UIFactory.CreateText(fuelBarRoot, "FuelText", string.Empty, 14, TextAnchor.MiddleCenter, Color.white);
+            UIFactory.Stretch((RectTransform)fuel.transform);
+
+            Image conditionFill = UIFactory.CreateBar(hudPanel, "ConditionBar", UIFactory.BarBackgroundColor, UIFactory.BarGoodColor);
+            RectTransform conditionBarRoot = (RectTransform)conditionFill.transform.parent;
+            UIFactory.Place(conditionBarRoot, new Vector2(0f, 1f), new Vector2(14f, -88f), new Vector2(272f, 22f));
+            Text condition = UIFactory.CreateText(conditionBarRoot, "ConditionText", string.Empty, 14, TextAnchor.MiddleCenter, Color.white);
+            UIFactory.Stretch((RectTransform)condition.transform);
+
+            Text cargo = UIFactory.CreateText(hudPanel, "CargoText", "Sipariş yok", 16, TextAnchor.UpperLeft,
+                new Color(0.85f, 0.9f, 1f));
+            UIFactory.Place((RectTransform)cargo.transform, new Vector2(0f, 1f), new Vector2(14f, -122f), new Vector2(272f, 56f));
+
+            // Speedometer: bottom-right, big — dashboard convention for driving games.
+            Text speed = UIFactory.CreateText(root, "SpeedText", "0 km/s", 46, TextAnchor.LowerRight, Color.white);
+            UIFactory.Place((RectTransform)speed.transform, new Vector2(1f, 0f), new Vector2(-24f, 24f), new Vector2(260f, 56f));
+
+            // Timer + its bar + distance: top center, the thing you glance at mid-delivery.
             Text timer = UIFactory.CreateText(root, "TimerText", string.Empty, 30, TextAnchor.MiddleCenter, Color.white);
             UIFactory.Place((RectTransform)timer.transform, new Vector2(0.5f, 1f), new Vector2(0f, -16f), new Vector2(420f, 40f));
 
+            Image timerFill = UIFactory.CreateBar(root, "TimerBar", UIFactory.BarBackgroundColor, UIFactory.BarGoodColor);
+            RectTransform timerBarRoot = (RectTransform)timerFill.transform.parent;
+            UIFactory.Place(timerBarRoot, new Vector2(0.5f, 1f), new Vector2(0f, -54f), new Vector2(360f, 14f));
+            timerFill.fillAmount = 0f;
+
             Text distance = UIFactory.CreateText(root, "DistanceText", string.Empty, 22, TextAnchor.MiddleCenter, new Color(0.8f, 0.9f, 1f));
-            UIFactory.Place((RectTransform)distance.transform, new Vector2(0.5f, 1f), new Vector2(0f, -56f), new Vector2(420f, 30f));
+            UIFactory.Place((RectTransform)distance.transform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(420f, 30f));
 
             HUDController hud = gameObject.AddComponent<HUDController>();
             hud.SetTexts(speed, money, fuel, condition, timer, distance, cargo, reputation);
-        }
-
-        private Text CreateHudLine(RectTransform parent, string name, int index)
-        {
-            Text text = UIFactory.CreateText(parent, name, string.Empty, 20, TextAnchor.MiddleLeft, Color.white);
-            UIFactory.Place((RectTransform)text.transform, new Vector2(0f, 1f),
-                new Vector2(12f, -8f - index * 30f), new Vector2(300f, 28f));
-            return text;
+            hud.SetBars(fuelFill, conditionFill, timerFill);
         }
 
         private void BuildPrompt(Transform root)
         {
-            Text prompt = UIFactory.CreateText(root, "InteractionPrompt", string.Empty, 26,
+            // Backdrop pill so the prompt reads over any background, not naked floating text.
+            RectTransform backdrop = UIFactory.CreatePanel(root, "InteractionPromptBackdrop", new Color(0f, 0f, 0f, 0.55f));
+            UIFactory.Place(backdrop, new Vector2(0.5f, 0f), new Vector2(0f, 108f), new Vector2(520f, 52f));
+
+            Text prompt = UIFactory.CreateText(backdrop, "InteractionPrompt", string.Empty, 26,
                 TextAnchor.MiddleCenter, new Color(1f, 0.95f, 0.5f));
-            UIFactory.Place((RectTransform)prompt.transform, new Vector2(0.5f, 0f),
-                new Vector2(0f, 120f), new Vector2(500f, 40f));
+            UIFactory.Stretch((RectTransform)prompt.transform);
 
             InteractionPromptUI promptUi = gameObject.AddComponent<InteractionPromptUI>();
             promptUi.SetText(prompt);
+            promptUi.SetBackdrop(backdrop.gameObject);
         }
 
         private void BuildNotification(Transform root)
         {
-            Text toast = UIFactory.CreateText(root, "NotificationText", string.Empty, 24,
-                TextAnchor.MiddleCenter, new Color(0.7f, 1f, 0.7f));
-            UIFactory.Place((RectTransform)toast.transform, new Vector2(0.5f, 1f),
-                new Vector2(0f, -100f), new Vector2(720f, 36f));
+            // Backdrop pill behind the toast — plain floating text is hard to read over gameplay.
+            RectTransform backdrop = UIFactory.CreatePanel(root, "NotificationBackdrop", new Color(0.05f, 0.06f, 0.08f, 0.85f));
+            UIFactory.Place(backdrop, new Vector2(0.5f, 1f), new Vector2(0f, -96f), new Vector2(760f, 48f));
+
+            Text toast = UIFactory.CreateText(backdrop, "NotificationText", string.Empty, 22,
+                TextAnchor.MiddleCenter, new Color(0.75f, 1f, 0.8f));
+            UIFactory.Stretch((RectTransform)toast.transform);
 
             NotificationUI notification = gameObject.AddComponent<NotificationUI>();
             notification.SetText(toast);
+            notification.SetBackdrop(backdrop.GetComponent<Image>());
         }
 
         private void BuildOrderPanel(Transform root)
         {
-            RectTransform panel = UIFactory.CreatePanel(root, "OrderPanel", new Color(0.05f, 0.06f, 0.09f, 0.92f));
+            RectTransform panel = UIFactory.CreatePanel(root, "OrderPanel", UIFactory.PanelColor);
             UIFactory.Place(panel, new Vector2(1f, 0.5f), new Vector2(-14f, 0f), new Vector2(470f, 480f));
 
-            Text title = UIFactory.CreateText(panel, "Title", "SİPARİŞLER [Tab]", 24, TextAnchor.MiddleCenter, Color.white);
+            Text title = UIFactory.CreateText(panel, "Title", "SİPARİŞLER [Tab]", 24, TextAnchor.MiddleCenter, UIFactory.AccentColor);
             UIFactory.Place((RectTransform)title.transform, new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(440f, 36f));
 
             var listGo = new GameObject("OfferList", typeof(RectTransform));
@@ -122,10 +150,10 @@ namespace DeliverySim
 
         private void BuildShopPanel(Transform root)
         {
-            RectTransform panel = UIFactory.CreatePanel(root, "ShopPanel", new Color(0.05f, 0.08f, 0.06f, 0.92f));
+            RectTransform panel = UIFactory.CreatePanel(root, "ShopPanel", UIFactory.PanelColor);
             UIFactory.Place(panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(500f, 520f));
 
-            Text title = UIFactory.CreateText(panel, "Title", "MAĞAZA [B]", 24, TextAnchor.MiddleCenter, Color.white);
+            Text title = UIFactory.CreateText(panel, "Title", "MAĞAZA [B]", 24, TextAnchor.MiddleCenter, UIFactory.AcceptColor);
             UIFactory.Place((RectTransform)title.transform, new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(460f, 36f));
 
             var listGo = new GameObject("ShopList", typeof(RectTransform));
@@ -151,13 +179,13 @@ namespace DeliverySim
             PauseMenuController controller = gameObject.AddComponent<PauseMenuController>();
             controller.SetReferences(panel.gameObject);
 
-            Button resume = UIFactory.CreateButton(panel, "ResumeButton", "Devam Et", controller.Resume);
+            Button resume = UIFactory.CreateButton(panel, "ResumeButton", "Devam Et", UIFactory.AcceptColor, controller.Resume);
             UIFactory.Place((RectTransform)resume.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, 40f), new Vector2(240f, 52f));
 
-            Button save = UIFactory.CreateButton(panel, "SaveButton", "Kaydet", controller.SaveGame);
+            Button save = UIFactory.CreateButton(panel, "SaveButton", "Kaydet", UIFactory.AccentColor, controller.SaveGame);
             UIFactory.Place((RectTransform)save.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, -24f), new Vector2(240f, 52f));
 
-            Button quit = UIFactory.CreateButton(panel, "QuitButton", "Çıkış", controller.QuitGame);
+            Button quit = UIFactory.CreateButton(panel, "QuitButton", "Çıkış", UIFactory.RejectColor, controller.QuitGame);
             UIFactory.Place((RectTransform)quit.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, -88f), new Vector2(240f, 52f));
         }
 

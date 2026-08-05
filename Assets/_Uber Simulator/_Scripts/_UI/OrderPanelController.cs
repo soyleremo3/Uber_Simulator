@@ -123,8 +123,7 @@ namespace DeliverySim
 
         private GameObject BuildRow(OrderData order, int index)
         {
-            RectTransform row = UIFactory.CreatePanel(listContainer, $"OrderRow_{index}",
-                new Color(0.12f, 0.14f, 0.18f, 0.95f));
+            RectTransform row = UIFactory.CreatePanel(listContainer, $"OrderRow_{index}", UIFactory.RowColor);
             UIFactory.Place(row, new Vector2(0.5f, 1f),
                 new Vector2(0f, -(index * (rowHeight + rowSpacing)) - rowSpacing),
                 new Vector2(440f, rowHeight));
@@ -141,12 +140,12 @@ namespace DeliverySim
             UIFactory.Place((RectTransform)info.transform, new Vector2(0f, 1f),
                 new Vector2(12f, -8f), new Vector2(280f, rowHeight - 16f));
 
-            Button accept = UIFactory.CreateButton(row, "AcceptButton", "Kabul",
+            Button accept = UIFactory.CreateButton(row, "AcceptButton", "Kabul", UIFactory.AcceptColor,
                 () => OrderManager.Instance?.AcceptOffer(order));
             UIFactory.Place((RectTransform)accept.transform, new Vector2(1f, 0.5f),
                 new Vector2(-96f, 0f), new Vector2(80f, 40f));
 
-            Button reject = UIFactory.CreateButton(row, "RejectButton", "Reddet",
+            Button reject = UIFactory.CreateButton(row, "RejectButton", "Reddet", UIFactory.RejectColor,
                 () => OrderManager.Instance?.RejectOffer(order));
             UIFactory.Place((RectTransform)reject.transform, new Vector2(1f, 0.5f),
                 new Vector2(-8f, 0f), new Vector2(80f, 40f));

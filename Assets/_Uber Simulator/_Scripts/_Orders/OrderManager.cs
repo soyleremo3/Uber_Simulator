@@ -60,7 +60,12 @@ namespace DeliverySim
         [Tooltip("Fraction of the payment still paid at the very last late moment.")]
         [Range(0f, 1f)][SerializeField] private float latePayFraction = 0.4f;
 
+        [Header("Variety")]
+        [Tooltip("How many recently accepted orders are avoided when refilling offers (as long as other candidates exist).")]
+        [SerializeField] private int recentHistoryLimit = 2;
+
         private readonly List<OrderData> currentOffers = new List<OrderData>();
+        private readonly List<OrderData> recentHistory = new List<OrderData>();
         private OrderData activeOrder;
         private OrderPhase phase = OrderPhase.None;
         private float remainingTime;
@@ -79,6 +84,8 @@ namespace DeliverySim
         public OrderPhase Phase => phase;
         public IReadOnlyList<OrderData> CurrentOffers => currentOffers;
         public float RemainingTime => remainingTime;
+        /// <summary>Time limit resolved at accept time for the active order; 0 when idle. Used by the HUD timer bar.</summary>
+        public float ActiveTimeLimit => activeTimeLimit;
 
         /// <summary>World position of the current target point (pickup or delivery), null when idle.</summary>
         public Vector3? CurrentTargetPosition
@@ -196,17 +203,49 @@ namespace DeliverySim
                 candidates.Add(order);
             }
 
+            // Prefer orders outside recent history so the same offer doesn't
+            // instantly reappear the moment its slot frees up; fall back to the
+            // full candidate list when there isn't enough variety left.
+            var preferred = new List<OrderData>();
+            foreach (OrderData candidate in candidates)
+            {
+                if (!recentHistory.Contains(candidate))
+                {
+                    preferred.Add(candidate);
+                }
+            }
+
             while (currentOffers.Count < maxOffers && candidates.Count > 0)
             {
-                int index = UnityEngine.Random.Range(0, candidates.Count);
-                currentOffers.Add(candidates[index]);
-                candidates.RemoveAt(index);
+                List<OrderData> pool = preferred.Count > 0 ? preferred : candidates;
+                int index = UnityEngine.Random.Range(0, pool.Count);
+                OrderData picked = pool[index];
+
+                currentOffers.Add(picked);
+                candidates.Remove(picked);
+                preferred.Remove(picked);
                 changed = true;
             }
 
             if (changed)
             {
                 OnOffersChanged?.Invoke(currentOffers);
+            }
+        }
+
+        private void RememberRecent(OrderData order)
+        {
+            if (order == null)
+            {
+                return;
+            }
+
+            recentHistory.Remove(order);
+            recentHistory.Add(order);
+
+            while (recentHistory.Count > Mathf.Max(0, recentHistoryLimit))
+            {
+                recentHistory.RemoveAt(0);
             }
         }
 
@@ -236,6 +275,7 @@ namespace DeliverySim
             phase = OrderPhase.AwaitingPickup;
             activeTimeLimit = GetEstimatedTimeLimit(order);
             currentOffers.Remove(order);
+            RememberRecent(order);
 
             pickup.SetMarkerActive(true);
             delivery.SetMarkerActive(false);

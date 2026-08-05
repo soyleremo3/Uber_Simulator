@@ -135,7 +135,7 @@ namespace DeliverySim
             if (next != null)
             {
                 info.text = $"{categoryName} — Seviye {level}\nSonraki: {next.DisplayName} (₺{next.Cost:F0})";
-                Button buy = UIFactory.CreateButton(row, "BuyButton", "Satın Al",
+                Button buy = UIFactory.CreateButton(row, "BuyButton", "Satın Al", UIFactory.AcceptColor,
                     () => ShopManager.Instance?.PurchaseNextUpgrade(category));
                 UIFactory.Place((RectTransform)buy.transform, new Vector2(1f, 0.5f),
                     new Vector2(-10f, 0f), new Vector2(110f, 40f));
@@ -159,7 +159,7 @@ namespace DeliverySim
             else
             {
                 info.text = $"{vehicle.DisplayName}\nFiyat: ₺{vehicle.Price:F0}";
-                Button buy = UIFactory.CreateButton(row, "BuyButton", "Satın Al",
+                Button buy = UIFactory.CreateButton(row, "BuyButton", "Satın Al", UIFactory.AcceptColor,
                     () => ShopManager.Instance?.PurchaseVehicle(vehicle));
                 UIFactory.Place((RectTransform)buy.transform, new Vector2(1f, 0.5f),
                     new Vector2(-10f, 0f), new Vector2(110f, 40f));
@@ -170,8 +170,7 @@ namespace DeliverySim
 
         private RectTransform CreateRow(int index, out Text info)
         {
-            RectTransform row = UIFactory.CreatePanel(listContainer, $"ShopRow_{index}",
-                new Color(0.12f, 0.14f, 0.18f, 0.95f));
+            RectTransform row = UIFactory.CreatePanel(listContainer, $"ShopRow_{index}", UIFactory.RowColor);
             UIFactory.Place(row, new Vector2(0.5f, 1f),
                 new Vector2(0f, -(index * (rowHeight + rowSpacing)) - rowSpacing),
                 new Vector2(460f, rowHeight));

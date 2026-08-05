@@ -19,12 +19,23 @@ namespace DeliverySim
 
         [Header("Line")]
         [SerializeField] private float lineWidth = 0.6f;
-        [SerializeField] private float lineHeightOffset = 0.3f;
+        [Tooltip("How far above the detected ground surface the line floats. Keep small so it reads as a road decal, not a floating beam.")]
+        [SerializeField] private float lineHeightOffset = 0.05f;
         [SerializeField] private Color lineColor = new Color(0.1f, 0.6f, 1f, 0.9f);
         [Tooltip("Seconds between route recomputes (recomputing every frame is wasteful).")]
         [SerializeField] private float updateInterval = 0.25f;
+        [Tooltip("How many texture tiles flow toward the destination per second (0 = static line).")]
+        [SerializeField] private float scrollSpeed = 1.2f;
+
+        [Header("Ground Snapping")]
+        [Tooltip("Raycasts each point down onto the ground so the line hugs road/terrain height instead of floating at a flat Y (Forza-style route decal).")]
+        [SerializeField] private bool snapToGround = true;
+        [SerializeField] private LayerMask groundLayerMask = ~0;
+        [SerializeField] private float raycastStartHeight = 20f;
+        [SerializeField] private float raycastMaxDistance = 100f;
 
         private LineRenderer line;
+        private Material lineMaterial;
         private Waypoint[] waypoints = new Waypoint[0];
         private Vector3? destination;
         private float updateTimer;
@@ -78,6 +89,14 @@ namespace DeliverySim
                 updateTimer = updateInterval;
                 RebuildLine();
             }
+
+            if (lineMaterial != null && scrollSpeed != 0f)
+            {
+                // Tiles scroll from the player toward the destination for a GPS "flow" cue.
+                Vector2 offset = lineMaterial.mainTextureOffset;
+                offset.x -= scrollSpeed * Time.deltaTime;
+                lineMaterial.mainTextureOffset = offset;
+            }
         }
 
         public void SetDestination(Vector3 worldPosition)
@@ -116,13 +135,61 @@ namespace DeliverySim
             GameObject lineObject = new GameObject("RouteLine");
             lineObject.transform.SetParent(transform, false);
             line = lineObject.AddComponent<LineRenderer>();
-            line.material = new Material(Shader.Find("Sprites/Default"));
+
+            lineMaterial = new Material(Shader.Find("Sprites/Default"));
+            lineMaterial.mainTexture = CreateChevronTexture();
+            line.material = lineMaterial;
+
+            // Local (not the default View/billboard) alignment makes the ribbon
+            // lie flat against the ground plane instead of always facing the
+            // camera like a floating wall — this is what makes it read as a
+            // road decal, Forza-style, rather than a beam hovering in the air.
+            line.alignment = LineAlignment.TransformZ;
+            line.textureMode = LineTextureMode.Tile;
+            line.numCapVertices = 4;
+            line.numCornerVertices = 4;
             line.startWidth = lineWidth;
             line.endWidth = lineWidth;
             line.startColor = lineColor;
             line.endColor = lineColor;
             line.positionCount = 0;
             line.enabled = false;
+        }
+
+        /// <summary>Repeating ">" chevrons along U so the route reads as directional flow, not a static bar.</summary>
+        private static Texture2D CreateChevronTexture()
+        {
+            const int width = 32;
+            const int height = 16;
+            const float chevronFraction = 0.6f;
+            const float strokeWidth = height * 0.14f;
+
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
+            {
+                wrapMode = TextureWrapMode.Repeat,
+                filterMode = FilterMode.Bilinear
+            };
+
+            float chevronWidth = width * chevronFraction;
+            float midY = height * 0.5f;
+
+            for (int x = 0; x < width; x++)
+            {
+                bool inChevron = x < chevronWidth;
+                float progress = inChevron ? x / chevronWidth : 0f;
+                float topArmY = Mathf.Lerp(0f, midY, progress);
+                float bottomArmY = Mathf.Lerp(height, midY, progress);
+
+                for (int y = 0; y < height; y++)
+                {
+                    bool onArm = inChevron &&
+                        (Mathf.Abs(y - topArmY) < strokeWidth || Mathf.Abs(y - bottomArmY) < strokeWidth);
+                    texture.SetPixel(x, y, onArm ? Color.white : new Color(1f, 1f, 1f, 0f));
+                }
+            }
+
+            texture.Apply();
+            return texture;
         }
 
         private void RebuildLine()
@@ -136,8 +203,27 @@ namespace DeliverySim
             line.positionCount = points.Count;
             for (int i = 0; i < points.Count; i++)
             {
-                line.SetPosition(i, points[i] + Vector3.up * lineHeightOffset);
+                line.SetPosition(i, GroundSnap(points[i]));
             }
+        }
+
+        /// <summary>Raycasts a point down onto the ground so the line hugs road/terrain height instead of floating at the source point's raw Y.</summary>
+        private Vector3 GroundSnap(Vector3 point)
+        {
+            if (snapToGround)
+            {
+                Vector3 rayOrigin = point + Vector3.up * raycastStartHeight;
+                float maxDistance = raycastStartHeight + raycastMaxDistance;
+
+                // Ignore triggers so pickup/delivery marker colliders don't get hit instead of the road.
+                if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, maxDistance,
+                    groundLayerMask, QueryTriggerInteraction.Ignore))
+                {
+                    point.y = hit.point.y;
+                }
+            }
+
+            return point + Vector3.up * lineHeightOffset;
         }
 
         private List<Vector3> BuildPath(Vector3 from, Vector3 to)

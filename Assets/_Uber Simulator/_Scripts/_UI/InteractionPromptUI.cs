@@ -10,12 +10,19 @@ namespace DeliverySim
     public class InteractionPromptUI : MonoBehaviour
     {
         [SerializeField] private Text promptText;
+        [SerializeField] private GameObject backdrop;
 
         private VehicleInteractor interactor;
 
         public void SetText(Text text)
         {
             promptText = text;
+        }
+
+        /// <summary>Optional pill background shown/hidden together with the prompt text.</summary>
+        public void SetBackdrop(GameObject backdropObject)
+        {
+            backdrop = backdropObject;
         }
 
         private void Start()
@@ -44,8 +51,14 @@ namespace DeliverySim
                 return;
             }
 
+            bool show = !string.IsNullOrEmpty(prompt);
             promptText.text = prompt;
-            promptText.enabled = !string.IsNullOrEmpty(prompt);
+            promptText.enabled = show;
+
+            if (backdrop != null)
+            {
+                backdrop.SetActive(show);
+            }
         }
     }
 }
