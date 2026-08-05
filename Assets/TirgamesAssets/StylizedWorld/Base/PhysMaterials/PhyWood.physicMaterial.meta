@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c46c21c7cb8bf7d45b7b5dbda108c267
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 13400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 230506
+  packageName: Stylized Downtown Street
+  packageVersion: 1.1
+  assetPath: Assets/TirgamesAssets/StylizedWorld/Base/PhysMaterials/PhyWood.physicMaterial
+  uploadId: 912930

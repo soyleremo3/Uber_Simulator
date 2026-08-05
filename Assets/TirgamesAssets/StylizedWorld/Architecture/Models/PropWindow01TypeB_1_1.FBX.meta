@@ -1,0 +1,157 @@
+fileFormatVersion: 2
+guid: d48b12d559ccc104b8d3a84531c7deec
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: Object011_Hull
+    100004: Object012_Hull
+    100006: Object013_Hull
+    100008: PropWindow01TypeB_1_003_Hull
+    100010: PropWindow01TypeB_1_1
+    100012: UCX_PropWindow01TypeB_1_1_01
+    100014: UCX_PropWindow01TypeB_1_1_02
+    100016: UCX_PropWindow01TypeB_1_1_03
+    100018: UCX_PropWindow01TypeB_1_1_04
+    400000: //RootNode
+    400002: Object011_Hull
+    400004: Object012_Hull
+    400006: Object013_Hull
+    400008: PropWindow01TypeB_1_003_Hull
+    400010: PropWindow01TypeB_1_1
+    400012: UCX_PropWindow01TypeB_1_1_01
+    400014: UCX_PropWindow01TypeB_1_1_02
+    400016: UCX_PropWindow01TypeB_1_1_03
+    400018: UCX_PropWindow01TypeB_1_1_04
+    2300000: //RootNode
+    2300002: Object011_Hull
+    2300004: Object012_Hull
+    2300006: Object013_Hull
+    2300008: PropWindow01TypeB_1_003_Hull
+    2300010: PropWindow01TypeB_1_1
+    2300012: UCX_PropWindow01TypeB_1_1_01
+    2300014: UCX_PropWindow01TypeB_1_1_02
+    2300016: UCX_PropWindow01TypeB_1_1_03
+    2300018: UCX_PropWindow01TypeB_1_1_04
+    3300000: //RootNode
+    3300002: Object011_Hull
+    3300004: Object012_Hull
+    3300006: Object013_Hull
+    3300008: PropWindow01TypeB_1_003_Hull
+    3300010: PropWindow01TypeB_1_1
+    3300012: UCX_PropWindow01TypeB_1_1_01
+    3300014: UCX_PropWindow01TypeB_1_1_02
+    3300016: UCX_PropWindow01TypeB_1_1_03
+    3300018: UCX_PropWindow01TypeB_1_1_04
+    4300000: PropWindow01TypeB_1_1
+    4300002: PropWindow01TypeB_1_003_Hull
+    4300004: Object013_Hull
+    4300006: Object011_Hull
+    4300008: Object012_Hull
+    4300010: UCX_PropWindow01TypeB_1_1_04
+    4300012: UCX_PropWindow01TypeB_1_1_01
+    4300014: UCX_PropWindow01TypeB_1_1_02
+    4300016: UCX_PropWindow01TypeB_1_1_03
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Phy
+    second: {fileID: 2100000, guid: f620cc6e058e97a408f2bb879da59d1d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PropWindows01SkinA
+    second: {fileID: 2100000, guid: ac6d7d8768ee0e844823ca4bb1357157, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 230506
+  packageName: Stylized Downtown Street
+  packageVersion: 1.1
+  assetPath: Assets/TirgamesAssets/StylizedWorld/Architecture/Models/PropWindow01TypeB_1_1.FBX
+  uploadId: 912930

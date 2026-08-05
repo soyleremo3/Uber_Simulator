@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2eda583461c943440a567da1b518a947
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 112000000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 230506
+  packageName: Stylized Downtown Street
+  packageVersion: 1.1
+  assetPath: Assets/TirgamesAssets/StylizedWorld/Locations/Urban/Scenes/StylizedStreetNight/LightingData.asset
+  uploadId: 912930

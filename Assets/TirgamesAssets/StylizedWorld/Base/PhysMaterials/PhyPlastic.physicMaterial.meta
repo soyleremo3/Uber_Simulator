@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c9f1b52f54863154fa8cbfb9db4aafab
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 13400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 230506
+  packageName: Stylized Downtown Street
+  packageVersion: 1.1
+  assetPath: Assets/TirgamesAssets/StylizedWorld/Base/PhysMaterials/PhyPlastic.physicMaterial
+  uploadId: 912930

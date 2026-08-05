@@ -1,0 +1,160 @@
+fileFormatVersion: 2
+guid: 0bde5f4a6161435429ce21413833edc0
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: DoorL
+    100002: DoorR
+    100004: FrameB
+    100006: //RootNode
+    100008: UCX_DoorL_01
+    100010: UCX_DoorL_02
+    100012: UCX_DoorR_01
+    100014: UCX_DoorR_02
+    100016: UCX_FrameB_01
+    100018: UCX_FrameB_02
+    100020: UCX_FrameB_03
+    400000: DoorL
+    400002: DoorR
+    400004: FrameB
+    400006: //RootNode
+    400008: UCX_DoorL_01
+    400010: UCX_DoorL_02
+    400012: UCX_DoorR_01
+    400014: UCX_DoorR_02
+    400016: UCX_FrameB_01
+    400018: UCX_FrameB_02
+    400020: UCX_FrameB_03
+    2300000: DoorL
+    2300002: DoorR
+    2300004: FrameB
+    2300006: UCX_DoorL_01
+    2300008: UCX_DoorL_02
+    2300010: UCX_DoorR_01
+    2300012: UCX_DoorR_02
+    2300014: UCX_FrameB_01
+    2300016: UCX_FrameB_02
+    2300018: UCX_FrameB_03
+    3300000: DoorL
+    3300002: DoorR
+    3300004: FrameB
+    3300006: UCX_DoorL_01
+    3300008: UCX_DoorL_02
+    3300010: UCX_DoorR_01
+    3300012: UCX_DoorR_02
+    3300014: UCX_FrameB_01
+    3300016: UCX_FrameB_02
+    3300018: UCX_FrameB_03
+    4300000: DoorR
+    4300002: UCX_DoorR_01
+    4300004: UCX_DoorR_02
+    4300006: FrameB
+    4300008: UCX_FrameB_01
+    4300010: UCX_FrameB_02
+    4300012: UCX_FrameB_03
+    4300014: DoorL
+    4300016: UCX_DoorL_02
+    4300018: UCX_DoorL_01
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Phy
+    second: {fileID: 2100000, guid: f620cc6e058e97a408f2bb879da59d1d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PropDoor04SkinA
+    second: {fileID: 2100000, guid: 1f1c52f8702d9e14ca271bb913815d58, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 230506
+  packageName: Stylized Downtown Street
+  packageVersion: 1.1
+  assetPath: Assets/TirgamesAssets/StylizedWorld/Architecture/Models/PropDoor04TypeB.FBX
+  uploadId: 912930

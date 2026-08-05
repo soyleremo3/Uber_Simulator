@@ -1,0 +1,304 @@
+fileFormatVersion: 2
+guid: bf51cea9c321d3b4c9457cd8527f29e1
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: 10cm
+    100004: Door01
+    100006: Door02
+    100008: House01F_2
+    100010: House01WW_4
+    100012: M01Floor01_1
+    100014: M01Wall01_1
+    100016: M01WallDoor01_2
+    100018: M01WallDoor01_2 1
+    100020: M01WallDoor01_3
+    100022: M01WallDoor01_4
+    100024: M01WallWindow01_1
+    100026: M01WallWindow01_2
+    100028: M01WallWindow01_3
+    100030: M01WallWindow02_1
+    100032: M01WallWindow02_2
+    100034: M01WallWindow03_1
+    100036: M01WallWindow04_1
+    100038: Window03
+    100040: Window04
+    100042: Window1
+    100044: Window2
+    100046: UCX_M01WallDoorTypeB_1_01
+    100048: UCX_M01WallDoorTypeB_1_02
+    100050: UCX_M01WallDoorTypeB_1_03
+    100052: UCX_M01WallDoorTypeB_1_04
+    100054: UCX_M01WallDoorTypeB_1_05
+    100056: UCX_M01WallDoorTypeB_1_06
+    400000: //RootNode
+    400002: 10cm
+    400004: Door01
+    400006: Door02
+    400008: House01F_2
+    400010: House01WW_4
+    400012: M01Floor01_1
+    400014: M01Wall01_1
+    400016: M01WallDoor01_2
+    400018: M01WallDoor01_2 1
+    400020: M01WallDoor01_3
+    400022: M01WallDoor01_4
+    400024: M01WallWindow01_1
+    400026: M01WallWindow01_2
+    400028: M01WallWindow01_3
+    400030: M01WallWindow02_1
+    400032: M01WallWindow02_2
+    400034: M01WallWindow03_1
+    400036: M01WallWindow04_1
+    400038: Window03
+    400040: Window04
+    400042: Window1
+    400044: Window2
+    400046: UCX_M01WallDoorTypeB_1_01
+    400048: UCX_M01WallDoorTypeB_1_02
+    400050: UCX_M01WallDoorTypeB_1_03
+    400052: UCX_M01WallDoorTypeB_1_04
+    400054: UCX_M01WallDoorTypeB_1_05
+    400056: UCX_M01WallDoorTypeB_1_06
+    2300000: //RootNode
+    2300002: 10cm
+    2300004: Door01
+    2300006: Door02
+    2300008: House01F_2
+    2300010: House01WW_4
+    2300012: M01Floor01_1
+    2300014: M01Wall01_1
+    2300016: M01WallDoor01_2
+    2300018: M01WallDoor01_2 1
+    2300020: M01WallDoor01_3
+    2300022: M01WallDoor01_4
+    2300024: M01WallWindow01_1
+    2300026: M01WallWindow01_2
+    2300028: M01WallWindow01_3
+    2300030: M01WallWindow02_1
+    2300032: M01WallWindow02_2
+    2300034: M01WallWindow03_1
+    2300036: M01WallWindow04_1
+    2300038: Window03
+    2300040: Window04
+    2300042: Window1
+    2300044: Window2
+    2300046: UCX_M01WallDoorTypeB_1_01
+    2300048: UCX_M01WallDoorTypeB_1_02
+    2300050: UCX_M01WallDoorTypeB_1_03
+    2300052: UCX_M01WallDoorTypeB_1_04
+    2300054: UCX_M01WallDoorTypeB_1_05
+    2300056: UCX_M01WallDoorTypeB_1_06
+    3300000: //RootNode
+    3300002: 10cm
+    3300004: Door01
+    3300006: Door02
+    3300008: House01F_2
+    3300010: House01WW_4
+    3300012: M01Floor01_1
+    3300014: M01Wall01_1
+    3300016: M01WallDoor01_2
+    3300018: M01WallDoor01_2 1
+    3300020: M01WallDoor01_3
+    3300022: M01WallDoor01_4
+    3300024: M01WallWindow01_1
+    3300026: M01WallWindow01_2
+    3300028: M01WallWindow01_3
+    3300030: M01WallWindow02_1
+    3300032: M01WallWindow02_2
+    3300034: M01WallWindow03_1
+    3300036: M01WallWindow04_1
+    3300038: Window03
+    3300040: Window04
+    3300042: Window1
+    3300044: Window2
+    3300046: UCX_M01WallDoorTypeB_1_01
+    3300048: UCX_M01WallDoorTypeB_1_02
+    3300050: UCX_M01WallDoorTypeB_1_03
+    3300052: UCX_M01WallDoorTypeB_1_04
+    3300054: UCX_M01WallDoorTypeB_1_05
+    3300056: UCX_M01WallDoorTypeB_1_06
+    4300000: M01WallDoor02_1
+    4300002: M01WallDoor01_2
+    4300004: M01Floor01_1
+    4300006: M01WallDoor01_2
+    4300008: House01WW_4
+    4300010: House01F_2
+    4300012: M01WallWindow01_1
+    4300014: Window1
+    4300016: M01Wall01_1
+    4300018: M01WallWindow01_2
+    4300020: M01WallWindow01_3
+    4300022: M01WallDoor01_3
+    4300024: Window2
+    4300026: M01WallWindow02_1
+    4300028: M01WallWindow02_2
+    4300030: Door02
+    4300032: M01WallDoor01_4
+    4300034: Door01
+    4300036: Window03
+    4300038: M01WallWindow03_1
+    4300040: 10cm
+    4300042: Window04
+    4300044: M01WallWindow04_1
+    4300046: M01WallDoorTypeB_1
+    4300048: UCX_M01WallDoorTypeB_1_02
+    4300050: UCX_M01WallDoorTypeB_1_03
+    4300052: UCX_M01WallDoorTypeB_1_04
+    4300054: UCX_M01WallDoorTypeB_1_05
+    4300056: UCX_M01WallDoorTypeB_1_06
+    4300058: UCX_M01WallDoorTypeB_1_01
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M01Grid01A
+    second: {fileID: 2100000, guid: e7cbd916c45bb944383fd2db9c2a6cb0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M01Grid01B
+    second: {fileID: 2100000, guid: a57798cb0647b584288fa6d51e8811bd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M01Grid01C
+    second: {fileID: 2100000, guid: 103408e2113c0a949aae0549645720d2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M01Grid01D
+    second: {fileID: 2100000, guid: 0b110e8deb40a234f88c52f63fc8cd75, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: No Name
+    second: {fileID: 2100000, guid: adf1d0a4186be7e48b930f48f9e66f4e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Phy
+    second: {fileID: 2100000, guid: f620cc6e058e97a408f2bb879da59d1d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: WallInterior01A
+    second: {fileID: 2100000, guid: 16bceacacb80beb4d9ba311f01f1c26b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: WoodBeams01A
+    second: {fileID: 2100000, guid: b6b5651bab5bb5d46b8f06773227a444, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: WoodBeams02A
+    second: {fileID: 2100000, guid: d00ae7efe0d23a14b948d1912364bfe9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: WoodPlanks03A
+    second: {fileID: 2100000, guid: 3eb3aad0f99f77c4986d14f54f17aee9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: WoodPlanks04A
+    second: {fileID: 2100000, guid: 369578c1d226b5d4ab9b66ee1e2ac67f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: WoodPlanks04B
+    second: {fileID: 2100000, guid: f0b2994c63e909249a1e20213074d249, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 230506
+  packageName: Stylized Downtown Street
+  packageVersion: 1.1
+  assetPath: Assets/TirgamesAssets/StylizedWorld/Architecture/Models/M01WallDoorTypeB_1.FBX
+  uploadId: 912930

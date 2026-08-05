@@ -1,0 +1,232 @@
+fileFormatVersion: 2
+guid: eb8a957cd23399b459b9da75b68e9739
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: PropWindow01TypeH_2_1
+    100004: UCX_PropWindow01TypeH_2_1_01
+    100006: UCX_PropWindow01TypeH_2_1_02
+    100008: UCX_PropWindow01TypeH_2_1_03
+    100010: UCX_PropWindow01TypeH_2_1_04
+    100012: UCX_PropWindow01TypeH_2_1_05
+    100014: UCX_PropWindow01TypeH_2_1_06
+    100016: UCX_PropWindow01TypeH_2_1_07
+    100018: UCX_PropWindow01TypeH_2_1_08
+    100020: UCX_PropWindow01TypeH_2_1_09
+    100022: UCX_PropWindow01TypeH_2_1_10
+    100024: UCX_PropWindow01TypeH_2_1_11
+    100026: UCX_PropWindow01TypeH_2_1_12
+    100028: UCX_PropWindow01TypeH_2_1_13
+    100030: UCX_PropWindow01TypeH_2_1_14
+    100032: UCX_PropWindow01TypeH_2_1_15
+    100034: UCX_PropWindow01TypeH_2_1_16
+    100036: UCX_PropWindow01TypeH_2_1_17
+    100038: UCX_PropWindow01TypeH_2_1_18
+    100040: UCX_PropWindow01TypeH_2_1_19
+    100042: UCX_PropWindow01TypeH_2_1_20
+    100044: UCX_PropWindow01TypeH_2_1_21
+    100046: UCX_PropWindow01TypeH_2_1_22
+    100048: UCX_PropWindow01TypeH_2_1_23
+    400000: //RootNode
+    400002: PropWindow01TypeH_2_1
+    400004: UCX_PropWindow01TypeH_2_1_01
+    400006: UCX_PropWindow01TypeH_2_1_02
+    400008: UCX_PropWindow01TypeH_2_1_03
+    400010: UCX_PropWindow01TypeH_2_1_04
+    400012: UCX_PropWindow01TypeH_2_1_05
+    400014: UCX_PropWindow01TypeH_2_1_06
+    400016: UCX_PropWindow01TypeH_2_1_07
+    400018: UCX_PropWindow01TypeH_2_1_08
+    400020: UCX_PropWindow01TypeH_2_1_09
+    400022: UCX_PropWindow01TypeH_2_1_10
+    400024: UCX_PropWindow01TypeH_2_1_11
+    400026: UCX_PropWindow01TypeH_2_1_12
+    400028: UCX_PropWindow01TypeH_2_1_13
+    400030: UCX_PropWindow01TypeH_2_1_14
+    400032: UCX_PropWindow01TypeH_2_1_15
+    400034: UCX_PropWindow01TypeH_2_1_16
+    400036: UCX_PropWindow01TypeH_2_1_17
+    400038: UCX_PropWindow01TypeH_2_1_18
+    400040: UCX_PropWindow01TypeH_2_1_19
+    400042: UCX_PropWindow01TypeH_2_1_20
+    400044: UCX_PropWindow01TypeH_2_1_21
+    400046: UCX_PropWindow01TypeH_2_1_22
+    400048: UCX_PropWindow01TypeH_2_1_23
+    2300000: //RootNode
+    2300002: PropWindow01TypeH_2_1
+    2300004: UCX_PropWindow01TypeH_2_1_01
+    2300006: UCX_PropWindow01TypeH_2_1_02
+    2300008: UCX_PropWindow01TypeH_2_1_03
+    2300010: UCX_PropWindow01TypeH_2_1_04
+    2300012: UCX_PropWindow01TypeH_2_1_05
+    2300014: UCX_PropWindow01TypeH_2_1_06
+    2300016: UCX_PropWindow01TypeH_2_1_07
+    2300018: UCX_PropWindow01TypeH_2_1_08
+    2300020: UCX_PropWindow01TypeH_2_1_09
+    2300022: UCX_PropWindow01TypeH_2_1_10
+    2300024: UCX_PropWindow01TypeH_2_1_11
+    2300026: UCX_PropWindow01TypeH_2_1_12
+    2300028: UCX_PropWindow01TypeH_2_1_13
+    2300030: UCX_PropWindow01TypeH_2_1_14
+    2300032: UCX_PropWindow01TypeH_2_1_15
+    2300034: UCX_PropWindow01TypeH_2_1_16
+    2300036: UCX_PropWindow01TypeH_2_1_17
+    2300038: UCX_PropWindow01TypeH_2_1_18
+    2300040: UCX_PropWindow01TypeH_2_1_19
+    2300042: UCX_PropWindow01TypeH_2_1_20
+    2300044: UCX_PropWindow01TypeH_2_1_21
+    2300046: UCX_PropWindow01TypeH_2_1_22
+    2300048: UCX_PropWindow01TypeH_2_1_23
+    3300000: //RootNode
+    3300002: PropWindow01TypeH_2_1
+    3300004: UCX_PropWindow01TypeH_2_1_01
+    3300006: UCX_PropWindow01TypeH_2_1_02
+    3300008: UCX_PropWindow01TypeH_2_1_03
+    3300010: UCX_PropWindow01TypeH_2_1_04
+    3300012: UCX_PropWindow01TypeH_2_1_05
+    3300014: UCX_PropWindow01TypeH_2_1_06
+    3300016: UCX_PropWindow01TypeH_2_1_07
+    3300018: UCX_PropWindow01TypeH_2_1_08
+    3300020: UCX_PropWindow01TypeH_2_1_09
+    3300022: UCX_PropWindow01TypeH_2_1_10
+    3300024: UCX_PropWindow01TypeH_2_1_11
+    3300026: UCX_PropWindow01TypeH_2_1_12
+    3300028: UCX_PropWindow01TypeH_2_1_13
+    3300030: UCX_PropWindow01TypeH_2_1_14
+    3300032: UCX_PropWindow01TypeH_2_1_15
+    3300034: UCX_PropWindow01TypeH_2_1_16
+    3300036: UCX_PropWindow01TypeH_2_1_17
+    3300038: UCX_PropWindow01TypeH_2_1_18
+    3300040: UCX_PropWindow01TypeH_2_1_19
+    3300042: UCX_PropWindow01TypeH_2_1_20
+    3300044: UCX_PropWindow01TypeH_2_1_21
+    3300046: UCX_PropWindow01TypeH_2_1_22
+    3300048: UCX_PropWindow01TypeH_2_1_23
+    4300000: PropWindow01TypeH_2_1
+    4300002: UCX_PropWindow01TypeH_2_1_01
+    4300004: UCX_PropWindow01TypeH_2_1_02
+    4300006: UCX_PropWindow01TypeH_2_1_03
+    4300008: UCX_PropWindow01TypeH_2_1_04
+    4300010: UCX_PropWindow01TypeH_2_1_05
+    4300012: UCX_PropWindow01TypeH_2_1_06
+    4300014: UCX_PropWindow01TypeH_2_1_07
+    4300016: UCX_PropWindow01TypeH_2_1_08
+    4300018: UCX_PropWindow01TypeH_2_1_09
+    4300020: UCX_PropWindow01TypeH_2_1_10
+    4300022: UCX_PropWindow01TypeH_2_1_11
+    4300024: UCX_PropWindow01TypeH_2_1_12
+    4300026: UCX_PropWindow01TypeH_2_1_13
+    4300028: UCX_PropWindow01TypeH_2_1_14
+    4300030: UCX_PropWindow01TypeH_2_1_15
+    4300032: UCX_PropWindow01TypeH_2_1_16
+    4300034: UCX_PropWindow01TypeH_2_1_17
+    4300036: UCX_PropWindow01TypeH_2_1_18
+    4300038: UCX_PropWindow01TypeH_2_1_19
+    4300040: UCX_PropWindow01TypeH_2_1_20
+    4300042: UCX_PropWindow01TypeH_2_1_21
+    4300044: UCX_PropWindow01TypeH_2_1_22
+    4300046: UCX_PropWindow01TypeH_2_1_23
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Phy
+    second: {fileID: 2100000, guid: f620cc6e058e97a408f2bb879da59d1d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PropWindows01SkinA
+    second: {fileID: 2100000, guid: ac6d7d8768ee0e844823ca4bb1357157, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 230506
+  packageName: Stylized Downtown Street
+  packageVersion: 1.1
+  assetPath: Assets/TirgamesAssets/StylizedWorld/Architecture/Models/PropWindow01TypeH_2_1.FBX
+  uploadId: 912930

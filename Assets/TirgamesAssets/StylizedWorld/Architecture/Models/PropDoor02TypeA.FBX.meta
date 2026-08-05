@@ -1,0 +1,223 @@
+fileFormatVersion: 2
+guid: c3b554702a8c1794e95888876188c18c
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: Door
+    100004: Frame
+    100006: Glass
+    100008: UCX_PropDoor02ADoor_01
+    100010: UCX_PropDoor02ADoor_02
+    100012: UCX_PropDoor02ADoor_03
+    100014: UCX_PropDoor02ADoor_04
+    100016: UCX_PropDoor02ADoor_05
+    100018: UCX_PropDoor02AFrame_01
+    100020: UCX_PropDoor02AFrame_02
+    100022: UCX_PropDoor02AFrame_03
+    100024: UCX_PropDoor02AGlass_01
+    100026: UCX_Door_01
+    100028: UCX_Door_02
+    100030: UCX_Door_03
+    100032: UCX_Door_04
+    100034: UCX_Door_05
+    100036: UCX_Frame_01
+    100038: UCX_Frame_02
+    100040: UCX_Frame_03
+    100042: UCX_Glass_01
+    400000: //RootNode
+    400002: Door
+    400004: Frame
+    400006: Glass
+    400008: UCX_PropDoor02ADoor_01
+    400010: UCX_PropDoor02ADoor_02
+    400012: UCX_PropDoor02ADoor_03
+    400014: UCX_PropDoor02ADoor_04
+    400016: UCX_PropDoor02ADoor_05
+    400018: UCX_PropDoor02AFrame_01
+    400020: UCX_PropDoor02AFrame_02
+    400022: UCX_PropDoor02AFrame_03
+    400024: UCX_PropDoor02AGlass_01
+    400026: UCX_Door_01
+    400028: UCX_Door_02
+    400030: UCX_Door_03
+    400032: UCX_Door_04
+    400034: UCX_Door_05
+    400036: UCX_Frame_01
+    400038: UCX_Frame_02
+    400040: UCX_Frame_03
+    400042: UCX_Glass_01
+    2300000: //RootNode
+    2300002: Door
+    2300004: Frame
+    2300006: Glass
+    2300008: UCX_PropDoor02ADoor_01
+    2300010: UCX_PropDoor02ADoor_02
+    2300012: UCX_PropDoor02ADoor_03
+    2300014: UCX_PropDoor02ADoor_04
+    2300016: UCX_PropDoor02ADoor_05
+    2300018: UCX_PropDoor02AFrame_01
+    2300020: UCX_PropDoor02AFrame_02
+    2300022: UCX_PropDoor02AFrame_03
+    2300024: UCX_PropDoor02AGlass_01
+    2300026: UCX_Door_01
+    2300028: UCX_Door_02
+    2300030: UCX_Door_03
+    2300032: UCX_Door_04
+    2300034: UCX_Door_05
+    2300036: UCX_Frame_01
+    2300038: UCX_Frame_02
+    2300040: UCX_Frame_03
+    2300042: UCX_Glass_01
+    3300000: //RootNode
+    3300002: Door
+    3300004: Frame
+    3300006: Glass
+    3300008: UCX_PropDoor02ADoor_01
+    3300010: UCX_PropDoor02ADoor_02
+    3300012: UCX_PropDoor02ADoor_03
+    3300014: UCX_PropDoor02ADoor_04
+    3300016: UCX_PropDoor02ADoor_05
+    3300018: UCX_PropDoor02AFrame_01
+    3300020: UCX_PropDoor02AFrame_02
+    3300022: UCX_PropDoor02AFrame_03
+    3300024: UCX_PropDoor02AGlass_01
+    3300026: UCX_Door_01
+    3300028: UCX_Door_02
+    3300030: UCX_Door_03
+    3300032: UCX_Door_04
+    3300034: UCX_Door_05
+    3300036: UCX_Frame_01
+    3300038: UCX_Frame_02
+    3300040: UCX_Frame_03
+    3300042: UCX_Glass_01
+    4300000: PropDoor02TypeA
+    4300002: Frame
+    4300004: UCX_PropDoor02AFrame_01
+    4300006: UCX_PropDoor02AFrame_02
+    4300008: UCX_PropDoor02AFrame_03
+    4300010: Door
+    4300012: Glass
+    4300014: UCX_PropDoor02AGlass_01
+    4300016: UCX_PropDoor02ADoor_01
+    4300018: UCX_PropDoor02ADoor_02
+    4300020: UCX_PropDoor02ADoor_03
+    4300022: UCX_PropDoor02ADoor_04
+    4300024: UCX_PropDoor02ADoor_05
+    4300026: UCX_Frame_01
+    4300028: UCX_Frame_02
+    4300030: UCX_Frame_03
+    4300032: UCX_Glass_01
+    4300034: UCX_Door_01
+    4300036: UCX_Door_02
+    4300038: UCX_Door_03
+    4300040: UCX_Door_04
+    4300042: UCX_Door_05
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Phy
+    second: {fileID: 2100000, guid: f620cc6e058e97a408f2bb879da59d1d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PropDoor02SkinA
+    second: {fileID: 2100000, guid: 9a7e7a53e9e20fe4aabf9fc1739a1f9f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PropGlass
+    second: {fileID: 2100000, guid: 348c2fa936023ed4fb37076df6028629, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 230506
+  packageName: Stylized Downtown Street
+  packageVersion: 1.1
+  assetPath: Assets/TirgamesAssets/StylizedWorld/Architecture/Models/PropDoor02TypeA.FBX
+  uploadId: 912930
