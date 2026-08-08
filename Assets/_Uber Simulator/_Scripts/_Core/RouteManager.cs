@@ -4,10 +4,17 @@ using UnityEngine;
 namespace DeliverySim
 {
     /// <summary>
-    /// Draws a GPS-style route line from the player vehicle to the current order
+    /// Draws a GPS-style route decal from the player vehicle to the current order
     /// target. If Waypoint nodes exist in the scene, the route follows the road
     /// graph (BFS shortest hop path); otherwise it falls back to a straight line.
     /// OrderManager calls SetDestination/ClearDestination.
+    ///
+    /// Rendered as a real flat ribbon MESH lying on the ground (not a LineRenderer)
+    /// — a LineRenderer's "TransformZ" alignment only lies flat if the object's
+    /// local Z axis points straight up, which it never did here, so the ribbon was
+    /// actually standing on edge like a fence (that's the "duruyor havada dik"
+    /// bug). Building real ground-plane geometry avoids that class of problem
+    /// entirely and reads correctly from every camera angle.
     /// </summary>
     public class RouteManager : MonoBehaviour
     {
@@ -19,28 +26,37 @@ namespace DeliverySim
 
         [Header("Line")]
         [SerializeField] private float lineWidth = 0.6f;
-        [Tooltip("How far above the detected ground surface the line floats. Keep small so it reads as a road decal, not a floating beam.")]
-        [SerializeField] private float lineHeightOffset = 0.05f;
-        [SerializeField] private Color lineColor = new Color(0.1f, 0.6f, 1f, 0.9f);
-        [Tooltip("Seconds between route recomputes (recomputing every frame is wasteful).")]
-        [SerializeField] private float updateInterval = 0.25f;
+        [Tooltip("How far above the detected ground surface the decal floats. Keep small so it reads as a road decal, not a floating beam.")]
+        [SerializeField] private float lineHeightOffset = 0.06f;
+        [SerializeField] private Color lineColor = new Color(0f, 0f, 0f, 0.95f);
         [Tooltip("How many texture tiles flow toward the destination per second (0 = static line).")]
         [SerializeField] private float scrollSpeed = 1.2f;
+        [Tooltip("World-space length (meters) of one arrow tile along the route.")]
+        [SerializeField] private float tileLength = 3f;
 
         [Header("Ground Snapping")]
-        [Tooltip("Raycasts each point down onto the ground so the line hugs road/terrain height instead of floating at a flat Y (Forza-style route decal).")]
+        [Tooltip("Raycasts each point down onto the ground so the decal hugs road/terrain height instead of floating at a flat Y.")]
         [SerializeField] private bool snapToGround = true;
         [SerializeField] private LayerMask groundLayerMask = ~0;
         [SerializeField] private float raycastStartHeight = 20f;
         [SerializeField] private float raycastMaxDistance = 100f;
-        [Tooltip("Used when the raycast finds no ground (missing/wrong-layer collider) — without this the line falls back to the source point's raw Y (e.g. the car's chassis pivot) and visibly floats.")]
+        [Tooltip("Used when the raycast finds no ground (missing/wrong-layer collider) — without this the decal falls back to the source point's raw Y (e.g. the car's chassis pivot) and visibly floats.")]
         [SerializeField] private float fallbackGroundY = 0f;
 
-        private LineRenderer line;
-        private Material lineMaterial;
+        private MeshFilter meshFilter;
+        private MeshRenderer meshRenderer;
+        private Mesh mesh;
+        private Material routeMaterial;
+
         private Waypoint[] waypoints = new Waypoint[0];
         private Vector3? destination;
-        private float updateTimer;
+
+        // Reused every frame to avoid per-frame allocations.
+        private readonly List<Vector3> pathPoints = new List<Vector3>(32);
+        private readonly List<Vector3> snappedPoints = new List<Vector3>(32);
+        private readonly List<Vector3> meshVertices = new List<Vector3>(64);
+        private readonly List<Vector2> meshUvs = new List<Vector2>(64);
+        private readonly List<int> meshTriangles = new List<int>(192);
 
         public Vector3? CurrentDestination => destination;
 
@@ -53,7 +69,7 @@ namespace DeliverySim
             }
 
             Instance = this;
-            CreateLine();
+            CreateRouteMesh();
         }
 
         private void OnDestroy()
@@ -82,50 +98,50 @@ namespace DeliverySim
         {
             if (destination == null || routeStart == null)
             {
+                if (meshRenderer != null && meshRenderer.enabled)
+                {
+                    meshRenderer.enabled = false;
+                }
+
                 return;
             }
 
-            updateTimer -= Time.deltaTime;
-            if (updateTimer <= 0f)
+            if (meshRenderer != null && !meshRenderer.enabled)
             {
-                updateTimer = updateInterval;
-                RebuildLine();
-            }
-            else if (line != null && line.positionCount > 0)
-            {
-                // The full path (waypoint hops) only needs to be recomputed on the
-                // throttled interval, but the FIRST point follows the moving vehicle —
-                // refreshing only every updateInterval made it visibly lag/detach from
-                // the car between rebuilds ("kasıyor"). Keep that one point live every frame.
-                line.SetPosition(0, GroundSnap(routeStart.position));
+                meshRenderer.enabled = true;
             }
 
-            if (lineMaterial != null && scrollSpeed != 0f)
+            // Rebuilt every frame: the path is short (a handful of waypoint hops),
+            // so this is cheap, and it's what guarantees the ribbon never lags
+            // behind the moving car or the ground it hugs — that staleness was
+            // the actual source of the "kasıyor" / "bazen gözükmüyor" complaints.
+            RebuildMesh();
+
+            if (routeMaterial != null && scrollSpeed != 0f)
             {
                 // Tiles scroll from the player toward the destination for a GPS "flow" cue.
-                Vector2 offset = lineMaterial.mainTextureOffset;
+                Vector2 offset = routeMaterial.mainTextureOffset;
                 offset.x -= scrollSpeed * Time.deltaTime;
-                lineMaterial.mainTextureOffset = offset;
+                routeMaterial.mainTextureOffset = offset;
             }
         }
 
         public void SetDestination(Vector3 worldPosition)
         {
             destination = worldPosition;
-            updateTimer = 0f;
-            if (line != null)
-            {
-                line.enabled = true;
-            }
         }
 
         public void ClearDestination()
         {
             destination = null;
-            if (line != null)
+            if (mesh != null)
             {
-                line.positionCount = 0;
-                line.enabled = false;
+                mesh.Clear();
+            }
+
+            if (meshRenderer != null)
+            {
+                meshRenderer.enabled = false;
             }
         }
 
@@ -140,30 +156,33 @@ namespace DeliverySim
             return Vector3.Distance(routeStart.position, destination.Value);
         }
 
-        private void CreateLine()
+        private void CreateRouteMesh()
         {
             GameObject lineObject = new GameObject("RouteLine");
             lineObject.transform.SetParent(transform, false);
-            line = lineObject.AddComponent<LineRenderer>();
 
-            lineMaterial = new Material(Shader.Find("Sprites/Default"));
-            lineMaterial.mainTexture = CreateChevronTexture();
-            line.material = lineMaterial;
+            meshFilter = lineObject.AddComponent<MeshFilter>();
+            meshRenderer = lineObject.AddComponent<MeshRenderer>();
 
-            // Local (not the default View/billboard) alignment makes the ribbon
-            // lie flat against the ground plane instead of always facing the
-            // camera like a floating wall — this is what makes it read as a
-            // road decal, Forza-style, rather than a beam hovering in the air.
-            line.alignment = LineAlignment.TransformZ;
-            line.textureMode = LineTextureMode.Tile;
-            line.numCapVertices = 4;
-            line.numCornerVertices = 4;
-            line.startWidth = lineWidth;
-            line.endWidth = lineWidth;
-            line.startColor = lineColor;
-            line.endColor = lineColor;
-            line.positionCount = 0;
-            line.enabled = false;
+            mesh = new Mesh { name = "RouteRibbon" };
+            mesh.MarkDynamic();
+            meshFilter.mesh = mesh;
+
+            // Sprites/Default: unlit, alpha-blended, double-sided (Cull Off) and
+            // doesn't write depth, all out of the box — no extra shader keywords to
+            // wire up by hand (unlike URP Lit/Unlit, whose transparency requires
+            // setting Surface Type + blend keywords in code or it silently renders
+            // opaque, turning the chevron cutout into a solid black block).
+            routeMaterial = new Material(Shader.Find("Sprites/Default"));
+            routeMaterial.mainTexture = CreateChevronTexture();
+            routeMaterial.color = lineColor;
+
+            meshRenderer.sharedMaterial = routeMaterial;
+            meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            meshRenderer.receiveShadows = false;
+            meshRenderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+            meshRenderer.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
+            meshRenderer.enabled = false;
         }
 
         /// <summary>Repeating ">" chevrons along U so the route reads as directional flow, not a static bar.</summary>
@@ -202,24 +221,102 @@ namespace DeliverySim
             return texture;
         }
 
-        private void RebuildLine()
+        private void RebuildMesh()
         {
-            if (line == null || destination == null || routeStart == null)
+            if (mesh == null || destination == null || routeStart == null)
             {
                 return;
             }
 
-            List<Vector3> points = BuildPath(routeStart.position, destination.Value);
-            line.positionCount = points.Count;
-            for (int i = 0; i < points.Count; i++)
+            pathPoints.Clear();
+            BuildPath(routeStart.position, destination.Value, pathPoints);
+
+            snappedPoints.Clear();
+            for (int i = 0; i < pathPoints.Count; i++)
             {
-                line.SetPosition(i, GroundSnap(points[i]));
+                snappedPoints.Add(GroundSnap(pathPoints[i]));
             }
+
+            // Drop consecutive duplicate/near-duplicate points (degenerate segments
+            // would otherwise produce a zero-length direction and flip the chevron
+            // orientation at that spot — the "bazıları geri gösteriyor" symptom).
+            for (int i = snappedPoints.Count - 2; i >= 0; i--)
+            {
+                if ((snappedPoints[i + 1] - snappedPoints[i]).sqrMagnitude < 0.0001f)
+                {
+                    snappedPoints.RemoveAt(i + 1);
+                }
+            }
+
+            meshVertices.Clear();
+            meshUvs.Clear();
+            meshTriangles.Clear();
+
+            if (snappedPoints.Count < 2)
+            {
+                mesh.Clear();
+                return;
+            }
+
+            float halfWidth = lineWidth * 0.5f;
+            float cumulativeDistance = 0f;
+
+            for (int i = 0; i < snappedPoints.Count; i++)
+            {
+                Vector3 point = snappedPoints[i];
+
+                // Direction always points from this point toward the destination side,
+                // so the chevrons flow consistently start -> end along the whole path.
+                Vector3 direction = i < snappedPoints.Count - 1
+                    ? (snappedPoints[i + 1] - point)
+                    : (point - snappedPoints[i - 1]);
+                direction.y = 0f;
+                direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
+
+                // Cross with world-up (not the segment's own "up") so the ribbon's
+                // width is always horizontal — this is what keeps it flat on the
+                // ground instead of standing up like a wall.
+                Vector3 right = Vector3.Cross(Vector3.up, direction).normalized * halfWidth;
+
+                meshVertices.Add(point - right);
+                meshVertices.Add(point + right);
+
+                float u = cumulativeDistance / Mathf.Max(0.01f, tileLength);
+                meshUvs.Add(new Vector2(u, 0f));
+                meshUvs.Add(new Vector2(u, 1f));
+
+                if (i < snappedPoints.Count - 1)
+                {
+                    cumulativeDistance += Vector3.Distance(point, snappedPoints[i + 1]);
+                }
+            }
+
+            for (int i = 0; i < snappedPoints.Count - 1; i++)
+            {
+                int a = i * 2;
+                int b = i * 2 + 1;
+                int c = (i + 1) * 2;
+                int d = (i + 1) * 2 + 1;
+
+                meshTriangles.Add(a);
+                meshTriangles.Add(c);
+                meshTriangles.Add(b);
+
+                meshTriangles.Add(b);
+                meshTriangles.Add(c);
+                meshTriangles.Add(d);
+            }
+
+            mesh.Clear();
+            mesh.SetVertices(meshVertices);
+            mesh.SetUVs(0, meshUvs);
+            mesh.SetTriangles(meshTriangles, 0);
+            mesh.RecalculateBounds();
         }
 
         private static readonly RaycastHit[] groundHitBuffer = new RaycastHit[16];
 
-        /// <summary>Raycasts a point down onto the ground so the line hugs road/terrain height instead of floating at the source point's raw Y.</summary>
+        /// <summary>Raycasts a point down onto the ground so the decal hugs road/terrain height instead of floating at the source point's raw Y.</summary>
         private Vector3 GroundSnap(Vector3 point)
         {
             if (snapToGround)
@@ -228,9 +325,9 @@ namespace DeliverySim
                 float maxDistance = raycastStartHeight + raycastMaxDistance;
 
                 // Ignore triggers so pickup/delivery marker colliders don't get hit instead of the road.
-                // Use RaycastAll (sorted by distance) instead of the first hit: pickup/delivery/station
+                // Use every hit (sorted by distance) instead of just the first: pickup/delivery/station
                 // kiosks sit exactly at destination points and have a SOLID collider (on purpose, so the
-                // car can't drive through), which otherwise blocks this ray and snaps the line to the
+                // car can't drive through), which otherwise blocks this ray and snaps the decal to the
                 // kiosk roof instead of the road beneath it — reads as the line floating/jumping.
                 int hitCount = Physics.RaycastNonAlloc(rayOrigin, Vector3.down, groundHitBuffer,
                     maxDistance, groundLayerMask, QueryTriggerInteraction.Ignore);
@@ -274,9 +371,9 @@ namespace DeliverySim
             return point + Vector3.up * lineHeightOffset;
         }
 
-        private List<Vector3> BuildPath(Vector3 from, Vector3 to)
+        private void BuildPath(Vector3 from, Vector3 to, List<Vector3> result)
         {
-            var result = new List<Vector3> { from };
+            result.Add(from);
 
             if (waypoints != null && waypoints.Length >= 2)
             {
@@ -297,7 +394,6 @@ namespace DeliverySim
             }
 
             result.Add(to);
-            return result;
         }
 
         private Waypoint FindNearest(Vector3 position)
