@@ -209,6 +209,8 @@ namespace DeliverySim
             }
         }
 
+        private static readonly RaycastHit[] groundHitBuffer = new RaycastHit[16];
+
         /// <summary>Raycasts a point down onto the ground so the line hugs road/terrain height instead of floating at the source point's raw Y.</summary>
         private Vector3 GroundSnap(Vector3 point)
         {
@@ -218,16 +220,37 @@ namespace DeliverySim
                 float maxDistance = raycastStartHeight + raycastMaxDistance;
 
                 // Ignore triggers so pickup/delivery marker colliders don't get hit instead of the road.
-                if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, maxDistance,
-                    groundLayerMask, QueryTriggerInteraction.Ignore))
+                // Use RaycastAll (sorted by distance) instead of the first hit: pickup/delivery/station
+                // kiosks sit exactly at destination points and have a SOLID collider (on purpose, so the
+                // car can't drive through), which otherwise blocks this ray and snaps the line to the
+                // kiosk roof instead of the road beneath it — reads as the line floating/jumping.
+                int hitCount = Physics.RaycastNonAlloc(rayOrigin, Vector3.down, groundHitBuffer,
+                    maxDistance, groundLayerMask, QueryTriggerInteraction.Ignore);
+
+                System.Array.Sort(groundHitBuffer, 0, hitCount,
+                    Comparer<RaycastHit>.Create((a, b) => a.distance.CompareTo(b.distance)));
+
+                bool snapped = false;
+                for (int i = 0; i < hitCount; i++)
                 {
-                    point.y = hit.point.y;
+                    Collider hitCollider = groundHitBuffer[i].collider;
+                    if (hitCollider.GetComponentInParent<InteractionPoint>() != null ||
+                        hitCollider.GetComponentInParent<FuelStation>() != null ||
+                        hitCollider.GetComponentInParent<RepairStation>() != null)
+                    {
+                        continue; // Kiosk/Visual stand collider — keep looking for the real ground.
+                    }
+
+                    point.y = groundHitBuffer[i].point.y;
+                    snapped = true;
+                    break;
                 }
-                else
+
+                if (!snapped)
                 {
-                    // No collider under this point (missing/wrong-layer road collider) — fall
-                    // back to a known ground height instead of leaving the point's raw Y
-                    // (which for the vehicle end is its chassis pivot, well above the road).
+                    // No usable ground collider under this point — fall back to a known ground
+                    // height instead of leaving the point's raw Y (which for the vehicle end is
+                    // its chassis pivot, well above the road).
                     point.y = fallbackGroundY;
                 }
             }
