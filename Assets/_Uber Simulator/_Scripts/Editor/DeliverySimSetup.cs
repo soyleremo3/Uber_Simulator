@@ -15,6 +15,8 @@ namespace DeliverySim.EditorTools
     {
         private const string DataFolderRoot = "Assets/_Uber Simulator/_Data";
         private const string OrdersFolder = DataFolderRoot + "/Orders";
+        private const string StoreFrontFolder = "Assets/TirgamesAssets/StylizedWorld/Locations/Urban/ExteriorProps/Prefabs";
+        private const int StoreFrontVariantCount = 6; // StreetStoreFront01_1 .. _6, already in the owned asset pack.
 
         // ------------------------------------------------------------------
         [MenuItem("DeliverySim/Setup/1 - Create Managers")]
@@ -534,6 +536,8 @@ namespace DeliverySim.EditorTools
                 new Vector3(0f, 2.1f, 0.75f), new Vector3(1.8f, 0.5f, 0.15f),
                 new Vector3(0f, 2.1f, 0.83f));
 
+            AddStoreFrontProp(root, point.PointId);
+
             markerProp.objectReferenceValue = ring;
             beaconProp.objectReferenceValue = kiosk; // Identity object is now the named kiosk, not a pole.
             so.ApplyModifiedProperties();
@@ -564,6 +568,40 @@ namespace DeliverySim.EditorTools
             AddNamePlate(stationRoot.transform, displayName, mat,
                 new Vector3(0f, 3.3f, 1.15f), new Vector3(1.8f, 0.5f, 0.15f),
                 new Vector3(0f, 3.3f, 1.23f));
+
+            AddStoreFrontProp(stationRoot.transform, displayName);
+        }
+
+        /// <summary>
+        /// Instantiates one of the owned "StreetStoreFront01_1..6" props (real modeled
+        /// shopfront — awning + detail, not a primitive) beside the point as pure set
+        /// dressing, so pickup/delivery/fuel/repair each reads as belonging to an actual
+        /// storefront instead of an anonymous colored box. Offset to the side (not
+        /// overlapping the kiosk/visual/sign) since we don't know its exact footprint.
+        /// Deterministic per point (hash of the id) so re-running doesn't reshuffle it,
+        /// and idempotent — skips if already placed.
+        /// </summary>
+        private static void AddStoreFrontProp(Transform root, string seed)
+        {
+            if (FindChild(root, "StoreFrontProp") != null)
+            {
+                return;
+            }
+
+            int variant = 1 + (Mathf.Abs(seed.GetHashCode()) % StoreFrontVariantCount);
+            string prefabPath = $"{StoreFrontFolder}/StreetStoreFront01_{variant}.prefab";
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
+            {
+                Debug.LogWarning($"[Setup] '{prefabPath}' bulunamadı — StoreFront prop atlandı.");
+                return;
+            }
+
+            GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, root);
+            instance.name = "StoreFrontProp";
+            instance.transform.localPosition = new Vector3(2.4f, 0f, -0.6f);
+            instance.transform.localRotation = Quaternion.identity;
+            Undo.RegisterCreatedObjectUndo(instance, "Add StoreFront Prop");
         }
 
         /// <summary>

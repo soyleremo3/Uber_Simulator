@@ -208,38 +208,66 @@ namespace DeliverySim.EditorTools
 
             // 3 olası yeni bölge slotu: kuzey, doğu, kuzey-doğu. Orijinal blok X:-31.5..31.5 Z:-38.25..42.75
             // (~63x81 birim) kapladığı için 90 birimlik adım aralarında rahat bir yol koridoru bırakıyor.
-            var slots = new (string name, Vector3 offset)[]
+            // Her slotun kendi rotasyonu ve gizlenen HouseSet alt kümesi var, ki yan yana konan
+            // bölgeler birbirinin BİREBİR aynısı gibi durmasın — aynı silüet tekrar etmesin diye
+            // her seferinde farklı bina kombinasyonu ve farklı yön görünsün.
+            var slots = new[]
             {
-                ("DowntownStreet_2", new Vector3(0f, 0f, 90f)),
-                ("DowntownStreet_3", new Vector3(90f, 0f, 0f)),
-                ("DowntownStreet_4", new Vector3(90f, 0f, 90f)),
+                new DistrictSlot("DowntownStreet_2", new Vector3(0f, 0f, 90f), 180f, new[] { "HouseSet2", "HouseSet4" }),
+                new DistrictSlot("DowntownStreet_3", new Vector3(90f, 0f, 0f), 0f, new[] { "HouseSet1", "HouseSet3" }),
+                new DistrictSlot("DowntownStreet_4", new Vector3(90f, 0f, 90f), 180f, new[] { "HouseSet3" }),
             };
 
-            foreach (var slot in slots)
+            foreach (DistrictSlot slot in slots)
             {
-                if (GameObject.Find(slot.name) != null)
+                if (GameObject.Find(slot.Name) != null)
                 {
                     continue; // Bu slot dolu, sıradakine bak.
                 }
 
                 GameObject clone = Object.Instantiate(original);
-                clone.name = slot.name;
-                clone.transform.position = slot.offset;
-                clone.transform.rotation = Quaternion.identity;
+                clone.name = slot.Name;
+                clone.transform.position = slot.Offset;
+                clone.transform.rotation = Quaternion.Euler(0f, slot.YRotation, 0f);
                 Undo.RegisterCreatedObjectUndo(clone, "Expand Downtown Map");
 
-                ExtendWaypointGraph(slot.offset, slot.name);
+                foreach (string hiddenGroup in slot.HiddenHouseSets)
+                {
+                    Transform group = clone.transform.Find(hiddenGroup);
+                    if (group != null)
+                    {
+                        group.gameObject.SetActive(false);
+                    }
+                }
+
+                ExtendWaypointGraph(clone.transform, slot.Name);
 
                 Selection.activeGameObject = clone;
                 EditorUtility.SetDirty(clone);
-                Debug.Log($"[Setup] Yeni bölge eklendi: '{slot.name}' ({slot.offset}). Sahneyi kaydet (Ctrl+S). Tekrar çalıştırırsan bir sonraki boş slot doldurulur (toplam 4 bölgeye kadar).");
+                Debug.Log($"[Setup] Yeni bölge eklendi: '{slot.Name}' ({slot.Offset}, {slot.YRotation}°, gizli: {string.Join(", ", slot.HiddenHouseSets)}). Sahneyi kaydet (Ctrl+S). Tekrar çalıştırırsan bir sonraki boş slot doldurulur (toplam 4 bölgeye kadar).");
                 return;
             }
 
             Debug.Log("[Setup] Tüm bölge slotları (4/4) dolu — harita zaten maksimum genişlikte.");
         }
 
-        private static void ExtendWaypointGraph(Vector3 offset, string slotName)
+        private readonly struct DistrictSlot
+        {
+            public readonly string Name;
+            public readonly Vector3 Offset;
+            public readonly float YRotation;
+            public readonly string[] HiddenHouseSets;
+
+            public DistrictSlot(string name, Vector3 offset, float yRotation, string[] hiddenHouseSets)
+            {
+                Name = name;
+                Offset = offset;
+                YRotation = yRotation;
+                HiddenHouseSets = hiddenHouseSets;
+            }
+        }
+
+        private static void ExtendWaypointGraph(Transform districtTransform, string slotName)
         {
             GameObject root = GameObject.Find(WaypointRootName);
             if (root == null)
@@ -257,7 +285,10 @@ namespace DeliverySim.EditorTools
             {
                 GameObject go = new GameObject(prefix + i);
                 go.transform.SetParent(root.transform, false);
-                go.transform.position = RoadTilePositions[i] + offset + Vector3.up * WaypointHeight;
+                // TransformPoint (not a raw offset add) so this stays correct when the
+                // district is rotated 180° for visual variety — a flat vector add would
+                // place the waypoints at the un-rotated positions, off the real roads.
+                go.transform.position = districtTransform.TransformPoint(RoadTilePositions[i]) + Vector3.up * WaypointHeight;
                 newNodes.Add(go.AddComponent<Waypoint>());
             }
 
