@@ -91,6 +91,14 @@ namespace DeliverySim
                 updateTimer = updateInterval;
                 RebuildLine();
             }
+            else if (line != null && line.positionCount > 0)
+            {
+                // The full path (waypoint hops) only needs to be recomputed on the
+                // throttled interval, but the FIRST point follows the moving vehicle —
+                // refreshing only every updateInterval made it visibly lag/detach from
+                // the car between rebuilds ("kasıyor"). Keep that one point live every frame.
+                line.SetPosition(0, GroundSnap(routeStart.position));
+            }
 
             if (lineMaterial != null && scrollSpeed != 0f)
             {
@@ -239,6 +247,14 @@ namespace DeliverySim
                         hitCollider.GetComponentInParent<RepairStation>() != null)
                     {
                         continue; // Kiosk/Visual stand collider — keep looking for the real ground.
+                    }
+
+                    if (routeStart != null && hitCollider.transform.IsChildOf(routeStart))
+                    {
+                        // The ray from directly above the vehicle hits the car's OWN body/roof
+                        // collider first — without this, the line's start point snaps to
+                        // windshield height instead of the road under the car.
+                        continue;
                     }
 
                     point.y = groundHitBuffer[i].point.y;
