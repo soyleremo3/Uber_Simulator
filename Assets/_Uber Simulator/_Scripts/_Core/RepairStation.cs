@@ -8,7 +8,10 @@ namespace DeliverySim
     /// </summary>
     public class RepairStation : MonoBehaviour, IInteractable
     {
+        [SerializeField] private string displayName = "Tamirhane";
         [SerializeField] private float costPerConditionPoint = 4f;
+
+        public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? name : displayName;
 
         public void Interact(GameObject interactor)
         {
@@ -47,7 +50,7 @@ namespace DeliverySim
             return $"Tamir Et [E] ({costPerConditionPoint:F1}/puan)";
         }
 
-        private void OnDrawGizmos()
+        private void OnDrawGizmosSelected()
         {
             Gizmos.color = new Color(0.6f, 0.6f, 0.9f);
             Gizmos.DrawWireCube(transform.position + Vector3.up * 1.5f, new Vector3(3f, 3f, 3f));

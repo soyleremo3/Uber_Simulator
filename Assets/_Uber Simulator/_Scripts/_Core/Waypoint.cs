@@ -13,7 +13,7 @@ namespace DeliverySim
         [Tooltip("Directly reachable neighbor waypoints. Links are bidirectional.")]
         public List<Waypoint> neighbors = new List<Waypoint>();
 
-        private void OnDrawGizmos()
+        private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.cyan;
             Gizmos.DrawWireSphere(transform.position, 0.8f);

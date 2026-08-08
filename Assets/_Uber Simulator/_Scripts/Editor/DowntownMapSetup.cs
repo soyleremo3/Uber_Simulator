@@ -194,5 +194,113 @@ namespace DeliverySim.EditorTools
             go.transform.position = pos;
             EditorUtility.SetDirty(go.transform);
         }
+
+        // ------------------------------------------------------------------
+        [MenuItem("DeliverySim/Setup/12 - Expand Downtown Map (Yeni Bölge Ekle)")]
+        public static void ExpandDowntownMap()
+        {
+            GameObject original = GameObject.Find(MapRootName);
+            if (original == null)
+            {
+                Debug.LogError("[Setup] '" + MapRootName + "' sahnede yok — önce '9 - Import Downtown Street Map' çalıştır.");
+                return;
+            }
+
+            // 3 olası yeni bölge slotu: kuzey, doğu, kuzey-doğu. Orijinal blok X:-31.5..31.5 Z:-38.25..42.75
+            // (~63x81 birim) kapladığı için 90 birimlik adım aralarında rahat bir yol koridoru bırakıyor.
+            var slots = new (string name, Vector3 offset)[]
+            {
+                ("DowntownStreet_2", new Vector3(0f, 0f, 90f)),
+                ("DowntownStreet_3", new Vector3(90f, 0f, 0f)),
+                ("DowntownStreet_4", new Vector3(90f, 0f, 90f)),
+            };
+
+            foreach (var slot in slots)
+            {
+                if (GameObject.Find(slot.name) != null)
+                {
+                    continue; // Bu slot dolu, sıradakine bak.
+                }
+
+                GameObject clone = Object.Instantiate(original);
+                clone.name = slot.name;
+                clone.transform.position = slot.offset;
+                clone.transform.rotation = Quaternion.identity;
+                Undo.RegisterCreatedObjectUndo(clone, "Expand Downtown Map");
+
+                ExtendWaypointGraph(slot.offset, slot.name);
+
+                Selection.activeGameObject = clone;
+                EditorUtility.SetDirty(clone);
+                Debug.Log($"[Setup] Yeni bölge eklendi: '{slot.name}' ({slot.offset}). Sahneyi kaydet (Ctrl+S). Tekrar çalıştırırsan bir sonraki boş slot doldurulur (toplam 4 bölgeye kadar).");
+                return;
+            }
+
+            Debug.Log("[Setup] Tüm bölge slotları (4/4) dolu — harita zaten maksimum genişlikte.");
+        }
+
+        private static void ExtendWaypointGraph(Vector3 offset, string slotName)
+        {
+            GameObject root = GameObject.Find(WaypointRootName);
+            if (root == null)
+            {
+                Debug.LogWarning("[Setup] '" + WaypointRootName + "' yok — önce '10 - Build Road Waypoint Graph' çalıştır, yeni bölgenin yol ağı eklenemedi.");
+                return;
+            }
+
+            // Mevcut tüm node'ları köprü bağlantısı için topla (sadece bu bölgeye ait olanlar hariç, henüz yok zaten).
+            var existingNodes = new List<Waypoint>(root.GetComponentsInChildren<Waypoint>());
+
+            string prefix = "RW_" + slotName.Substring(slotName.Length - 1) + "_";
+            var newNodes = new List<Waypoint>(RoadTilePositions.Length);
+            for (int i = 0; i < RoadTilePositions.Length; i++)
+            {
+                GameObject go = new GameObject(prefix + i);
+                go.transform.SetParent(root.transform, false);
+                go.transform.position = RoadTilePositions[i] + offset + Vector3.up * WaypointHeight;
+                newNodes.Add(go.AddComponent<Waypoint>());
+            }
+
+            // Bölge içi komşuluk (orijinal '10' adımıyla aynı mantık).
+            for (int i = 0; i < newNodes.Count; i++)
+            {
+                for (int j = i + 1; j < newNodes.Count; j++)
+                {
+                    float dist = Vector3.Distance(newNodes[i].transform.position, newNodes[j].transform.position);
+                    if (dist <= NeighborLinkDistance)
+                    {
+                        newNodes[i].neighbors.Add(newNodes[j]);
+                    }
+                }
+            }
+
+            // Köprü bağlantısı: yeni bölgeyi eski ağa en yakın node çiftinden bağla, GPS rotası
+            // iki bölge arasında da çalışsın.
+            Waypoint bestOld = null;
+            Waypoint bestNew = null;
+            float bestDist = float.MaxValue;
+            foreach (Waypoint oldNode in existingNodes)
+            {
+                foreach (Waypoint newNode in newNodes)
+                {
+                    float dist = Vector3.Distance(oldNode.transform.position, newNode.transform.position);
+                    if (dist < bestDist)
+                    {
+                        bestDist = dist;
+                        bestOld = oldNode;
+                        bestNew = newNode;
+                    }
+                }
+            }
+
+            if (bestOld != null && bestNew != null)
+            {
+                bestOld.neighbors.Add(bestNew);
+                bestNew.neighbors.Add(bestOld);
+                Debug.Log($"[Setup] Yeni bölge yol ağı eski ağa bağlandı: '{bestOld.name}' <-> '{bestNew.name}' (mesafe {bestDist:F1}m).");
+            }
+
+            EditorUtility.SetDirty(root);
+        }
     }
 }

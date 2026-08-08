@@ -15,15 +15,20 @@ namespace DeliverySim
         [Tooltip("Must match OrderData.pickupPointId / deliveryPointId.")]
         [SerializeField] private string pointId;
 
+        [Tooltip("Tabelada gösterilecek isim. Boşsa pointId kullanılır.")]
+        [SerializeField] private string displayName;
+
         [Header("Visuals")]
         [Tooltip("ACTIVE-TARGET highlight (e.g. bright ground ring). Toggled on while this point is the current order target.")]
         [SerializeField] private GameObject markerVisual;
-        [Tooltip("ALWAYS-VISIBLE beacon (colored pillar). Never hidden — players can always see where pickup/delivery locations are.")]
+        [Tooltip("ALWAYS-VISIBLE identity marker (yer adını gösteren tabelalı durak). Never hidden — players can always see where pickup/delivery locations are.")]
         [SerializeField] private GameObject permanentBeacon;
 
         private static readonly Dictionary<string, InteractionPoint> registry = new Dictionary<string, InteractionPoint>();
 
         public string PointId => pointId;
+
+        public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? pointId : displayName;
 
         protected abstract Color GizmoColor { get; }
 
@@ -78,7 +83,7 @@ namespace DeliverySim
         public abstract void Interact(GameObject interactor);
         public abstract string GetInteractionPrompt();
 
-        protected virtual void OnDrawGizmos()
+        protected virtual void OnDrawGizmosSelected()
         {
             Gizmos.color = GizmoColor;
             Gizmos.DrawWireSphere(transform.position, 2f);
@@ -86,7 +91,7 @@ namespace DeliverySim
 
 #if UNITY_EDITOR
             UnityEditor.Handles.Label(transform.position + Vector3.up * 4.5f,
-                $"{GetType().Name}\n[{pointId}]");
+                $"{GetType().Name}\n[{pointId}]\n{DisplayName}");
 #endif
         }
     }

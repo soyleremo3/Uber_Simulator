@@ -9,7 +9,10 @@ namespace DeliverySim
     /// </summary>
     public class FuelStation : MonoBehaviour, IInteractable
     {
+        [SerializeField] private string displayName = "Benzin İstasyonu";
         [SerializeField] private float pricePerLiter = 3f;
+
+        public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? name : displayName;
 
         public void Interact(GameObject interactor)
         {
@@ -61,7 +64,7 @@ namespace DeliverySim
             return $"Yakıt Al [E] ({pricePerLiter:F1}/litre)";
         }
 
-        private void OnDrawGizmos()
+        private void OnDrawGizmosSelected()
         {
             Gizmos.color = new Color(0.9f, 0.8f, 0.1f);
             Gizmos.DrawWireCube(transform.position + Vector3.up * 1.5f, new Vector3(2f, 3f, 2f));

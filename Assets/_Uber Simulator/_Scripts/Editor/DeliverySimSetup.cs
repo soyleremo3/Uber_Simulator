@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using Unity.Cinemachine;
 using UnityEditor;
 using UnityEngine;
@@ -434,12 +435,12 @@ namespace DeliverySim.EditorTools
 
             foreach (FuelStation station in Object.FindObjectsByType<FuelStation>(FindObjectsSortMode.None))
             {
-                EnsureStationSolid(station.gameObject, stationMat);
+                EnsureStationSolid(station.gameObject, stationMat, station.DisplayName);
             }
 
             foreach (RepairStation station in Object.FindObjectsByType<RepairStation>(FindObjectsSortMode.None))
             {
-                EnsureStationSolid(station.gameObject, stationMat);
+                EnsureStationSolid(station.gameObject, stationMat, station.DisplayName);
             }
 
             AssetDatabase.SaveAssets();
@@ -483,27 +484,14 @@ namespace DeliverySim.EditorTools
             SerializedProperty markerProp = so.FindProperty("markerVisual");
             SerializedProperty beaconProp = so.FindProperty("permanentBeacon");
 
-            // Permanent beacon: reuse the original tall "Marker" cylinder when present.
-            GameObject beacon = beaconProp.objectReferenceValue as GameObject;
-            if (beacon == null)
+            // The old tall "Marker" cylinder (bare pole look) is no longer wanted —
+            // remove it outright. The named kiosk below replaces it as the
+            // always-visible identity marker.
+            Transform oldMarker = root.Find("Marker");
+            if (oldMarker != null)
             {
-                Transform existing = root.Find("Marker");
-                beacon = existing != null ? existing.gameObject : null;
+                Object.DestroyImmediate(oldMarker.gameObject);
             }
-
-            if (beacon == null)
-            {
-                beacon = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                beacon.name = "Marker";
-                Object.DestroyImmediate(beacon.GetComponent<Collider>());
-                beacon.transform.SetParent(root, false);
-                beacon.transform.localPosition = new Vector3(0f, 6f, 0f);
-                beacon.transform.localScale = new Vector3(1.5f, 6f, 1.5f);
-                Undo.RegisterCreatedObjectUndo(beacon, "Create Beacon");
-            }
-
-            beacon.SetActive(true); // Always visible — never hidden again.
-            ApplyMaterial(beacon, mat);
 
             // Active-target highlight: flat bright ring on the ground, toggled by OrderManager.
             GameObject ring = FindChild(root, "HighlightRing");
@@ -521,28 +509,37 @@ namespace DeliverySim.EditorTools
             ApplyMaterial(ring, mat);
             ring.SetActive(false);
 
-            // Solid kiosk: the car physically cannot drive through the location center.
-            // (This is a REAL visible obstacle — unrelated to the old invisible-trigger
-            // catapult bug, which was about raycasts hitting the trigger shell.)
+            // Solid kiosk/stand: the car physically cannot drive through the location
+            // center (REAL visible obstacle — unrelated to the old invisible-trigger
+            // catapult bug, which was about raycasts hitting the trigger shell). Now
+            // sized like a small stand/kiosk instead of a thin block, and doubles as
+            // the always-visible identity marker (no bare "pole" anymore).
             GameObject kiosk = FindChild(root, "Kiosk");
             if (kiosk == null)
             {
                 kiosk = GameObject.CreatePrimitive(PrimitiveType.Cube); // Keeps its SOLID BoxCollider on purpose
                 kiosk.name = "Kiosk";
                 kiosk.transform.SetParent(root, false);
-                kiosk.transform.localPosition = new Vector3(0f, 0.8f, 0f);
-                kiosk.transform.localScale = new Vector3(1.2f, 1.6f, 1.2f);
                 Undo.RegisterCreatedObjectUndo(kiosk, "Create Kiosk");
             }
 
+            kiosk.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+            kiosk.transform.localScale = new Vector3(1.6f, 1.8f, 1.6f);
+            kiosk.SetActive(true); // Always visible — never hidden again.
             ApplyMaterial(kiosk, mat);
 
+            // Named sign board + 3D text on top of the kiosk — replaces the bare pole
+            // with something that actually reads as "this location's stand".
+            AddNamePlate(root, point.DisplayName, mat,
+                new Vector3(0f, 2.1f, 0.75f), new Vector3(1.8f, 0.5f, 0.15f),
+                new Vector3(0f, 2.1f, 0.83f));
+
             markerProp.objectReferenceValue = ring;
-            beaconProp.objectReferenceValue = beacon;
+            beaconProp.objectReferenceValue = kiosk; // Identity object is now the named kiosk, not a pole.
             so.ApplyModifiedProperties();
         }
 
-        private static void EnsureStationSolid(GameObject stationRoot, Material mat)
+        private static void EnsureStationSolid(GameObject stationRoot, Material mat, string displayName)
         {
             GameObject visual = FindChild(stationRoot.transform, "Visual");
             if (visual == null)
@@ -561,6 +558,68 @@ namespace DeliverySim.EditorTools
             }
 
             ApplyMaterial(visual, mat);
+
+            // Same named sign board treatment as pickup/delivery kiosks, positioned
+            // above the taller station "Visual" block (3 units tall vs kiosk's 1.8).
+            AddNamePlate(stationRoot.transform, displayName, mat,
+                new Vector3(0f, 3.3f, 1.15f), new Vector3(1.8f, 0.5f, 0.15f),
+                new Vector3(0f, 3.3f, 1.23f));
+        }
+
+        /// <summary>
+        /// Creates/updates a flat "SignBoard" plate plus a "SignText" TextMeshPro
+        /// label above it, showing displayName. Idempotent: re-running just updates
+        /// text/position/material on the existing objects instead of duplicating.
+        /// Shared by pickup/delivery kiosks and fuel/repair stations.
+        /// </summary>
+        private static void AddNamePlate(Transform root, string displayName, Material mat,
+            Vector3 boardLocalPosition, Vector3 boardLocalScale, Vector3 textLocalPosition)
+        {
+            GameObject signBoard = FindChild(root, "SignBoard");
+            if (signBoard == null)
+            {
+                signBoard = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                signBoard.name = "SignBoard";
+                Object.DestroyImmediate(signBoard.GetComponent<Collider>());
+                signBoard.transform.SetParent(root, false);
+                Undo.RegisterCreatedObjectUndo(signBoard, "Create SignBoard");
+            }
+
+            signBoard.transform.localPosition = boardLocalPosition;
+            signBoard.transform.localScale = boardLocalScale;
+            ApplyMaterial(signBoard, mat);
+
+            GameObject signTextGo = FindChild(root, "SignText");
+            TextMeshPro label;
+            if (signTextGo == null)
+            {
+                signTextGo = new GameObject("SignText");
+                signTextGo.transform.SetParent(root, false);
+                Undo.RegisterCreatedObjectUndo(signTextGo, "Create SignText");
+
+                label = signTextGo.AddComponent<TextMeshPro>();
+                label.fontSize = 8;
+                label.alignment = TextAlignmentOptions.Center;
+                label.color = Color.white;
+
+                RectTransform rectTransform = signTextGo.GetComponent<RectTransform>();
+                if (rectTransform != null)
+                {
+                    rectTransform.sizeDelta = new Vector2(20f, 5f);
+                }
+            }
+            else
+            {
+                label = signTextGo.GetComponent<TextMeshPro>();
+                if (label == null)
+                {
+                    label = signTextGo.AddComponent<TextMeshPro>();
+                }
+            }
+
+            signTextGo.transform.localPosition = textLocalPosition;
+            signTextGo.transform.localScale = Vector3.one * 0.15f;
+            label.text = displayName; // Name may have changed — always refresh.
         }
 
         private static GameObject FindChild(Transform root, string childName)
