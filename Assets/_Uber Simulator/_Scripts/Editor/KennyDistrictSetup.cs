@@ -65,9 +65,15 @@ namespace DeliverySim.EditorTools
             Material suburbanMat = EnsureKenneyMaterial(SuburbanFolder, "KenneySuburban");
 
             // Real footprint from the imported meshes — not a guessed grid unit —
-            // so spacing can't come out overlapping or oddly sparse.
-            float commercialFootprint = MeasureMaxFootprint(CommercialFolder, CommercialBuildings);
-            float suburbanFootprint = MeasureMaxFootprint(SuburbanFolder, SuburbanBuildings);
+            // so spacing can't come out overlapping or oddly sparse. Also records each
+            // prefab's own mesh-bottom-to-pivot offset: Kenney FBX pivots are not
+            // guaranteed to sit at the mesh base, so placing every instance at
+            // localPosition.y = 0 made roughly half the grid float above the ground
+            // and the other half sink into it — the single biggest reason the district
+            // read as "bad" instead of a clean skyline. groundOffsets fixes that.
+            var groundOffsets = new Dictionary<string, float>();
+            float commercialFootprint = MeasureMaxFootprint(CommercialFolder, CommercialBuildings, groundOffsets);
+            float suburbanFootprint = MeasureMaxFootprint(SuburbanFolder, SuburbanBuildings, groundOffsets);
             float spacing = Mathf.Max(commercialFootprint, suburbanFootprint) + 2.5f; // +margin so meshes never touch
 
             if (spacing <= 2.5f)
@@ -106,9 +112,11 @@ namespace DeliverySim.EditorTools
 
                     GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, root.transform);
                     instance.name = $"{prefabName}_{r}_{c}";
+                    string offsetKey = $"{folder}/{prefabName}";
+                    float groundY = groundOffsets.TryGetValue(offsetKey, out float offset) ? offset : 0f;
                     instance.transform.localPosition = new Vector3(
                         (c - (columns - 1) * 0.5f) * spacing,
-                        0f,
+                        groundY,
                         r * spacing);
                     // Random cardinal facing: a background building reads fine from
                     // any of the 4 rotations, unlike a road tile, so this is safe.
@@ -142,7 +150,15 @@ namespace DeliverySim.EditorTools
             Debug.Log("[Setup] '" + DistrictRootName + "' kaldırıldı. Sahneyi kaydet (Ctrl+S).");
         }
 
-        private static float MeasureMaxFootprint(string folder, IReadOnlyList<string> names)
+        /// <summary>
+        /// Measures max X/Z footprint across all named prefabs, and records each
+        /// prefab's world-space bounds.min.y (measured with the temp instance at
+        /// the origin, so min.y IS the pivot-to-base offset) into groundOffsets
+        /// keyed by "folder/name". BuildDistrict negates that into localPosition.y
+        /// so every instance's mesh base — not its pivot — touches the ground.
+        /// </summary>
+        private static float MeasureMaxFootprint(string folder, IReadOnlyList<string> names,
+            Dictionary<string, float> groundOffsets)
         {
             float max = 0f;
             foreach (string name in names)
@@ -174,6 +190,7 @@ namespace DeliverySim.EditorTools
                     if (combined != null)
                     {
                         max = Mathf.Max(max, combined.Value.size.x, combined.Value.size.z);
+                        groundOffsets[$"{folder}/{name}"] = -combined.Value.min.y;
                     }
                 }
                 finally
