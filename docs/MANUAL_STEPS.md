@@ -1,291 +1,291 @@
-# MANUAL_STEPS — Unity Editor Kurulum Rehberi (ÇOK DETAYLI, TIK TIK)
+# MANUAL_STEPS — Unity Editor Setup Guide (VERY DETAILED, CLICK BY CLICK)
 
-Bu rehber her şeyi tek tek anlatır: neye tıklayacaksın, ekranda ne göreceksin,
-doğru gittiğini nereden anlayacaksın. Yukarıdan aşağı sırayla git, hiçbir adımı atlama.
-Her adımın sonundaki **✓ KONTROL** satırı, o adımın başarılı olduğunu nasıl anlayacağını söyler.
+This guide explains everything step by step: what to click, what you'll see on screen,
+and how to know you did it right. Go through it top to bottom in order, don't skip any step.
+The **✓ CHECK** line at the end of each step tells you how to know that step succeeded.
 
-**Panellerin yerleri (hatırlatma):**
-- **Hierarchy** = genelde SOL tarafta, sahnedeki objelerin listesi.
-- **Scene** = ortadaki 3D görünüm.
-- **Inspector** = SAĞ tarafta, seçili objenin özellikleri.
-- **Project** = ALTTA, projedeki dosyalar.
-- **Console** = ALTTA (Project'in yanında sekme). Görünmüyorsa: üst menü **Window → General → Console**.
-
----
-
-# BÖLÜM A — ÖN KONTROL (bir kere yapılır, ~5 dakika)
-
-## ADIM A1 — Projeyi aç ve hata var mı bak
-
-1. Unity Hub'ı aç.
-2. Projeler listesinden **Uber_Simulator**'a tıkla, projenin açılmasını bekle.
-3. Açılınca alt kısımda sağda dönen bir çark görebilirsin — bu, scriptlerin derlendiği anlamına gelir. **Çark kaybolana kadar hiçbir şeye dokunma.**
-4. Üst menüden **Window → General → Console**'a tıkla (Console paneli açılır).
-5. Console panelinin sağ üstündeki üç ikona bak: beyaz konuşma balonu, sarı üçgen, kırmızı ünlem.
-6. **Kırmızı ünlemin** yanındaki sayıya bak.
-
-**✓ KONTROL:** Kırmızı sayı **0** ise sorun yok, devam et.
-**✗ SORUN:** Kırmızı sayı 0 değilse → kırmızı satıra bir kez tıkla → satırın tamamını kopyala → bana chat'e yapıştır. Ben düzeltmeden devam etme.
-
-## ADIM A2 — Input ayarını kontrol et (ÇOK ÖNEMLİ)
-
-Oyunun tüm tuş kontrolleri "eski input sistemi" ile yazıldı. Unity yanlış moddaysa oyun açılır açılmaz hata fırlatır. Kontrol edelim:
-
-1. Üst menüden **Edit → Project Settings...**'e tıkla. Yeni bir pencere açılır.
-2. Bu pencerenin SOL listesinden **Player**'a tıkla.
-3. Sağ tarafta **Other Settings** yazan bölümü bul, üzerine tıklayıp genişlet (kapalıysa).
-4. Aşağı in, **Configuration** başlığını bul.
-5. İçinde **Active Input Handling** diye bir satır var. Sağındaki değere bak.
-
-Üç ihtimal var:
-- **"Input Manager (Old)"** yazıyorsa → dokunma, bu iyi. Pencereyi kapat.
-- **"Both"** yazıyorsa → dokunma, bu da iyi. Pencereyi kapat.
-- **"Input System Package (New)"** yazıyorsa → tıkla, açılan listeden **Both**'u seç. Unity "editor yeniden başlayacak" diye soracak → **Apply/Yes** de. Unity kendini yeniden başlatır (1-2 dk). Yeniden açılınca bu bölüme geri dön.
-
-**✓ KONTROL:** Active Input Handling = "Input Manager (Old)" veya "Both".
-
-## ADIM A3 — Cinemachine paketi kurulu mu bak
-
-1. Üst menüden **Window → Package Management → Package Manager**'a tıkla (eski sürümlerde direkt Window → Package Manager).
-2. Açılan pencerenin sol üstünde bir açılır menü var; **In Project** seçili olsun.
-3. Soldaki listede **Cinemachine** var mı bak. Versiyonu **3.x** olmalı (örn. 3.1.7).
-
-**✓ KONTROL:** Cinemachine 3.x listede görünüyor. (Projende zaten kurulu olmalı — manifest'te gördüm. Yoksa: pencerenin sol üstünden **Unity Registry** seç, arama kutusuna "Cinemachine" yaz, seç, sağ alttan **Install**.)
-
-4. Pencereyi kapat.
+**Panel locations (reminder):**
+- **Hierarchy** = usually on the LEFT, the list of objects in the scene.
+- **Scene** = the 3D view in the middle.
+- **Inspector** = on the RIGHT, properties of the selected object.
+- **Project** = at the BOTTOM, the project's files.
+- **Console** = at the BOTTOM (tab next to Project). If not visible: top menu **Window → General → Console**.
 
 ---
 
-# BÖLÜM B — SAHNE KURULUMU (~10 dakika, sırası önemli)
+# SECTION A — PRE-CHECK (done once, ~5 minutes)
 
-## ADIM B1 — Doğru sahneyi aç
+## STEP A1 — Open the project and check for errors
 
-1. Alttaki **Project** panelinde şu klasöre git: **Assets → _Uber Simulator → Scenes**.
-   (Klasörlere çift tıklayarak ilerle veya soldaki klasör ağacını kullan.)
-2. **MainScene** dosyasına ÇİFT tıkla.
-3. "Save current scene?" diye sorarsa **Save** de.
+1. Open Unity Hub.
+2. Click **Uber_Simulator** from the projects list, wait for the project to open.
+3. Once open, you may see a spinning wheel at the bottom right — this means scripts are compiling. **Don't touch anything until the wheel disappears.**
+4. From the top menu, click **Window → General → Console** (the Console panel opens).
+5. Look at the three icons at the top right of the Console panel: white speech bubble, yellow triangle, red exclamation mark.
+6. Look at the number next to the **red exclamation mark**.
 
-**✓ KONTROL:** Unity penceresinin en üst başlığında "MainScene" yazıyor ve Hierarchy panelinde en üstte **MainScene** görünüyor.
+**✓ CHECK:** If the red number is **0**, there's no problem, continue.
+**✗ PROBLEM:** If the red number is not 0 → click the red line once → copy the whole line → paste it to me in chat. Don't continue until I fix it.
 
-## ADIM B2 — Zemin var mı kontrol et
+## STEP A2 — Check the Input setting (VERY IMPORTANT)
 
-Örnek teslimat noktaları sahnede -60 ile +90 metre arasına yerleşecek. Aracın altında ve o alanda zemin olmalı.
+All of the game's key controls were written with the "old input system". If Unity is in the wrong mode, the game will throw an error the moment it opens. Let's check:
 
-1. Scene görünümünde aracının durduğu yere bak. Araç bir zemin/yol üzerinde mi?
-2. Zemin genişse (araba etrafında her yöne en az 100 metre) → bu adımı atla, B3'e geç.
-3. Zemin yoksa veya küçükse:
-   a. Hierarchy panelinde BOŞ bir yere SAĞ tıkla.
-   b. Menüden **3D Object → Plane**'e tıkla. Sahneye "Plane" adında düz bir zemin eklenir.
-   c. Plane seçiliyken (Hierarchy'de mavi) sağdaki Inspector'a bak.
-   d. En üstte **Transform** bölümü var. Şunları elle yaz:
+1. From the top menu, click **Edit → Project Settings...**. A new window opens.
+2. From this window's LEFT list, click **Player**.
+3. On the right side, find the section labeled **Other Settings**, click it to expand it (if collapsed).
+4. Scroll down, find the **Configuration** heading.
+5. Inside it there's a line called **Active Input Handling**. Look at the value next to it.
+
+There are three possibilities:
+- If it says **"Input Manager (Old)"** → leave it, this is fine. Close the window.
+- If it says **"Both"** → leave it, this is also fine. Close the window.
+- If it says **"Input System Package (New)"** → click it, select **Both** from the dropdown that opens. Unity will ask "the editor will restart" → click **Apply/Yes**. Unity restarts itself (1-2 min). Once it reopens, come back to this section.
+
+**✓ CHECK:** Active Input Handling = "Input Manager (Old)" or "Both".
+
+## STEP A3 — Check if the Cinemachine package is installed
+
+1. From the top menu, click **Window → Package Management → Package Manager** (in older versions, directly Window → Package Manager).
+2. There's a dropdown at the top left of the window that opens; make sure **In Project** is selected.
+3. Look for **Cinemachine** in the list on the left. The version should be **3.x** (e.g. 3.1.7).
+
+**✓ CHECK:** Cinemachine 3.x appears in the list. (It should already be installed in your project — I saw it in the manifest. If not: select **Unity Registry** from the top left of the window, type "Cinemachine" in the search box, select it, click **Install** at the bottom right.)
+
+4. Close the window.
+
+---
+
+# SECTION B — SCENE SETUP (~10 minutes, order matters)
+
+## STEP B1 — Open the correct scene
+
+1. In the **Project** panel at the bottom, go to: **Assets → _Uber Simulator → Scenes**.
+   (Navigate by double-clicking folders, or use the folder tree on the left.)
+2. DOUBLE-click the **MainScene** file.
+3. If it asks "Save current scene?" click **Save**.
+
+**✓ CHECK:** The very top title bar of the Unity window says "MainScene" and the Hierarchy panel shows **MainScene** at the top.
+
+## STEP B2 — Check whether there's ground
+
+The sample delivery points will be placed in the scene between -60 and +90 meters. There must be ground under the vehicle and across that area.
+
+1. In the Scene view, look at where the vehicle is sitting. Is the vehicle on a ground/road surface?
+2. If the ground is large (at least 100 meters in every direction around the car) → skip this step, go to B3.
+3. If there's no ground or it's small:
+   a. Right-click an EMPTY spot in the Hierarchy panel.
+   b. Click **3D Object → Plane** from the menu. A flat "Plane" ground object is added to the scene.
+   c. With the Plane selected (blue in Hierarchy), look at the Inspector on the right.
+   d. At the top there's a **Transform** section. Type the following by hand:
       - **Position**: X = `0`, Y = `0`, Z = `0`
       - **Scale**: X = `30`, Y = `1`, Z = `30`
-   (Kutucuğa tıkla, değeri sil, yenisini yaz, Enter'a bas.)
+   (Click the box, delete the value, type the new one, press Enter.)
 
-**✓ KONTROL:** Scene'de araç ve etrafında geniş bir zemin var.
+**✓ CHECK:** In the Scene, there's the vehicle and a large ground area around it.
 
-## ADIM B3 — Manager'ları oluştur (TEK TIK) ⚠️ EN KRİTİK ADIM
+## STEP B3 — Create the managers (ONE CLICK) ⚠️ THE MOST CRITICAL STEP
 
-1. Unity'nin EN ÜST menü çubuğuna bak (File, Edit, Assets, GameObject...). Orada **DeliverySim** diye YENİ bir menü göreceksin.
-   - **Göremiyorsan:** scriptler henüz derlenmemiş demektir. 10 saniye bekle; hâlâ yoksa Console'da kırmızı hata var demektir → A1'e dön.
-2. **DeliverySim → Setup → 1 - Create Managers**'a tıkla.
-3. Hierarchy paneline bak.
+1. Look at Unity's TOP menu bar (File, Edit, Assets, GameObject...). You'll see a NEW menu there called **DeliverySim**.
+   - **Can't see it?** Scripts haven't compiled yet. Wait 10 seconds; if it's still not there, there's a red error in Console → go back to A1.
+2. Click **DeliverySim → Setup → 1 - Create Managers**.
+3. Look at the Hierarchy panel.
 
-**✓ KONTROL:** Hierarchy'de şu ÜÇ yeni obje belirdi:
+**✓ CHECK:** The following THREE new objects appeared in the Hierarchy:
 - `_Managers`
 - `_Gameplay`
 - `_UI`
 
-Ekstra doğrulama istersen: `_Managers`'a tıkla → Inspector'da şu 6 bileşeni görmelisin: **Game Manager, Economy Manager, Save System, Reputation Manager, Shop Manager, Audio Manager**. `_Gameplay`'de: **Order Manager, Route Manager**. `_UI`'da: **UI Bootstrap**.
+For extra verification: click `_Managers` → in the Inspector you should see these 6 components: **Game Manager, Economy Manager, Save System, Reputation Manager, Shop Manager, Audio Manager**. Under `_Gameplay`: **Order Manager, Route Manager**. Under `_UI`: **UI Bootstrap**.
 
-## ADIM B4 — Araca bileşenleri ekle (TEK TIK)
+## STEP B4 — Add components to the vehicle (ONE CLICK)
 
-1. Üst menüden **DeliverySim → Setup → 2 - Setup Player Vehicle Components**'a tıkla.
-2. Console'a bak (alttaki panel).
+1. From the top menu, click **DeliverySim → Setup → 2 - Setup Player Vehicle Components**.
+2. Look at Console (the panel at the bottom).
 
-**✓ KONTROL:** Console'da şöyle bir satır göreceksin:
-`[Setup] '...' araç bileşenleri tamam (yakıt, hasar, etkileşim, yükseltme).`
-Ayrıca Hierarchy'de aracın otomatik seçildiğini ve Inspector'da şu bileşenlerin eklendiğini görürsün: **Vehicle Fuel, Vehicle Condition, Vehicle Interactor, Vehicle Upgrade Applier**.
+**✓ CHECK:** You'll see a line in Console like this:
+`[Setup] '...' vehicle components complete (fuel, damage, interaction, upgrade).`
+Also, in the Hierarchy the vehicle will be automatically selected and you'll see these components added in the Inspector: **Vehicle Fuel, Vehicle Condition, Vehicle Interactor, Vehicle Upgrade Applier**.
 
-**✗ SORUN:** Console'da `Sahnede VehicleController bulunamadı` yazıyorsa → sahnede araba yok veya arabada VehicleController component'i yok. Aracını sahneye koy, sonra bu adımı tekrarla.
+**✗ PROBLEM:** If Console says `VehicleController not found in scene` → there's no car in the scene or the car doesn't have a VehicleController component. Put your car in the scene, then redo this step.
 
-## ADIM B5 — Takip kamerasını kur (TEK TIK)
+## STEP B5 — Set up the follow camera (ONE CLICK)
 
-**ÖNEMLİ ÖN NOT:** Sahnende ZATEN çalışan bir Cinemachine takip kameran varsa (önceki oturumlarda kurduysan) bu adımı ATLA ve B6'ya geç. İki takip kamerası birbiriyle kavga eder.
+**IMPORTANT PRE-NOTE:** If your scene ALREADY has a working Cinemachine follow camera (from a previous session), SKIP this step and go to B6. Two follow cameras will fight each other.
 
-Emin değilsen kontrol: Hierarchy'nin üstündeki arama kutusuna `CM` yaz. "CM" ile başlayan veya "CinemachineCamera" içeren bir obje çıkıyorsa kameran zaten var → atla. Çıkmıyorsa devam:
+If you're not sure, check: type `CM` in the search box above the Hierarchy. If an object starting with "CM" or containing "CinemachineCamera" shows up, you already have a camera → skip. If not, continue:
 
-1. Üst menüden **DeliverySim → Setup → 3 - Create Follow Camera (Cinemachine)**'a tıkla.
+1. From the top menu, click **DeliverySim → Setup → 3 - Create Follow Camera (Cinemachine)**.
 
-**✓ KONTROL:** Hierarchy'de `CameraRig` ve `CM_FollowCamera` objeleri belirdi. Console'da `[Setup] Cinemachine takip kamerası hazır` yazıyor.
+**✓ CHECK:** `CameraRig` and `CM_FollowCamera` objects appeared in the Hierarchy. Console shows `[Setup] Cinemachine follow camera ready`.
 
-## ADIM B6 — Örnek siparişleri ve noktaları üret (TEK TIK)
+## STEP B6 — Generate sample orders and points (ONE CLICK)
 
-1. Üst menüden **DeliverySim → Setup → 4 - Create Sample Orders + Points**'a tıkla.
+1. From the top menu, click **DeliverySim → Setup → 4 - Create Sample Orders + Points**.
 
-**✓ KONTROL (üç şey):**
-1. Hierarchy'de şu 7 yeni obje var: `Pickup_Restaurant`, `Pickup_Depot`, `Delivery_HouseA`, `Delivery_HouseB`, `Delivery_Office`, `FuelStation_Main`, `RepairStation_Main`.
-2. Project panelinde **Assets → _Uber Simulator → _Data → Orders** klasörü oluştu, içinde 3 dosya var: `order_food_a`, `order_package_a`, `order_fragile_a`.
-3. Console'da: `[Setup] OrderManager.orderPool 3 örnek siparişle dolduruldu.`
+**✓ CHECK (three things):**
+1. In the Hierarchy there are these 7 new objects: `Pickup_Restaurant`, `Pickup_Depot`, `Delivery_HouseA`, `Delivery_HouseB`, `Delivery_Office`, `FuelStation_Main`, `RepairStation_Main`.
+2. In the Project panel, an **Assets → _Uber Simulator → _Data → Orders** folder was created, containing 3 files: `order_food_a`, `order_package_a`, `order_fragile_a`.
+3. Console shows: `[Setup] OrderManager.orderPool filled with 3 sample orders.`
 
-**NOT:** Scene görünümünde bu noktaları renkli tel kürelerle görürsün (yeşil = alım, turuncu = teslim). Bir nokta zeminin dışında/duvarın içinde kaldıysa: Hierarchy'de objeye tıkla → Scene'de ok (Move) aracıyla sürükleyip uygun yere taşı. Sistem ID ile çalıştığı için konumu değiştirmek serbesttir.
+**NOTE:** In the Scene view you'll see these points as colored wireframe spheres (green = pickup, orange = delivery). If a point ended up outside the ground/inside a wall: click the object in Hierarchy → drag it to a suitable spot with the (Move) tool in the Scene. The system works by ID, so it's fine to move the position.
 
-## ADIM B7 — Sahneyi kaydet
+## STEP B7 — Save the scene
 
-1. Klavyeden **Ctrl+S** bas.
+1. Press **Ctrl+S** on the keyboard.
 
-**✓ KONTROL:** Unity başlığındaki MainScene yazısının yanında `*` işareti kayboldu.
+**✓ CHECK:** The `*` mark next to the MainScene name in the Unity title bar disappeared.
 
 ---
 
-# BÖLÜM C — İLK OYUN TESTİ (adım adım senaryo)
+# SECTION C — FIRST GAMEPLAY TEST (step-by-step scenario)
 
-> **GÜNCELLEME 2 (takla / gerçekçi sürüş düzeltmesi):** Takla sorununun kökü bulundu:
-> aktif araç 1 kg kütleyle çalışıyordu (!) ve kodda devrilmeyi frenleyecek mekanik yoktu.
-> Kod artık interpolation'dan bağımsız (kamera akıcılığı için **Interpolation AÇIK kalıyor** —
-> eski "Setup 5 ile None yap" talimatı GEÇERSİZ, o komut artık tam tersine interpolation'ı açık garanti eder)
-> ve anti-roll bar + roll-center mekaniği eklendi. Yapman gereken TEK ŞEY:
+> **UPDATE 2 (rollover / realistic driving fix):** The root of the rollover issue was found:
+> the active vehicle was running with a 1 kg mass (!) and there was no mechanic in the code to prevent tipping.
+> The code is now independent of interpolation (**Interpolation stays ON** for smooth camera —
+> the old "run Setup 5 to set to None" instruction is now INVALID, that command now guarantees the opposite, that interpolation stays on)
+> and an anti-roll bar + roll-center mechanic was added. The ONLY thing you need to do:
 >
-> 1. Unity'de derlemenin bitmesini bekle.
-> 2. Üst menü → **DeliverySim → Setup → 6 - Apply Realistic Vehicle Tuning** → tıkla.
->    (Console'a önce ESKİ değerler loglanır — beğenmezsen Ctrl+Z veya o değerleri elle geri girersin.)
-> 3. **Ctrl+S** ile sahneyi kaydet → Play → test et.
+> 1. Wait for Unity to finish compiling.
+> 2. Top menu → **DeliverySim → Setup → 6 - Apply Realistic Vehicle Tuning** → click.
+>    (Console logs the OLD values first — if you don't like it, Ctrl+Z or enter those values back by hand.)
+> 3. Save the scene with **Ctrl+S** → Play → test it.
 >
-> **GÜNCELLEME 3 (pro kontroller + kamera + noktalar):** Tuş düzeni sürüş oyunu standardına çekildi,
-> kamera hissi/geçişleri profesyonelleştirildi, noktalara kalıcı işaret + katı kiosk eklendi,
-> teslimat süresi artık gerçek mesafeden hesaplanıyor. Derleme sonrası TEK SEFERLİK iki tık:
+> **UPDATE 3 (pro controls + camera + points):** The key layout was moved to the driving-game standard,
+> the camera feel/transitions were made more professional, permanent markers + solid kiosks were added to points,
+> and delivery time is now calculated from real distance. After compiling, TWO ONE-TIME clicks:
 >
-> 1. **DeliverySim → Setup → 7 - Pro Controls + Camera Feel** (etkileşim tuşunu E yapar,
->    kamerayı araç dönüşünü takip eden pro moda alır, mod geçiş blend'ini 0.8 sn yapar).
-> 2. **DeliverySim → Setup → 8 - Upgrade Point Visuals** (tüm noktalara her zaman görünür
->    renkli işaret — yeşil=alım, turuncu=teslim — + aktif hedef zemin halkası + içinden
->    geçilemeyen katı kiosk; istasyon küpleri de katılaşır).
+> 1. **DeliverySim → Setup → 7 - Pro Controls + Camera Feel** (makes the interact key E,
+>    puts the camera in a pro mode that follows the vehicle's turning, makes the mode-switch blend 0.8 sec).
+> 2. **DeliverySim → Setup → 8 - Upgrade Point Visuals** (always-visible colored
+>    markers on all points — green=pickup, orange=delivery — + a glowing ground ring on the active target +
+>    a solid kiosk you can't walk through; station cubes also become solid).
 > 3. **Ctrl+S**.
 >
-> **GÜNCEL TUŞ DÜZENİ (sürüş oyunu standardı):**
+> **CURRENT KEY LAYOUT (driving-game standard):**
 >
-> | Tuş | İşlev |
+> | Key | Function |
 > |---|---|
-> | **WASD** | Gaz / fren / direksiyon |
-> | **Space** | El freni |
-> | **E** | Etkileşim (yük al/ver, yakıt, tamir) |
-> | **Tab** | Telefon / Sipariş paneli |
-> | **C** | Kamera modu (1./3. şahıs) |
-> | **B** | Mağaza |
-> | **R** | Aracı düzelt (takla sonrası) |
-> | **LShift / LCtrl** | Vites yukarı / aşağı (manuel müdahale; otomatik vites zaten aktif) |
-> | **Esc** | Duraklat |
-> | **Fare** | Kamerayı çevir — bırakınca ~1 sn sonra kendiliğinden aracın arkasına döner |
+> | **WASD** | Throttle / brake / steering |
+> | **Space** | Handbrake |
+> | **E** | Interact (pick up/drop off cargo, fuel, repair) |
+> | **Tab** | Phone / Order panel |
+> | **C** | Camera mode (1st/3rd person) |
+> | **B** | Shop |
+> | **R** | Reset vehicle (after a rollover) |
+> | **LShift / LCtrl** | Gear up / down (manual override; automatic is already active) |
+> | **Esc** | Pause |
+> | **Mouse** | Look around the camera — after releasing, it auto-recenters behind the vehicle after ~1 sec |
 >
-> **Sürüş hissi ayar rehberi** (Inspector → PlayerVeichle Car → Vehicle Controller):
+> **Driving feel tuning guide** (Inspector → PlayerVeichle Car → Vehicle Controller):
 >
-> | Ne değiştirmek istiyorsun | Hangi alan | Yönü |
+> | What you want to change | Which field | Direction |
 > |---|---|---|
-> | Devrilme direnci | `Anti Roll Stiffness`, `Lateral Force Height`, `Center Of Mass Offset.y` | Artır / artır / daha negatif = daha stabil |
-> | Süspansiyon sertliği | `Suspension Force` | Artır = sert |
-> | Zıplama/sallanma sönümü | `Damp Amount` | Artır = daha çabuk oturur |
-> | Hızlanma gücü | teker başına `Engine Torque` | Artır = güçlü |
-> | Viraj tutuşu | `Wheel Grip X` | Artır = daha çok tutar (aşırısı devirmeye zorlar) |
-> | Direksiyon açısı | ön tekerlerde `Turn Angle` | Azalt = yüksek hızda daha stabil |
-> | Araç ağırlık hissi | Rigidbody `Mass` | 1200 = sedan; büyük araçta 2000+ |
+> | Rollover resistance | `Anti Roll Stiffness`, `Lateral Force Height`, `Center Of Mass Offset.y` | Increase / increase / more negative = more stable |
+> | Suspension stiffness | `Suspension Force` | Increase = stiffer |
+> | Bounce/wobble damping | `Damp Amount` | Increase = settles faster |
+> | Acceleration power | `Engine Torque` per wheel | Increase = stronger |
+> | Cornering grip | `Wheel Grip X` | Increase = more grip (too much forces a rollover) |
+> | Steering angle | `Turn Angle` on the front wheels | Decrease = more stable at high speed |
+> | Vehicle weight feel | Rigidbody `Mass` | 1200 = sedan; 2000+ for a larger vehicle |
 
-Şimdi oyunu oynayarak çekirdek döngüyü doğrulayacağız.
+Now let's play the game to verify the core loop.
 
-## ADIM C1 — Oyunu başlat
+## STEP C1 — Start the game
 
-1. Ekranın üst ortasındaki **▶ (Play)** butonuna tıkla.
-2. 1-2 saniye bekle.
+1. Click the **▶ (Play)** button at the top center of the screen.
+2. Wait 1-2 seconds.
 
-**✓ KONTROL:** Ekranda şunlar otomatik belirir:
-- SOL ALTTA yarı saydam siyah panel: hız, para (₺ 100), yakıt, durum, ★ puan, "Sipariş yok".
-- EN ALTTA yardım satırı: `WASD: Sür | Space: El freni | E: Etkileşim | Tab: Siparişler | B: Mağaza | C: Kamera | R: Aracı Düzelt | LShift/LCtrl: Vites | Esc: Duraklat`
+**✓ CHECK:** The following appear automatically on screen:
+- A semi-transparent black panel at the BOTTOM LEFT: speed, money (₺ 100), fuel, status, ★ rating, "No order".
+- A help line at the very BOTTOM: `WASD: Drive | Space: Handbrake | E: Interact | Tab: Orders | B: Shop | C: Camera | R: Reset Vehicle | LShift/LCtrl: Gear | Esc: Pause`
 
-**✗ SORUN:** Bu yazılar YOKSA → Play'i durdur, Hierarchy'de `_UI` objesini seç, Inspector'da **UI Bootstrap** bileşeninde **Build On Start** kutusunun İŞARETLİ olduğunu doğrula.
+**✗ PROBLEM:** If this text is NOT there → stop Play, select the `_UI` object in Hierarchy, verify that the **Build On Start** checkbox on the **UI Bootstrap** component is CHECKED in the Inspector.
 
-## ADIM C2 — Sipariş kabul et
+## STEP C2 — Accept an order
 
-1. Klavyeden **Tab** tuşuna bas. (Kamera modu artık **C** tuşunda.)
-2. Ekranın sağında "SİPARİŞLER" paneli açılır. İçinde 3 sipariş kartı var (isim, ücret, süre + Kabul/Reddet butonları).
-3. İlk siparişin **Kabul** butonuna FARE ile tıkla.
+1. Press **Tab** on the keyboard. (Camera mode is now on the **C** key.)
+2. An "ORDERS" panel opens on the right of the screen. Inside it are 3 order cards (name, fee, time + Accept/Reject buttons).
+3. Click the **Accept** button on the first order with the MOUSE.
 
-**✓ KONTROL:**
-- Ekranın üstünde yeşil bildirim: "Sipariş kabul edildi: ... Alım noktasına git!"
-- Sahnede bir noktada havada duran BEYAZ SİLİNDİR (marker) belirdi.
-- Zeminde araçtan o noktaya giden MAVİ ÇİZGİ (GPS rotası) var.
-- Sol alt panelde "Alım bekleniyor: ..." yazıyor.
+**✓ CHECK:**
+- A green notification at the top of the screen: "Order accepted: ... Head to the pickup point!"
+- A WHITE CYLINDER (marker) hovering in the air appeared at a point in the scene.
+- A BLUE LINE (GPS route) from the vehicle to that point appears on the ground.
+- The bottom-left panel says "Waiting for pickup: ...".
 
-**NOT:** Panel açıkken araba tuşları çalışmaya devam eder. Paneli kapatmak için tekrar **Tab**.
+**NOTE:** The vehicle controls keep working while the panel is open. To close the panel, press **Tab** again.
 
-## ADIM C3 — Yükü al
+## STEP C3 — Pick up the cargo
 
-1. **W A S D** ile arabayı sür, mavi çizgiyi takip et, beyaz silindirli noktaya git.
-2. Noktaya ~5 metre yaklaşınca ekranın alt ortasında SARI yazı belirir: **"Yükü Al [E]"**.
-3. Dur ve **E** tuşuna bas. (Ortadaki kiosk küpü katıdır — içinden geçemezsin, yanına park et.)
+1. Drive the car with **W A S D**, follow the blue line, go to the point with the white cylinder.
+2. When you get within ~5 meters of the point, YELLOW text appears at the bottom center of the screen: **"Pick Up Cargo [E]"**.
+3. Stop and press **E**. (The kiosk cube in the middle is solid — you can't drive through it, park next to it.)
 
-**✓ KONTROL:**
-- Bildirim: "Yük alındı! Teslimat için ... saniyen var."
-- Ekranın ÜST ORTASINDA geri sayım başladı: `Süre: 02:30` gibi.
-- Marker eski noktadan kayboldu, YENİ bir noktada belirdi (teslim noktası).
-- Mavi çizgi artık teslim noktasına gidiyor.
+**✓ CHECK:**
+- Notification: "Cargo picked up! You have ... seconds for the delivery."
+- A countdown started at the TOP CENTER of the screen: something like `Time: 02:30`.
+- The marker disappeared from the old point, appeared at a NEW point (the delivery point).
+- The blue line now goes to the delivery point.
 
-## ADIM C4 — Teslim et
+## STEP C4 — Deliver
 
-1. Mavi çizgiyi takip ederek teslim noktasına sür.
-2. Yaklaşınca **"Teslim Et [E]"** yazısı çıkar → **E** bas.
+1. Follow the blue line to the delivery point.
+2. As you approach, the **"Deliver [E]"** text appears → press **E**.
 
-**✓ KONTROL:**
-- Bildirim: "Teslimat tamamlandı! +35 para, 5.0 yıldız." (geç kaldıysan daha az).
-- Sol altta para arttı (₺ 100 → ₺ 135 gibi).
-- ★ satırı güncellendi.
-- Süre sayacı kayboldu, "Sipariş yok" yazısına dönüldü.
+**✓ CHECK:**
+- Notification: "Delivery complete! +35 money, 5.0 stars." (less if you were late).
+- Money increased at the bottom left (₺ 100 → ₺ 135 or similar).
+- The ★ line updated.
+- The time counter disappeared, back to the "No order" text.
 
-**BU NOKTAYA GELDİYSEN ÇEKİRDEK DÖNGÜ ÇALIŞIYOR — oyunun ilk oynanabilir prototipi tamam. 🎉**
+**IF YOU'VE REACHED THIS POINT, THE CORE LOOP IS WORKING — the game's first playable prototype is complete. 🎉**
 
-## ADIM C5 — Yakıt istasyonunu dene (opsiyonel)
+## STEP C5 — Try the fuel station (optional)
 
-1. Sahnede sarı gizmo'lu `FuelStation_Main` küpüne sür (koordinat ~ x=12, z=-25).
-2. Yaklaşınca **"Yakıt Al [E] (3.0/litre)"** çıkar → **E** bas.
+1. Drive to the `FuelStation_Main` cube with the yellow gizmo in the scene (coordinates ~ x=12, z=-25).
+2. As you approach, **"Refuel [E] (3.0/liter)"** appears → press **E**.
 
-**✓ KONTROL:** "X litre yakıt alındı (-Y para)" bildirimi + sol altta yakıt arttı, para azaldı. (Depo doluysa "Depo zaten dolu." der — normal.)
+**✓ CHECK:** A "X liters of fuel added (-Y money)" notification + fuel increased at the bottom left, money decreased. (If the tank is full, it says "Tank is already full." — normal.)
 
-## ADIM C6 — Mağazayı aç
+## STEP C6 — Open the shop
 
-1. **B** tuşuna bas.
+1. Press **B**.
 
-**✓ KONTROL:** Ortada "MAĞAZA" paneli açılır; Motor / Yakıt Deposu / Dayanıklılık satırları görünür.
-**NOT:** Satırlarda "MAKS" yazması normal — henüz yükseltme asset'i üretmedik (Bölüm D2'de üreteceğiz). Kapatmak için tekrar **B**.
+**✓ CHECK:** A "SHOP" panel opens in the center; Engine / Fuel Tank / Durability rows are visible.
+**NOTE:** It's normal for the rows to say "MAX" — we haven't produced the upgrade assets yet (we'll do this in Section D2). Press **B** again to close.
 
-## ADIM C7 — Duraklat ve kaydet
+## STEP C7 — Pause and save
 
-1. **Esc** bas → "DURAKLATILDI" ekranı gelir, oyun donar.
-2. **Kaydet** butonuna tıkla → "Oyun kaydedildi." bildirimi.
-3. **Devam Et**'e tıkla → oyun kaldığı yerden sürer.
-4. Testi bitirmek için üstteki **▶ Play** butonuna tekrar tıkla (oyundan çıkar).
+1. Press **Esc** → a "PAUSED" screen appears, the game freezes.
+2. Click the **Save** button → a "Game saved." notification appears.
+3. Click **Resume** → the game continues from where it left off.
+4. To end the test, click the **▶ Play** button at the top again (exits play mode).
 
-**✓ KONTROL:** Console'da `[SaveSystem] Oyun kaydedildi: ...` satırı var.
+**✓ CHECK:** There's a `[SaveSystem] Game saved: ...` line in Console.
 
-**⚠ UYARI:** Play modundayken sahnede yaptığın hiçbir değişiklik kalıcı olmaz. Objeleri taşımak istiyorsan önce Play'den çık.
+**⚠ WARNING:** Any change you make in the scene while in Play mode does not persist. If you want to move objects, exit Play mode first.
 
 ---
 
-# BÖLÜM D — İÇERİK ÜRETİMİ (oyun çalıştıktan sonra, keyfe göre)
+# SECTION D — CONTENT PRODUCTION (after the game works, at your own pace)
 
-## ADIM D1 — Mağazayı doldur: yükseltme asset'leri üret
+## STEP D1 — Fill the shop: produce upgrade assets
 
-Mağazadaki "MAKS" yazısının sebebi katalogun boş olması. Dolduralım. Örnek olarak Motor Seviye 1'i beraber yapalım:
+The reason the shop says "MAX" is that the catalog is empty. Let's fill it. As an example, let's make Engine Level 1 together:
 
-1. Project panelinde **Assets → _Uber Simulator → _Data** klasörüne git.
-2. Klasör içinde BOŞ bir yere SAĞ tıkla → **Create → DeliverySim → Vehicle Upgrade Data**.
-3. Yeni dosya oluşur, adı yazılabilir durumda → `Upgrade_Engine_1` yaz, Enter.
-4. Dosya seçiliyken Inspector'da şunları ayarla:
+1. In the Project panel, go to the **Assets → _Uber Simulator → _Data** folder.
+2. Right-click an EMPTY spot in the folder → **Create → DeliverySim → Vehicle Upgrade Data**.
+3. A new file is created, its name is editable → type `Upgrade_Engine_1`, press Enter.
+4. With the file selected, set the following in the Inspector:
    - **Category**: `Engine`
-   - **Display Name**: `Motor Yükseltmesi I`
+   - **Display Name**: `Engine Upgrade I`
    - **Level**: `1`
    - **Cost**: `500`
-   - **Effect Multiplier**: `1.15`  (= %15 daha güçlü motor)
-5. Aynı yöntemle istediğin kadar üret. Önerilen başlangıç seti:
+   - **Effect Multiplier**: `1.15` (= 15% more powerful engine)
+5. Produce as many as you like the same way. Recommended starting set:
 
-   | Dosya adı | Category | Level | Cost | Effect Multiplier |
+   | File name | Category | Level | Cost | Effect Multiplier |
    |---|---|---|---|---|
    | Upgrade_Engine_1 | Engine | 1 | 500 | 1.15 |
    | Upgrade_Engine_2 | Engine | 2 | 1200 | 1.3 |
@@ -294,121 +294,121 @@ Mağazadaki "MAKS" yazısının sebebi katalogun boş olması. Dolduralım. Örn
    | Upgrade_Durability_1 | Durability | 1 | 450 | 1.3 |
    | Upgrade_Durability_2 | Durability | 2 | 1000 | 1.6 |
 
-6. Şimdi bunları mağazaya bağla:
-   a. Hierarchy'de `_Managers` objesine tıkla.
-   b. Inspector'da **Shop Manager** bileşenini bul.
-   c. **Upgrade Catalog** satırının solundaki ok ile listeyi aç.
-   d. Listenin altındaki **+** butonuna 6 kez bas (6 boş satır açılır).
-   e. Project panelinden her Upgrade dosyasını sürükleyip birer satıra bırak.
-      (Alternatif: her satırın sağındaki küçük ⊙ ikonuna tıkla, açılan listeden seç.)
-7. **Ctrl+S** ile sahneyi kaydet.
+6. Now let's link these to the shop:
+   a. In Hierarchy, click the `_Managers` object.
+   b. Find the **Shop Manager** component in the Inspector.
+   c. Open the list with the arrow to the left of the **Upgrade Catalog** row.
+   d. Press the **+** button at the bottom of the list 6 times (opens 6 empty rows).
+   e. Drag each Upgrade file from the Project panel into a row.
+      (Alternative: click the small ⊙ icon on the right of each row, select from the list that opens.)
+7. Save the scene with **Ctrl+S**.
 
-**✓ KONTROL:** Play'e bas → **B** → artık "Motor — Seviye 0 / Sonraki: Motor Yükseltmesi I (₺500)" ve **Satın Al** butonu görünüyor. Yeterli paran varsa satın al → seviye artar, para düşer.
+**✓ CHECK:** Press Play → **B** → you should now see "Engine — Level 0 / Next: Engine Upgrade I (₺500)" and a **Buy** button. If you have enough money, buy it → level goes up, money goes down.
 
-## ADIM D2 — Yeni sipariş eklemek
+## STEP D2 — Adding a new order
 
-1. Project'te **Assets → _Uber Simulator → _Data → Orders** klasörüne git.
-2. Sağ tık → **Create → DeliverySim → Order Data** → ad ver (örn. `order_food_b`).
-3. Inspector'da doldur:
-   - **Order Id**: `order_food_b` (benzersiz olsun)
-   - **Order Name**: oyuncunun göreceği isim (örn. `Pizza Teslimatı`)
-   - **Pickup Point Id**: sahnedeki BİR alım noktasının ID'si (örn. `pickup_restaurant`)
-   - **Delivery Point Id**: bir teslim noktası ID'si (örn. `delivery_house_b`)
-   - **Payment Amount**: ücret (örn. `45`)
-   - **Time Limit Seconds**: saniye (örn. `120`)
+1. In Project, go to **Assets → _Uber Simulator → _Data → Orders**.
+2. Right-click → **Create → DeliverySim → Order Data** → give it a name (e.g. `order_food_b`).
+3. Fill it out in the Inspector:
+   - **Order Id**: `order_food_b` (must be unique)
+   - **Order Name**: the name the player will see (e.g. `Pizza Delivery`)
+   - **Pickup Point Id**: the ID of ONE pickup point in the scene (e.g. `pickup_restaurant`)
+   - **Delivery Point Id**: a delivery point ID (e.g. `delivery_house_b`)
+   - **Payment Amount**: the fee (e.g. `45`)
+   - **Time Limit Seconds**: seconds (e.g. `120`)
    - **Cargo Type**: Food / Package / Fragile
-4. Hierarchy'de `_Gameplay` → Inspector'da **Order Manager** → **Order Pool** listesine **+** ile satır ekle → yeni asset'i sürükle.
+4. In Hierarchy, select `_Gameplay` → in the Inspector, **Order Manager** → add a row to the **Order Pool** list with **+** → drag in the new asset.
 5. **Ctrl+S**.
 
-**Mevcut nokta ID'leri (Setup 4'ün ürettikleri):**
-`pickup_restaurant`, `pickup_depot` (alım) — `delivery_house_a`, `delivery_house_b`, `delivery_office` (teslim).
+**Existing point IDs (produced by Setup 4):**
+`pickup_restaurant`, `pickup_depot` (pickup) — `delivery_house_a`, `delivery_house_b`, `delivery_office` (delivery).
 
-## ADIM D3 — Yeni alım/teslim noktası eklemek
+## STEP D3 — Adding a new pickup/delivery point
 
-1. Hierarchy'de sağ tık → **Create Empty** → ad ver (örn. `Delivery_Market`).
-2. Objeyi Scene'de istediğin konuma taşı (Move aracı).
-3. Inspector'da **Add Component** → arama kutusuna `DeliveryPoint` yaz → seç. (Alım noktası için `PickupPoint`.)
-4. **Point Id** alanına benzersiz bir ID yaz (örn. `delivery_market`).
-5. **Add Component** → `Sphere Collider` → ekle. Inspector'da:
-   - **Is Trigger**: İŞARETLE ✓
+1. Right-click in Hierarchy → **Create Empty** → give it a name (e.g. `Delivery_Market`).
+2. Move the object to the desired position in the Scene (Move tool).
+3. In the Inspector, **Add Component** → type `DeliveryPoint` in the search box → select it. (For a pickup point, use `PickupPoint`.)
+4. Type a unique ID into the **Point Id** field (e.g. `delivery_market`).
+5. **Add Component** → `Sphere Collider` → add it. In the Inspector:
+   - **Is Trigger**: CHECK ✓
    - **Radius**: `5`
-6. (Opsiyonel marker) Objeye sağ tık → **3D Object → Cylinder** → child olur. Position Y=`6`, Scale (`1.5`, `6`, `1.5`). Cylinder'ın **Capsule Collider**'ını kaldır (bileşen başlığına sağ tık → Remove Component). Cylinder'ı seçip Inspector'ın EN ÜST solundaki aktiflik kutusunun işaretini KALDIR (marker normalde gizli durur). Sonra ana noktayı seç, **Marker Visual** alanına bu Cylinder'ı sürükle.
-7. Artık `delivery_market` ID'sini siparişlerde kullanabilirsin (D2).
+6. (Optional marker) Right-click the object → **3D Object → Cylinder** → becomes a child. Position Y=`6`, Scale (`1.5`, `6`, `1.5`). Remove the Cylinder's **Capsule Collider** (right-click the component header → Remove Component). Select the Cylinder and UNCHECK the activation checkbox at the very TOP LEFT of the Inspector (the marker stays hidden by default). Then select the main point, drag this Cylinder into the **Marker Visual** field.
+7. You can now use the `delivery_market` ID in orders (D2).
 
-## ADIM D4 — GPS çizgisini yollara oturtmak (opsiyonel)
+## STEP D4 — Snapping the GPS line to the roads (optional)
 
-Şu an rota düz çizgi. Yol ağı çizmek istersen:
+Right now the route is a straight line. If you want to draw a road network:
 
-1. Hierarchy'de sağ tık → **Create Empty** → ad `WP_01`. Yolun bir köşesine taşı.
+1. Right-click in Hierarchy → **Create Empty** → name it `WP_01`. Move it to a corner of the road.
 2. **Add Component** → `Waypoint`.
-3. Aynı şekilde yol boyunca WP_02, WP_03... oluştur.
-4. Her waypoint'i seç → Inspector'da **Neighbors** listesine **+** bas → komşu waypoint'i Hierarchy'den sürükle. (Sadece tek yönde bağlaman yeterli — sistem çift yönlü sayar.)
-5. Scene'de sarı çizgiler bağlantıları gösterir. Play'de rota artık bu ağı takip eder.
+3. Create WP_02, WP_03... the same way along the road.
+4. Select each waypoint → in the Inspector, press **+** on the **Neighbors** list → drag the neighboring waypoint from the Hierarchy. (You only need to connect in one direction — the system counts both ways.)
+5. Yellow lines in the Scene show the connections. In Play, the route now follows this network.
 
-## ADIM D5 — Kamera hissini ayarlamak
+## STEP D5 — Tuning the camera feel
 
-**Cinemachine kullanıyorsan (B5'i yaptıysan):**
-1. Hierarchy'de `CM_FollowCamera` seç.
-2. Inspector'da **Cinemachine Follow** bileşeni → **Follow Offset** değerleriyle oyna (Y = yükseklik, Z = uzaklık; Z negatif olmalı, örn. -7.5).
-3. Yumuşaklık için aynı bileşendeki **Tracker Settings → Position Damping** değerlerini artır/azalt.
+**If you're using Cinemachine (you did B5):**
+1. In Hierarchy, select `CM_FollowCamera`.
+2. In the Inspector, play with the **Follow Offset** values on the **Cinemachine Follow** component (Y = height, Z = distance; Z should be negative, e.g. -7.5).
+3. For smoothness, increase/decrease the **Tracker Settings → Position Damping** values on the same component.
 
-**Kod kamerası kullanmak istersen (alternatif):**
-1. Project'te sağ tık → **Create → DeliverySim → Camera Settings** → asset oluşur; Inspector'da tüm parametreler (yumuşatma, FOV, duvar koruması, ölü bölge) açıklamalı.
-2. Hierarchy'de **Main Camera**'yı seç → **Add Component** → `VehicleCameraController`.
-3. **Settings** alanına az önceki asset'i, **Target** alanına aracını sürükle.
-4. `CM_FollowCamera` objesini seç → Inspector'ın en üstündeki aktiflik kutusunu KAPAT. Main Camera'daki **Cinemachine Brain** bileşenini de kapat (bileşen adının solundaki kutucuk).
-   (İki kamera sistemi aynı anda AÇIK OLMASIN.)
-
----
-
-# BÖLÜM E — ANA MENÜ SAHNESİ (opsiyonel, MVP sonrası)
-
-1. **File → New Scene** → **Basic (Built-in)** / boş şablon → **Create**.
-2. **Ctrl+S** → konum: `Assets/_Uber Simulator/Scenes` → ad: `MainMenu` → Save.
-3. Hierarchy'de sağ tık → **UI → Canvas**.
-4. Canvas'a sağ tık → **UI → Legacy → Button** → 3 kez tekrarla (3 buton).
-5. Butonları alt alta diz (Scene'de 2D moduna geçip sürükle). Her butonun içindeki **Text** child'ına tıkla, Inspector'da Text alanına sırasıyla: `Yeni Oyun`, `Devam Et`, `Çıkış`.
-6. Hierarchy'de sağ tık → **Create Empty** → ad `MenuController` → **Add Component** → `MainMenuController`.
-7. Inspector'da **Gameplay Scene Name** = `MainScene` yaz.
-8. Her butonu bağla:
-   a. Butonu seç → Inspector'da **Button** bileşeni → **On Click ()** kutusunun **+**'sına bas.
-   b. Boş alana Hierarchy'den `MenuController` objesini sürükle.
-   c. Sağdaki "No Function" menüsüne tıkla → **MainMenuController** → sırasıyla: `StartNewGame ()` / `ContinueGame ()` / `QuitGame ()`.
-9. Bu sahneye de manager lazım: üst menü **DeliverySim → Setup → 1 - Create Managers** (UI Bootstrap'lı `_UI` objesi menü sahnesinde gereksiz — `_UI` objesini silebilirsin).
-10. **File → Build Profiles** (eski adıyla Build Settings) → **Scene List** → **Add Open Scenes** ile önce MainMenu'yü ekle. Sonra MainScene'i açıp aynısını yap. MainMenu listede EN ÜSTTE (index 0) olsun — değilse sürükleyerek sırala.
-
-**✓ KONTROL:** MainMenu sahnesinde Play → "Yeni Oyun" → MainScene yüklenir ve oyun başlar.
+**If you want to use the code camera instead (alternative):**
+1. Right-click in Project → **Create → DeliverySim → Camera Settings** → an asset is created; all parameters (smoothing, FOV, wall protection, dead zone) are documented in the Inspector.
+2. In Hierarchy, select **Main Camera** → **Add Component** → `VehicleCameraController`.
+3. Drag the asset you just created into the **Settings** field, drag your vehicle into the **Target** field.
+4. Select the `CM_FollowCamera` object → turn OFF the activation checkbox at the top of the Inspector. Also turn off the **Cinemachine Brain** component on Main Camera (the checkbox left of the component name).
+   (Don't have both camera systems ON at the same time.)
 
 ---
 
-# BÖLÜM F — İLERİ FAZLAR (kısa yol haritası)
+# SECTION E — MAIN MENU SCENE (optional, post-MVP)
 
-- **Ses:** `_Managers` → **Audio Manager** Inspector'ında 7 boş clip alanı var (müzik, kabul, alım, teslim, başarısız, para, hata). Ses dosyalarını Project'e at, alanlara sürükle. Bitti — kod bağlantısı otomatik.
-- **Gerçek UI:** Kendi Canvas'ını yapacağın gün: `_UI` → **UI Bootstrap** → **Build On Start** işaretini kaldır. Controller scriptlerini (HUDController vb.) kendi panellerine ekleyip Text referanslarını Inspector'dan bağla. İstersen o gün bana "TMP'ye geçir" de — kodu ben değiştiririm.
-- **Performans:** Hareketsiz çevre objelerini seç → Inspector sağ üst **Static** işaretle. Büyük haritada: **Window → Rendering → Occlusion Culling → Bake**.
-- **Build:** **Edit → Project Settings → Player** (isim/ikon/versiyon) → **File → Build Profiles → Windows → Build**. Kayıt dosyası konumu: `%USERPROFILE%\AppData\LocalLow\<Şirket>\<Ürün>\deliverysim_save.json`.
-- **Steam:** partner.steamgames.com hesabı (100$ başvuru ücreti, onay günler sürer) → sayfa materyalleri ASSET_NEEDS.md'de. Steamworks entegrasyonu istediğinde kod tarafını ben yazarım.
+1. **File → New Scene** → **Basic (Built-in)** / empty template → **Create**.
+2. **Ctrl+S** → location: `Assets/_Uber Simulator/Scenes` → name: `MainMenu` → Save.
+3. Right-click in Hierarchy → **UI → Canvas**.
+4. Right-click the Canvas → **UI → Legacy → Button** → repeat 3 times (3 buttons).
+5. Line up the buttons vertically (switch to 2D mode in the Scene and drag). Click each button's inner **Text** child, type in the Inspector's Text field, in order: `New Game`, `Continue`, `Quit`.
+6. Right-click in Hierarchy → **Create Empty** → name it `MenuController` → **Add Component** → `MainMenuController`.
+7. In the Inspector, set **Gameplay Scene Name** = `MainScene`.
+8. Wire up each button:
+   a. Select the button → in the Inspector, **Button** component → click the **+** in the **On Click ()** box.
+   b. Drag the `MenuController` object from Hierarchy into the empty slot.
+   c. Click the "No Function" dropdown on the right → **MainMenuController** → select, in order: `StartNewGame ()` / `ContinueGame ()` / `QuitGame ()`.
+9. This scene needs managers too: top menu **DeliverySim → Setup → 1 - Create Managers** (the `_UI` object with UI Bootstrap is unnecessary in the menu scene — you can delete the `_UI` object).
+10. **File → Build Profiles** (previously called Build Settings) → **Scene List** → use **Add Open Scenes** to first add MainMenu. Then open MainScene and do the same. MainMenu should be at the TOP (index 0) in the list — if it isn't, drag to reorder.
+
+**✓ CHECK:** Play in the MainMenu scene → "New Game" → MainScene loads and the game starts.
 
 ---
 
-# SORUN GİDERME (hızlı başvuru)
+# SECTION F — LATER PHASES (short roadmap)
 
-| Belirti | Muhtemel sebep | Çözüm |
+- **Sound:** `_Managers` → **Audio Manager** has 7 empty clip fields in the Inspector (music, accepted, pickup, delivery, failed, money, error). Drop sound files into the Project, drag them into the fields. Done — the code wiring is automatic.
+- **Real UI:** The day you build your own Canvas: `_UI` → **UI Bootstrap** → uncheck **Build On Start**. Add the controller scripts (HUDController etc.) to your own panels and wire up the Text references from the Inspector. If you want, that day tell me "switch to TMP" — I'll change the code.
+- **Performance:** Select static environment objects → check **Static** at the top right of the Inspector. On a large map: **Window → Rendering → Occlusion Culling → Bake**.
+- **Build:** **Edit → Project Settings → Player** (name/icon/version) → **File → Build Profiles → Windows → Build**. Save file location: `%USERPROFILE%\AppData\LocalLow\<Company>\<Product>\deliverysim_save.json`.
+- **Steam:** partner.steamgames.com account ($100 application fee, approval takes days) → page materials are in ASSET_NEEDS.md. When you want Steamworks integration, I'll write the code side.
+
+---
+
+# TROUBLESHOOTING (quick reference)
+
+| Symptom | Likely cause | Fix |
 |---|---|---|
-| Sipariş paneli açılınca kamera değişiyor | Eski sürümde tuşlar çakışıyordu | Düzeltildi: siparişler **Tab**, kamera **C**. Setup 7'yi çalıştırdığından emin ol |
-| E'ye basınca yük alınmıyor | Sahnedeki etkileşim tuşu hâlâ F | **DeliverySim → Setup → 7** çalıştır (interactKey'i E yapar) → Ctrl+S |
-| Kamera araç dönünce arkaya geçmiyor | Orbital binding hâlâ World Space | **DeliverySim → Setup → 7** çalıştır → Ctrl+S |
-| Noktalar görünmüyor / alınca kayboluyor | Setup 8 çalıştırılmamış | **DeliverySim → Setup → 8** çalıştır → Ctrl+S |
-| Araç takla attı, ters kaldı | Normal kaza | **R** tuşu aracı olduğu yerde düzeltir (Setup 5 veya Setup 2'yi bir kez çalıştırmış olman gerekir) |
-| Sipariş ALANINA GİRERKEN araç fırlıyor/takla atıyor | Süspansiyon ışını görünmez trigger küresine çarpıyordu | Kodda düzeltildi (trigger'lar yok sayılıyor) — scriptler derlensin, ekstra adım yok |
-| Araç virajda devriliyor | Gerçekçi profil uygulanmamış | **DeliverySim → Setup → 6** çalıştır → Ctrl+S. Hâlâ devriliyorsa `Anti Roll Stiffness` artır |
-| Kamera sarsak/titriyor | Rigidbody Interpolation kapalı kalmış | **DeliverySim → Setup → 5** çalıştır (Interpolation'ı AÇIK yapar) → Ctrl+S |
-| DeliverySim menüsü yok | Derleme bitmedi veya hata var | Console'daki kırmızı satırı bana gönder |
-| Play'de UI görünmüyor | UIBootstrap kapalı veya `_UI` yok | B3'ü tekrar çalıştır, Build On Start işaretli mi bak |
-| "Yükü Al [F]" hiç çıkmıyor | Noktada trigger collider yok / araçta VehicleInteractor yok | B4 ve B6'yı tekrar çalıştır (güvenli, kopya üretmez) |
-| Tab panelinde teklif yok | OrderManager havuzu boş | B6'yı çalıştır; `_Gameplay` → Order Manager → Order Pool dolu mu bak |
-| Kabul'e basınca "noktalar sahnede eksik" | OrderData ID'si sahnedeki Point Id ile uyuşmuyor | ID'leri karşılaştır (büyük/küçük harf dahil birebir aynı olmalı) |
-| Kamera titriyor | Rigidbody Interpolate kapalı | B4'ü tekrar çalıştır (otomatik açar) |
-| Kamera dönüp duruyor / iki kamera kavgası | İki kamera sistemi aynı anda aktif | D5'in son maddesi: birini kapat |
-| Tuşlara basınca InvalidOperationException | Active Input Handling "New only" | A2'yi uygula |
-| Para hiç artmıyor | EconomyManager sahnede yok | B3'ü tekrar çalıştır |
+| Camera changes when the order panel opens | Keys used to conflict in an older version | Fixed: orders are on **Tab**, camera on **C**. Make sure you ran Setup 7 |
+| Pressing E doesn't pick up cargo | The scene's interact key is still F | Run **DeliverySim → Setup → 7** (sets interactKey to E) → Ctrl+S |
+| The camera doesn't move behind the vehicle when it turns | Orbital binding still World Space | Run **DeliverySim → Setup → 7** → Ctrl+S |
+| Points aren't visible / disappear once picked up | Setup 8 hasn't been run | Run **DeliverySim → Setup → 8** → Ctrl+S |
+| Vehicle flipped, stuck upside down | Normal crash | The **R** key resets the vehicle in place (you need to have run Setup 5 or Setup 2 once) |
+| Vehicle flies/flips ENTERING an order area | The suspension raycast was hitting the invisible trigger sphere | Fixed in code (triggers are now ignored) — scripts just need to compile, no extra step |
+| Vehicle rolls over in corners | Realistic profile not applied | Run **DeliverySim → Setup → 6** → Ctrl+S. If it still rolls, increase `Anti Roll Stiffness` |
+| Camera is shaky/jittery | Rigidbody Interpolation left off | Run **DeliverySim → Setup → 5** (turns Interpolation ON) → Ctrl+S |
+| No DeliverySim menu | Compiling not finished or there's an error | Send me the red line from Console |
+| UI doesn't show up in Play | UIBootstrap disabled or `_UI` missing | Rerun B3, check whether Build On Start is checked |
+| "Pick Up Cargo [F]" never appears | No trigger collider on the point / no VehicleInteractor on the vehicle | Rerun B4 and B6 (safe, doesn't create duplicates) |
+| No offers in the Tab panel | OrderManager's pool is empty | Run B6; check whether `_Gameplay` → Order Manager → Order Pool is filled |
+| "Points missing in scene" when clicking Accept | The OrderData's ID doesn't match the scene's Point Id | Compare the IDs (must match exactly, including case) |
+| Camera jitters | Rigidbody Interpolate off | Rerun B4 (turns it on automatically) |
+| Camera keeps spinning / two cameras fighting | Two camera systems active at once | Last item in D5: turn one off |
+| InvalidOperationException on key press | Active Input Handling is "New only" | Apply A2 |
+| Money never increases | EconomyManager isn't in the scene | Rerun B3 |
