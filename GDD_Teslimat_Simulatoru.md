@@ -1,129 +1,129 @@
 # Game Design Document
-## [Çalışma Adı] — Teslimat Şoförü Simülatörü
+## [Working Title] — Delivery Driver Simulator
 
-**Versiyon:** 0.1 (İlk Taslak)
-**Motor:** Unity 6.4
-**Platform:** PC (Steam) — Mobil port ihtimali sonraki fazda değerlendirilebilir
-**Tür:** Casual Driving / Job Simulator / Economy
-
----
-
-## 1. Konsept Özeti
-
-Oyuncu, bir teslimat/kurye platformuna kayıtlı bağımsız bir şoförü canlandırır. Uygulamadan gelen siparişleri alır, belirtilen noktadan yükü/paketi/yemeği alır ve müşterinin adresine zamanında ve hasarsız teslim eder. Teslimat kalitesi müşteri puanına, puan ise kazanılan paraya ve açılan yeni fırsatlara doğrudan yansır. Kazanılan para; araç yükseltmeleri, yeni araçlar, lisanslar ve kozmetik özelleştirmeler üzerinden tekrar oyuna yatırılır.
-
-**Çekirdek fantezi:** "Kendi patronun ol, sokakları öğren, itibarını inşa et, filon büyüsün."
-
-**Bir cümlelik hedef:** Basit ama tatmin edici bir teslimat döngüsü + anlamlı bir ekonomi döngüsü = tekrar oynanabilir, sakinleştirici bir iş simülatörü.
+**Version:** 0.1 (First Draft)
+**Engine:** Unity 6.4
+**Platform:** PC (Steam) — a mobile port possibility can be evaluated in a later phase
+**Genre:** Casual Driving / Job Simulator / Economy
 
 ---
 
-## 2. Çekirdek Oyun Döngüsü (Core Loop)
+## 1. Concept Summary
+
+The player embodies an independent driver registered with a delivery/courier platform. They take orders from the app, pick up the cargo/package/food from the specified point, and deliver it to the customer's address on time and undamaged. Delivery quality is directly reflected in the customer rating, and the rating directly translates into money earned and new opportunities unlocked. The money earned is reinvested into the game through vehicle upgrades, new vehicles, licenses, and cosmetic customization.
+
+**Core fantasy:** "Be your own boss, learn the streets, build your reputation, grow your fleet."
+
+**One-sentence goal:** A simple but satisfying delivery loop + a meaningful economy loop = a replayable, relaxing job simulator.
+
+---
+
+## 2. Core Game Loop
 
 ```
-Sipariş Al → Alım Noktasına Sür → Yükü Al → Teslimat Noktasına Sür (süre baskısı)
-   → Teslim Et → Puan/Değerlendirme Al → Ödeme Al → Mağazada Harca/Yükselt → Tekrar Sipariş Al
+Take Order → Drive to Pickup Point → Pick Up Cargo → Drive to Delivery Point (time pressure)
+   → Deliver → Get Score/Rating → Get Paid → Spend/Upgrade in Shop → Take Order Again
 ```
 
-Döngü uzunluğu: Tek bir teslimat **2-5 dakika** arası sürmeli (oturum başına 20-40 dk oynanabilir olacak şekilde).
+Loop length: A single delivery should take **2-5 minutes** (so a session is playable for 20-40 minutes).
 
 ---
 
-## 3. Temel Mekanikler
+## 3. Core Mechanics
 
-### 3.1 Sipariş Sistemi
-- Telefon/uygulama arayüzü üzerinden gelen sipariş listesi (aynı anda 1-3 aktif teklif)
-- Her sipariş: alım noktası, teslim noktası, tahmini süre, ödeme miktarı, yük türü (yemek/paket/kırılabilir eşya vb.)
-- Oyuncu siparişi kabul/red edebilir — bu, rota planlama ve risk/ödül kararı katar
+### 3.1 Order System
+- Order list coming through the phone/app interface (1-3 active offers at a time)
+- Each order: pickup point, delivery point, estimated time, payment amount, cargo type (food/package/fragile item, etc.)
+- The player can accept/reject an order — this adds a route-planning and risk/reward decision
 
-### 3.2 Teslimat & Puanlama
-- Zamanında teslim = tam puan (5 yıldız)
-- Geç teslim = kademeli puan düşüşü (süreye göre lineer veya eşik bazlı)
-- Yanlış adrese bırakma / aracın hasar görmesi (yükün "sağlık" değeri varsa) = düşük puan
-- Ortalama puan, oyuncunun **itibar seviyesini** belirler
+### 3.2 Delivery & Scoring
+- On-time delivery = full score (5 stars)
+- Late delivery = gradual score reduction (linear based on time, or threshold-based)
+- Delivering to the wrong address / vehicle taking damage (if the cargo has a "health" value) = low score
+- The average score determines the player's **reputation level**
 
-### 3.3 İtibar & Seviye Sistemi
-- Ortalama puana bağlı itibar kademeleri (ör. Bronz → Gümüş → Altın → Elmas)
-- Yüksek itibar → daha yüksek ücretli siparişlere erişim + daha az "sıradan" iş
-- Düşük itibar → sipariş havuzu daralır, ceza riski artar
+### 3.3 Reputation & Level System
+- Reputation tiers tied to average score (e.g. Bronze → Silver → Gold → Diamond)
+- Higher reputation → access to higher-paying orders + fewer "ordinary" jobs
+- Lower reputation → order pool narrows, penalty risk increases
 
-### 3.4 Ekonomi & Harcama (Kritik Sistem)
-Kazanılan para şu kanallara akmalı — **bu, oyunun en önemli tasarım eksenidir:**
+### 3.4 Economy & Spending (Critical System)
+The money earned must flow into these channels — **this is the game's most important design axis:**
 
-| Kategori | Örnek | Amaç |
+| Category | Example | Purpose |
 |---|---|---|
-| Araç satın alma | Yeni bisiklet/motor/araba/kamyon | İlerleme hissi, yeni sipariş türlerine erişim |
-| Araç yükseltmesi | Motor, lastik, yakıt deposu, hasar dayanımı | Performans artışı |
-| Kozmetik | Kaplama, jant, dekal | Kişiselleştirme (düşük maliyet, yüksek his) |
-| Gider | Yakıt, bakım, tamir | Parayı geri emen "sürtünme" — ekonomiyi anlamlı kılar |
-| Lisans | Motor ehliyeti, ağır vasıta lisansı | Yeni araç kategorilerinin kilidini açar |
-| Üs/Garaj | Depo alanı, birden fazla araç barındırma | Uzun vadeli yatırım hissi |
+| Vehicle purchase | New bike/motorcycle/car/truck | Sense of progression, access to new order types |
+| Vehicle upgrade | Engine, tires, fuel tank, damage resistance | Performance boost |
+| Cosmetic | Livery, wheels, decals | Personalization (low cost, high feel) |
+| Expense | Fuel, maintenance, repair | "Friction" that eats money back — makes the economy meaningful |
+| License | Motorcycle license, heavy vehicle license | Unlocks new vehicle categories |
+| Base/Garage | Storage space, housing multiple vehicles | Sense of long-term investment |
 
-> **Tasarım notu:** Gider kalemleri olmadan (yakıt/tamir) ekonomi tek yönlü şişer ve anlamını kaybeder. Her teslimatın küçük bir maliyeti olmalı ki "kâr marjı" kavramı oyuncu için gerçek hissettirsin.
+> **Design note:** Without expense items (fuel/repair), the economy inflates one-directionally and loses its meaning. Every delivery must have a small cost so the concept of "profit margin" feels real to the player.
 
-### 3.5 Sürüş Sistemi
-- Basit ama tatmin edici araç fiziği (WheelCollider tabanlı — mevcut PRO RACER alt yapısı temel alınabilir)
-- Hasar/denge sistemi opsiyonel: sert manevralar yük kalitesini etkileyebilir (özellikle yemek/kırılabilir eşya taşırken)
-- Mini-harita + rota çizgisi (GPS simülasyonu)
-
----
-
-## 4. İlerleme Yapısı
-
-**Erken oyun:** Tek araç (bisiklet/scooter), küçük harita alanı, düşük ödemeli siparişler
-**Orta oyun:** Araba kilidi açılır, harita genişler, itibar sistemi devreye girer, yükseltme mağazası aktifleşir
-**Geç oyun:** Kamyon/ağır vasıta, çoklu araç filosu (opsiyonel idle/pasif gelir mekaniği), üst düzey itibar ödülleri
+### 3.5 Driving System
+- Simple but satisfying vehicle physics (WheelCollider-based — the existing PRO RACER foundation can be used as a base)
+- Optional damage/balance system: hard maneuvers can affect cargo quality (especially when carrying food/fragile items)
+- Mini-map + route line (GPS simulation)
 
 ---
 
-## 5. Kullanıcı Arayüzü (UI)
+## 4. Progression Structure
 
-- **Telefon Ekranı:** Aktif sipariş listesi, kabul/red butonları, kazanç geçmişi
-- **HUD (sürüş sırasında):** Rota işareti, kalan süre, yük durumu ikonu, hız göstergesi
-- **Mağaza Ekranı:** Araç/yükseltme/kozmetik kategorileri, sahip olunan bakiye
-- **Puan/İtibar Paneli:** Ortalama yıldız, itibar seviyesi, sonraki seviyeye kalan ilerleme
-
----
-
-## 6. Teknik Mimari Notları (Unity)
-
-Mevcut proje deneyimlerinle doğrudan örtüşen sistemler:
-
-- **Sipariş verisi** → `ScriptableObject` tabanlı `OrderData` (alım/teslim koordinatları, ödeme, süre, yük tipi) — Inventory sistemindeki `ItemData` yaklaşımıyla birebir aynı mantık
-- **Yük etkileşimi** → `IInteractable` / `IUsable` arayüzleri — mevcut Interaction System'in üzerine inşa edilebilir
-- **Araç fiziği** → WheelCollider + ScriptableObject araç profilleri (PRO RACER'daki yapı)
-- **Envanter/Yükseltme** → `InventorySlot` benzeri bir `VehicleUpgradeSlot` sistemi
-- **Ekonomi Yöneticisi** → Tekil bir `EconomyManager` (MonoBehaviour ya da Singleton) — bakiye, gider/gelir event'leri
-- **Sipariş Yöneticisi** → `OrderManager` — aktif sipariş havuzu, zamanlayıcı, puan hesaplama mantığı
-
-> Namespace önerisi: mevcut projelerinle çakışmaması için `DeliverySim` gibi bağımsız bir namespace kullanılabilir.
+**Early game:** A single vehicle (bike/scooter), a small map area, low-paying orders
+**Mid game:** Car unlocked, map expands, reputation system kicks in, upgrade shop becomes active
+**Late game:** Truck/heavy vehicle, multi-vehicle fleet (optional idle/passive income mechanic), high-tier reputation rewards
 
 ---
 
-## 7. MVP Kapsamı (İlk Prototip Hedefi)
+## 5. User Interface (UI)
 
-Aşırı kapsam genişlemesinden kaçınmak için ilk prototipte **sadece şunlar** olmalı:
-
-1. Tek araç (araba)
-2. Küçük, el yapımı harita (5-8 teslimat noktası)
-3. Basit sipariş döngüsü (kabul et → git → teslim et → puan al)
-4. Temel ekonomi: para kazan, 2-3 yükseltme satın al
-5. Minimal UI (metin tabanlı sipariş listesi + HUD)
-
-Bu kapsam netleşmeden harita büyütme, çoklu araç, hikaye gibi eklerle uğraşmamak, projenin bitirilebilirliğini doğrudan artırır.
+- **Phone Screen:** Active order list, accept/reject buttons, earnings history
+- **HUD (while driving):** Route marker, remaining time, cargo status icon, speedometer
+- **Shop Screen:** Vehicle/upgrade/cosmetic categories, owned balance
+- **Score/Reputation Panel:** Average stars, reputation level, progress remaining to next level
 
 ---
 
-## 8. Farklılaşma / Öne Çıkış Fikirleri (opsiyonel, sonraki faz)
+## 6. Technical Architecture Notes (Unity)
 
-- Belirgin bir görsel kimlik (ör. retro/düşük-poli stil, ya da yerel/Türkiye temalı bir şehir kurgusu)
-- Hafif mizah veya kısa NPC diyalogları (mevcut NPC dialogue sistemin uyarlanabilir)
-- Hava durumu / trafik yoğunluğu gibi dinamik zorluk katmanları
+Systems that directly overlap with your existing project experience:
+
+- **Order data** → `ScriptableObject`-based `OrderData` (pickup/delivery coordinates, payment, time, cargo type) — exactly the same logic as the `ItemData` approach in the Inventory system
+- **Cargo interaction** → `IInteractable` / `IUsable` interfaces — can be built on top of the existing Interaction System
+- **Vehicle physics** → WheelCollider + ScriptableObject vehicle profiles (the structure from PRO RACER)
+- **Inventory/Upgrade** → A `VehicleUpgradeSlot` system similar to `InventorySlot`
+- **Economy Manager** → A single `EconomyManager` (MonoBehaviour or Singleton) — balance, expense/income events
+- **Order Manager** → `OrderManager` — active order pool, timer, score calculation logic
+
+> Namespace suggestion: an independent namespace like `DeliverySim` can be used to avoid conflicting with your existing projects.
 
 ---
 
-## 9. Riskler & Dikkat Edilmesi Gerekenler
+## 7. MVP Scope (First Prototype Goal)
 
-- **Ekonomi dengesi:** Gelir/gider oranı test edilmeden ilerlemek en büyük risk — erken prototipte bile temel bir gelir/gider tablosu tutulmalı
-- **İçerik hacmi:** Harita ve sipariş çeşitliliği elle üretildiği için zaman yutar — MVP'de kapsamı küçük tutmak şart
-- **Tekrarlayıcılık:** Döngü basit olduğu için 5-10 saatten uzun oynanışta monotonluk riski var; ilerleme/kozmetik sistemleri bunu telafi etmeli
+To avoid excessive scope creep, the first prototype should have **only** the following:
+
+1. A single vehicle (car)
+2. A small, hand-built map (5-8 delivery points)
+3. A simple order loop (accept → go → deliver → get score)
+4. Basic economy: earn money, buy 2-3 upgrades
+5. Minimal UI (text-based order list + HUD)
+
+Not touching things like map expansion, multiple vehicles, or story before this scope is nailed down directly improves the project's chances of being finished.
+
+---
+
+## 8. Differentiation / Standout Ideas (optional, later phase)
+
+- A distinctive visual identity (e.g. a retro/low-poly style, or a local/Turkey-themed city setting)
+- Light humor or short NPC dialogues (your existing NPC dialogue system could be adapted)
+- Dynamic difficulty layers like weather / traffic density
+
+---
+
+## 9. Risks & Things to Watch Out For
+
+- **Economy balance:** Proceeding without testing the income/expense ratio is the biggest risk — even in the early prototype, a basic income/expense table should be kept
+- **Content volume:** Map and order variety are produced by hand, which eats time — keeping the scope small in the MVP is essential
+- **Repetitiveness:** Since the loop is simple, there's a monotony risk in play sessions longer than 5-10 hours; progression/cosmetic systems should compensate for this
