@@ -1,84 +1,84 @@
-# PROGRESS — Geliştirme Durumu
+# PROGRESS — Development Status
 
-Son güncelleme: 2026-07-19 (kesintisiz tam kodlama oturumu)
+Last updated: 2026-07-19 (uninterrupted full coding session)
 
-## Faz Durumu
+## Phase Status
 
-| Faz | Durum | Not |
+| Phase | Status | Note |
 |---|---|---|
-| 0. Ön Hazırlık | ✅ | Klasörler, git, docs, .gitkeep |
-| 1. Mimari Temeller | ✅ | GameManager (Shop state eklendi), EconomyManager (TrySpendMoney alias), OrderData (itibar kilidi + İngilizce CargoType), IInteractable/IUsable, SaveSystem v2 (versiyon+migrasyon, itibar, araçlar, yükseltmeler) |
-| 2. Araç + Kamera | ✅ | Mevcut VehicleController korundu + upgrade/fuel çarpanları eklendi. YENİ: VehicleCameraController (6 klasik kamera bugı çözümlü) + CameraSettings SO + Cinemachine kurulum MenuItem'ı. VehicleData SO (ekonomi metadatası) |
-| 3. Dünya İskeleti (kod) | ✅ | Waypoint + RouteManager (BFS + LineRenderer GPS), InteractionPoint (ID registry + gizmo) → PickupPoint/DeliveryPoint |
-| 4. Sipariş Sistemi | ✅ KOD TAMAM | OrderManager: teklif havuzu, kabul/red, alım→teslim, süre sayacı, geç teslim puan/ödeme düşüşü, başarısızlık. Editor'de tek tık örnek içerik (Setup menü 4). SAHNE KURULUMU KULLANICIDA — MANUAL_STEPS Bölüm B+C |
-| 5. İtibar | ✅ | ReputationManager: son N ortalama, Bronz/Gümüş/Altın/Elmas, ödeme çarpanı, sipariş havuzu filtresi |
-| 6. Ekonomi & Gider | ✅ | VehicleFuel (sürüşte tüketim, motor kesme), FuelStation (kısmi dolum), VehicleCondition (çarpışma hasarı), RepairStation |
-| 7. Mağaza | ✅ | ShopManager + VehicleUpgradeData (3 kategori), araç satın alma, VehicleUpgradeApplier (etkileri araca uygular). Yükseltme ASSET'lerini kullanıcı üretecek (MANUAL_STEPS D2) |
-| 8. UI | ✅ | Event-driven: HUD, sipariş paneli (Tab), mağaza (B), duraklatma (Esc), ana menü, etkileşim promptu, bildirimler. UIBootstrap runtime'da sıfır-kurulum UI kurar |
-| 9. Asset | 🟡 İnsan işi | ASSET_NEEDS.md güncel; kod placeholder'larla tam çalışır |
-| 10. Animasyon | 🟡 | Teker dönüşü kodda var; gerisi asset fazı |
-| 11. Ses | ✅ kancalar | AudioManager: müzik+SFX, PlayerPrefs ses seviyesi, sipariş event'lerine otomatik bağlanır. Clip'ler insan işi |
-| 12. Efekt/Cila | 🟡 | Skid mark kodda mevcut; partikül/post-processing insan işi (MANUAL_STEPS F) |
-| 13. Test & Denge | ⬜ | Kullanıcı playtest (MANUAL_STEPS Bölüm C senaryosu) |
-| 14. Optimizasyon | ✅ kancalar | ObjectPool hazır; static/LOD/occlusion adımları MANUAL_STEPS F4 |
-| 15. Build & Yayın | ⬜ | Adımlar MANUAL_STEPS F5-F6 |
+| 0. Preparation | ✅ | Folders, git, docs, .gitkeep |
+| 1. Architectural Foundations | ✅ | GameManager (Shop state added), EconomyManager (TrySpendMoney alias), OrderData (reputation lock + English CargoType), IInteractable/IUsable, SaveSystem v2 (versioning+migration, reputation, vehicles, upgrades) |
+| 2. Vehicle + Camera | ✅ | Existing VehicleController preserved + upgrade/fuel multipliers added. NEW: VehicleCameraController (6 classic camera bugs fixed) + CameraSettings SO + Cinemachine setup MenuItem. VehicleData SO (economy metadata) |
+| 3. World Skeleton (code) | ✅ | Waypoint + RouteManager (BFS + LineRenderer GPS), InteractionPoint (ID registry + gizmo) → PickupPoint/DeliveryPoint |
+| 4. Order System | ✅ CODE DONE | OrderManager: offer pool, accept/reject, pickup→delivery, time counter, late-delivery score/payment reduction, failure. One-click sample content in editor (Setup menu 4). SCENE SETUP IS ON THE USER — MANUAL_STEPS Sections B+C |
+| 5. Reputation | ✅ | ReputationManager: average of last N, Bronze/Silver/Gold/Diamond, payment multiplier, order pool filter |
+| 6. Economy & Expenses | ✅ | VehicleFuel (consumption while driving, engine cutoff), FuelStation (partial refill), VehicleCondition (crash damage), RepairStation |
+| 7. Shop | ✅ | ShopManager + VehicleUpgradeData (3 categories), vehicle purchase, VehicleUpgradeApplier (applies effects to the vehicle). Upgrade ASSETS to be produced by the user (MANUAL_STEPS D2) |
+| 8. UI | ✅ | Event-driven: HUD, order panel (Tab), shop (B), pause (Esc), main menu, interaction prompt, notifications. UIBootstrap builds zero-setup UI at runtime |
+| 9. Assets | 🟡 Human work | ASSET_NEEDS.md is up to date; code works fully with placeholders |
+| 10. Animation | 🟡 | Wheel rotation is in code; the rest is asset phase |
+| 11. Sound | ✅ hooks | AudioManager: music+SFX, PlayerPrefs volume, auto-wires to order events. Clips are human work |
+| 12. Effects/Polish | 🟡 | Skid mark exists in code; particles/post-processing are human work (MANUAL_STEPS F) |
+| 13. Testing & Balance | ⬜ | User playtest (MANUAL_STEPS Section C scenario) |
+| 14. Optimization | ✅ hooks | ObjectPool ready; static/LOD/occlusion steps in MANUAL_STEPS F4 |
+| 15. Build & Release | ⬜ | Steps in MANUAL_STEPS F5-F6 |
 
-## Verilen Kararlar / Varsayımlar (durmamak için not edildi)
+## Decisions / Assumptions Made (noted to avoid stalling)
 
-1. **GDD.md yok** — kök CLAUDE.md'deki GDD özeti esas alındı. Tam GDD gelirse `docs/GDD.md`'ye koy, uyumsuzluk varsa düzeltirim.
-2. **Legacy Input** — mevcut (test edilmiş) VehicleController Legacy kullanıyor; tüm yeni kod da öyle. Player Settings "Both" olmalı (MANUAL_STEPS A2).
-3. **Düz `DeliverySim` namespace** — alt namespace istenmişti ama mevcut tüm kod düz; proje CLAUDE.md'si tutarlılık şart koşuyor.
-4. **WheelCollider'a dönülmedi** — mevcut raycast süspansiyonlu controller test edilmiş ve çalışıyor; yeniden yazmak riskti. Tork eğrisi yerine mevcut RPM/vites simülasyonu korundu.
-5. **VehicleData SO fizik değil ekonomi metadatası** — controller bilinçli olarak SO okumuyor (kodda not var).
-6. **Sipariş süresi ALIMDA başlar** (teslimat bacağı zamanlı — GDD "teslimata zamanında götür" ifadesine uygun).
-7. **Etkileşim tuşu F** — E, viteste kullanılıyor (VehicleController).
-8. **UI legacy Text** — TMP importu gerektirmez, kutudan çıktığı gibi çalışır. TMP'ye geçiş cila fazında.
-9. **EconomyManager float bakiye + SpendMoney korundu**; `TrySpendMoney` alias eklendi.
-10. **Araç değiştirme (garaj) MVP dışı** — satın alma + sahiplik kaydı var, spawn/switch yok.
+1. **No GDD.md** — the GDD summary in the root CLAUDE.md was used as the basis. If the full GDD arrives, put it in `docs/GDD.md`, I'll fix any inconsistencies.
+2. **Legacy Input** — the existing (tested) VehicleController uses Legacy; all new code follows suit. Player Settings should be "Both" (MANUAL_STEPS A2).
+3. **Flat `DeliverySim` namespace** — a sub-namespace was requested but all existing code is flat; the project's CLAUDE.md requires consistency.
+4. **Did not revert to WheelCollider** — the existing raycast-suspension controller is tested and working; rewriting it was risky. Kept the existing RPM/gear simulation instead of a torque curve.
+5. **VehicleData SO is economy metadata, not physics** — the controller deliberately doesn't read the SO (noted in code).
+6. **Order time starts AT PICKUP** (the delivery leg is timed — matches the GDD's "deliver on time" phrasing).
+7. **Interact key is F** — E is used for gear shifting (VehicleController).
+8. **UI uses legacy Text** — doesn't require a TMP import, works out of the box. Switch to TMP in the polish phase.
+9. **EconomyManager kept its float balance + SpendMoney**; a `TrySpendMoney` alias was added.
+10. **Vehicle switching (garage) is out of MVP scope** — purchase + ownership record exist, spawn/switch doesn't.
 
-## Sistem Haritası (dosya → sorumluluk)
+## System Map (file → responsibility)
 
 - `_Managers/`: GameManager, EconomyManager, ReputationManager, ShopManager, AudioManager
 - `_Orders/`: OrderManager (+DeliveryResult), InteractionPoint, PickupPoint, DeliveryPoint
 - `_Core/`: Waypoint, RouteManager, FuelStation, RepairStation, NotificationService, ObjectPool
-- `_Vehicles/`: VehicleController (+çarpanlar), VehicleCameraController, VehicleFuel, VehicleCondition, VehicleInteractor, VehicleUpgradeApplier, VehicleCameraRig, SmoothMouseLook, CameraModeController
+- `_Vehicles/`: VehicleController (+multipliers), VehicleCameraController, VehicleFuel, VehicleCondition, VehicleInteractor, VehicleUpgradeApplier, VehicleCameraRig, SmoothMouseLook, CameraModeController
 - `_Data/`: OrderData, VehicleData, VehicleUpgradeData, CameraSettings, ReputationTier
-- `_Save/`: SaveSystem (v2, migrasyonlu)
+- `_Save/`: SaveSystem (v2, with migration)
 - `_UI/`: UIFactory, UIBootstrap, HUDController, OrderPanelController, ShopPanelController, PauseMenuController, MainMenuController, InteractionPromptUI, NotificationUI
-- `Editor/`: DeliverySimSetup (4 kurulum MenuItem'ı)
+- `Editor/`: DeliverySimSetup (4 setup MenuItems)
 
-## Düzeltme Kaydı (2026-07-20 — "araç kontrolü bozuldu" raporu)
+## Fix Log (2026-07-20 — "vehicle control broke" report)
 
-Teşhis: araç ayarlarına (grip/tork/süspansiyon) dokunulmamıştı; iki yeni etkileşim sorunu vardı:
-1. **Tab çakışması:** OrderPanelController ve CameraModeController ikisi de Tab kullanıyordu — panel açarken kamera first-person'a geçiyordu. Çözüm: sipariş paneli **O** tuşuna taşındı.
-2. **Rigidbody Interpolation:** Setup 2 komutu None→Interpolate yapmıştı; mass=1'lik hassas özel fizik bununla dengesizleşti. Çözüm: Setup artık interpolation'a dokunmuyor + **Setup 5** menü komutu eski ayara (None) döndürüyor.
-3. **Yeni:** `VehicleReset` (R tuşu) — takla sonrası aracı olduğu yerde düzeltir. Setup 2 ve 5 otomatik ekler.
-4. **ASIL TAKLA SEBEBİ (kullanıcı tespiti doğrulandı):** Nokta trigger'ları 5m yarıçaplı küre; süspansiyon raycast'i varsayılan ayarla trigger'lara da çarpıyordu → alana girişte tekerlek ışını görünmez küre kabuğunu zemin sanıp aracı fırlatıyordu. Çözüm: süspansiyon raycast'ine `QueryTriggerInteraction.Ignore` eklendi (VehicleController.FixedUpdate).
+Diagnosis: vehicle settings (grip/torque/suspension) hadn't been touched; there were two new interaction problems:
+1. **Tab conflict:** OrderPanelController and CameraModeController both used Tab — opening the panel switched the camera to first-person. Fix: the order panel was moved to the **O** key.
+2. **Rigidbody Interpolation:** the Setup 2 command had changed None→Interpolate; the mass=1 sensitive custom physics became unstable with this. Fix: Setup no longer touches interpolation + the new **Setup 5** menu command reverts to the old setting (None).
+3. **New:** `VehicleReset` (R key) — resets the vehicle in place after a rollover. Setup 2 and 5 add it automatically.
+4. **ROOT CAUSE OF THE ROLLOVER (user's diagnosis confirmed):** Point triggers are 5m-radius spheres; with default settings the suspension raycast was also hitting triggers → entering the area, the wheel ray mistook the invisible sphere shell for ground and launched the vehicle. Fix: added `QueryTriggerInteraction.Ignore` to the suspension raycast (VehicleController.FixedUpdate).
 
-Eski scriptler (`_CarScripts/Car.cs`, `Camera.cs`, `ui.cs`) kontrol edildi: yalnızca pasif objelerde, aktif araca etkileri yok.
+Old scripts (`_CarScripts/Car.cs`, `Camera.cs`, `ui.cs`) were checked: they're only on passive objects, no effect on the active vehicle.
 
-## Düzeltme Kaydı 2 (2026-07-20 — takla kök çözümü + gerçekçi sürüş)
+## Fix Log 2 (2026-07-20 — rollover root-cause fix + realistic driving)
 
-Derin teşhis (git geçmişi + sahne YAML + kod analizi):
-- Değerler oturumda değişmemişti (`git diff` temiz). Asıl sorun: aktif araç "PlayerVeichle Car" **1 kg kütle**, asistler kapalı, düşürülmüş grip/süspansiyon değerleriyle çalışıyordu — devrilme ataleti ~0.4 kg·m², her viraj kuvveti taklaya yetiyor. (Pasif eski "PlayerVehicle": 1500 kg + asistler açık.)
-- Kod eksikleri: yanal tutuş kuvveti zemin noktasından uygulanıyordu (maksimum devirme momenti), anti-roll bar yoktu, fizik `transform` okuyordu (Interpolation açıkken FixedUpdate'te ara-poz okunup süspansiyona hata karışıyordu).
+Deep diagnosis (git history + scene YAML + code analysis):
+- Values hadn't changed during the session (`git diff` clean). The actual problem: the active vehicle "PlayerVeichle Car" was running with **1 kg mass**, assists off, reduced grip/suspension values — rollover inertia ~0.4 kg·m², every corner force was enough to flip it. (The passive old "PlayerVehicle": 1500 kg + assists on.)
+- Code gaps: lateral grip force was applied at the ground contact point (maximum tipping moment), there was no anti-roll bar, the physics was reading `transform` (with Interpolation on, an intermediate pose was being read in FixedUpdate, corrupting the suspension).
 
-Uygulanan çözüm:
-1. `VehicleController.FixedUpdate` tamamen `rb.position/rb.rotation` tabanlı — **Interpolation artık AÇIK kalabiliyor** (kamera akıcı, fizik doğru). Setup 5 komutu tersine çevrildi: Interpolation'ı AÇIK garanti eder.
-2. Yeni mekanik: **anti-roll bar** (aks başına, `antiRollStiffness`, varsayılan 0=kapalı) + **roll-center** (`lateralForceHeight`, yanal kuvvet CoM yüksekliğine doğru uygulanır, varsayılan 0.6).
-3. **Setup 6 - Apply Realistic Vehicle Tuning**: 1200 kg + türetilmiş tutarlı set (suspensionForce 40000, clamp 15000, damp 4, gripX 8 / gripZ 42, engineTorque 1200, teker 20 kg, turnAngle 30, CoM -0.3, antiRoll 12000, asistler açık). Undo destekli; eski değerler uygulanmadan önce Console'a loglanır.
-4. Yan kazanım: kütle gerçekçi olunca `VehicleCondition` hasar eşiği (impulse 300) gerçekten çalışır oldu (1 kg'da hiç tetiklenmiyordu).
+Solution applied:
+1. `VehicleController.FixedUpdate` is now entirely `rb.position/rb.rotation`-based — **Interpolation can now stay ON** (smooth camera, correct physics). The Setup 5 command was reversed: it now guarantees Interpolation is ON.
+2. New mechanic: **anti-roll bar** (per axle, `antiRollStiffness`, default 0=off) + **roll-center** (`lateralForceHeight`, lateral force is applied toward the CoM height, default 0.6).
+3. **Setup 6 - Apply Realistic Vehicle Tuning**: 1200 kg + a derived consistent set (suspensionForce 40000, clamp 15000, damp 4, gripX 8 / gripZ 42, engineTorque 1200, wheel 20 kg, turnAngle 30, CoM -0.3, antiRoll 12000, assists on). Undo-supported; old values are logged to Console before being applied.
+4. Side benefit: with realistic mass, `VehicleCondition`'s damage threshold (impulse 300) actually works now (it never triggered at 1 kg).
 
-## Düzeltme Kaydı 3 (2026-07-20 — pro kontroller, kamera hissi, nokta fiziği, mesafe-bazlı süre)
+## Fix Log 3 (2026-07-20 — pro controls, camera feel, point physics, distance-based time)
 
-1. **Tuş düzeni sürüş oyunu standardına çekildi:** E=etkileşim (F yerine; sahne değeri Setup 7 ile güncellenir), Tab=siparişler, C=kamera modu, LShift/LCtrl=vites (E/Q yerine), Space/R/B/Esc aynı. Tüm tuşlar artık serialize alan (Inspector'dan değiştirilebilir).
-2. **Kamera hissi:** Ana bulgu — OrbitalFollow "World Space" binding'deydi, kamera araç dönüşünü takip etmiyordu. Setup 7: binding → LockToTargetWithWorldUp (yaw-yumuşatmalı rig ile döner), PositionDamping (0.3, 0.8, 0.3), RotationComposer (0.4), rig yaw 6. `SmoothMouseLook`'a otomatik recentering eklendi (1.2 sn boşta → arkaya süzülür, kapatılabilir).
-3. **Kamera geçişleri:** Brain DefaultBlend = EaseInOut 0.8 sn (2 sn gevşek varsayılan yerine). First-person'a mikro-titreşim filtresi (HardLock 0.08 / RotateWith 0.15 damping).
-4. **Nokta fiziği + görünürlük (Setup 8):** Her noktaya katı Kiosk küpü (içinden geçilemez — görünür gerçek engel, trigger-fırlatma bug'ıyla ilgisiz), her zaman görünür renkli işaret (yeşil=alım, turuncu=teslim; `permanentBeacon` alanı, asla gizlenmez), aktif hedefte yanan zemin halkası (`markerVisual`). İstasyon küpleri katılaştı. URP Lit materyalleri `Art/Materials/` altına asset olarak üretilir.
-5. **Mesafe-bazlı süre:** OrderManager `GetEstimatedTimeLimit` — pickup→teslim mesafesi × routeFactor(1.4) / ortalama hız(40 km/s) + tampon(20 sn), min 45 sn. Kabulde hesaplanır (`activeTimeLimit`), sayaç/başarısızlık/puan bu değeri kullanır; teklif kartı tahmini gösterir. OrderData.timeLimitSeconds fallback olarak durur.
+1. **Key layout moved to the driving-game standard:** E=interact (instead of F; the scene value is updated via Setup 7), Tab=orders, C=camera mode, LShift/LCtrl=gear (instead of E/Q), Space/R/B/Esc unchanged. All keys are now serialized fields (changeable from the Inspector).
+2. **Camera feel:** Main finding — OrbitalFollow was in "World Space" binding, the camera wasn't following the vehicle's turning. Setup 7: binding → LockToTargetWithWorldUp (rotates with a yaw-smoothed rig), PositionDamping (0.3, 0.8, 0.3), RotationComposer (0.4), rig yaw 6. Auto-recentering added to `SmoothMouseLook` (1.2 sec idle → glides back behind the vehicle, can be disabled).
+3. **Camera transitions:** Brain DefaultBlend = EaseInOut 0.8 sec (instead of the loose 2 sec default). A micro-jitter filter for first-person (HardLock 0.08 / RotateWith 0.15 damping).
+4. **Point physics + visibility (Setup 8):** A solid Kiosk cube on every point (can't drive through — a visible real obstacle, unrelated to the trigger-launch bug), an always-visible colored marker (green=pickup, orange=delivery; `permanentBeacon` field, never hidden), a glowing ground ring on the active target (`markerVisual`). Station cubes became solid too. URP Lit materials are generated as assets under `Art/Materials/`.
+5. **Distance-based time:** OrderManager's `GetEstimatedTimeLimit` — pickup→delivery distance × routeFactor(1.4) / average speed(40 km/h) + buffer(20 sec), min 45 sec. Calculated on accept (`activeTimeLimit`), the counter/failure/score use this value; the offer card shows the estimate. OrderData.timeLimitSeconds remains as a fallback.
 
-## Sonraki Oturum İçin
+## For the Next Session
 
-- Kullanıcı MANUAL_STEPS B+C'yi uygulayıp test sonucunu bildirecek.
-- Derleme hatası çıkarsa Console'daki ilk hata satırı yeterli.
-- TMP geçişi, garaj/araç değiştirme, motor sesi pitch bağlama, yerelleştirme — istek üzerine.
+- The user will apply MANUAL_STEPS B+C and report the test result.
+- If a compile error comes up, the first error line in Console is enough.
+- TMP migration, garage/vehicle switching, engine sound pitch binding, localization — on request.
