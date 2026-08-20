@@ -150,6 +150,182 @@ namespace DeliverySim.EditorTools
             Debug.Log("[Setup] '" + DistrictRootName + "' kaldırıldı. Sahneyi kaydet (Ctrl+S).");
         }
 
+        private const string KennyWaypointRootName = "_KennyRoadWaypoints";
+        private const float KennyWaypointHeight = 0.15f; // matches DowntownMapSetup.WaypointHeight
+
+        /// <summary>
+        /// Kenney has no discrete road meshes (see BuildDistrict's doc comment above) —
+        /// the whole district drives on one open ground Plane, so there's no
+        /// RoadTilePositions-style array to extract like Downtown has. Instead this
+        /// derives an aisle grid from the ACTUAL placed building positions (parsed
+        /// from their "prefabName_row_col" name suffix), so the waypoint spacing
+        /// always matches whatever BuildDistrict really used, without duplicating its
+        /// footprint-measurement logic. Before this existed, orders in this district
+        /// had zero waypoint graph — RouteManager fell back to a straight line from
+        /// the nearest Downtown node, straight through buildings.
+        /// </summary>
+        [MenuItem("DeliverySim/Setup/15 - Build Kenney Waypoint Graph")]
+        public static void BuildWaypointGraph()
+        {
+            if (GameObject.Find(KennyWaypointRootName) != null)
+            {
+                Debug.Log("[Setup] Kenney yol waypoint ağı zaten var — tekrar oluşturulmadı.");
+                return;
+            }
+
+            GameObject districtRoot = GameObject.Find(DistrictRootName);
+            if (districtRoot == null)
+            {
+                Debug.LogError("[Setup] '" + DistrictRootName + "' sahnede yok — önce '13 - Build Kenney District' çalıştır.");
+                return;
+            }
+
+            var colX = new Dictionary<int, float>();
+            var rowZ = new Dictionary<int, float>();
+
+            foreach (Transform child in districtRoot.transform)
+            {
+                string[] parts = child.name.Split('_');
+                if (parts.Length < 3)
+                {
+                    continue;
+                }
+
+                if (!int.TryParse(parts[parts.Length - 1], out int c) ||
+                    !int.TryParse(parts[parts.Length - 2], out int r))
+                {
+                    continue;
+                }
+
+                colX[c] = child.localPosition.x;
+                rowZ[r] = child.localPosition.z;
+            }
+
+            if (colX.Count < 2 || rowZ.Count < 2)
+            {
+                Debug.LogError("[Setup] Kenney bina grid'i okunamadı — '" + DistrictRootName +
+                                "' altında beklenen 'isim_satır_sütun' adlı obje bulunamadı.");
+                return;
+            }
+
+            var cols = new List<int>(colX.Keys);
+            var rows = new List<int>(rowZ.Keys);
+            cols.Sort();
+            rows.Sort();
+
+            float spacing = Mathf.Abs(rowZ[rows[1]] - rowZ[rows[0]]);
+            if (spacing <= 0.01f)
+            {
+                Debug.LogError("[Setup] Kenney bina aralığı ölçülemedi (spacing <= 0) — grid hesaplanamadı.");
+                return;
+            }
+
+            float halfSpacing = spacing * 0.5f;
+
+            // Aisle lines: one more than the row/column count, bounding every row/column
+            // (e.g. 4 building rows -> 5 aisle lines running east-west between/around them).
+            var columnLines = new List<float>(cols.Count + 1);
+            for (int i = 0; i <= cols.Count; i++)
+            {
+                columnLines.Add(colX[cols[0]] - halfSpacing + i * spacing);
+            }
+
+            var rowLines = new List<float>(rows.Count + 1);
+            for (int i = 0; i <= rows.Count; i++)
+            {
+                rowLines.Add(rowZ[rows[0]] - halfSpacing + i * spacing);
+            }
+
+            GameObject root = new GameObject(KennyWaypointRootName);
+            Undo.RegisterCreatedObjectUndo(root, "Build Kenney Waypoints");
+
+            var grid = new Waypoint[rowLines.Count, columnLines.Count];
+            for (int ri = 0; ri < rowLines.Count; ri++)
+            {
+                for (int ci = 0; ci < columnLines.Count; ci++)
+                {
+                    GameObject go = new GameObject($"KW_{ri}_{ci}");
+                    go.transform.SetParent(root.transform, false);
+                    Vector3 localPos = new Vector3(columnLines[ci], KennyWaypointHeight, rowLines[ri]);
+                    go.transform.position = districtRoot.transform.position + localPos;
+                    grid[ri, ci] = go.AddComponent<Waypoint>();
+                }
+            }
+
+            int linkCount = 0;
+            for (int ri = 0; ri < rowLines.Count; ri++)
+            {
+                for (int ci = 0; ci < columnLines.Count; ci++)
+                {
+                    if (ci + 1 < columnLines.Count)
+                    {
+                        grid[ri, ci].neighbors.Add(grid[ri, ci + 1]);
+                        linkCount++;
+                    }
+
+                    if (ri + 1 < rowLines.Count)
+                    {
+                        grid[ri, ci].neighbors.Add(grid[ri + 1, ci]);
+                        linkCount++;
+                    }
+                }
+            }
+
+            // Bridge into whatever other district graph already exists (e.g. Downtown's
+            // _RoadWaypoints) — same nearest-pair idea DowntownMapSetup.ExtendWaypointGraph
+            // uses. Without this, Kenney's grid would be an island: RouteManager could
+            // route within it but never through it to reach the rest of the map.
+            var otherNodes = new List<Waypoint>();
+            foreach (Waypoint w in Object.FindObjectsByType<Waypoint>(FindObjectsSortMode.None))
+            {
+                if (!w.transform.IsChildOf(root.transform))
+                {
+                    otherNodes.Add(w);
+                }
+            }
+
+            if (otherNodes.Count > 0)
+            {
+                Waypoint bestOld = null;
+                Waypoint bestNew = null;
+                float bestDist = float.MaxValue;
+
+                foreach (Waypoint oldNode in otherNodes)
+                {
+                    for (int ri = 0; ri < rowLines.Count; ri++)
+                    {
+                        for (int ci = 0; ci < columnLines.Count; ci++)
+                        {
+                            float dist = Vector3.Distance(oldNode.transform.position, grid[ri, ci].transform.position);
+                            if (dist < bestDist)
+                            {
+                                bestDist = dist;
+                                bestOld = oldNode;
+                                bestNew = grid[ri, ci];
+                            }
+                        }
+                    }
+                }
+
+                if (bestOld != null && bestNew != null)
+                {
+                    bestOld.neighbors.Add(bestNew);
+                    bestNew.neighbors.Add(bestOld);
+                    Debug.Log($"[Setup] Kenney yol ağı diğer bölgeye bağlandı: '{bestOld.name}' <-> '{bestNew.name}' (mesafe {bestDist:F1}m).");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[Setup] Bağlanacak başka waypoint bulunamadı (Downtown ağı henüz kurulmamış olabilir) — Kenney ağı izole kaldı.");
+            }
+
+            EditorUtility.SetDirty(root);
+            Selection.activeGameObject = root;
+            Debug.Log($"[Setup] Kenney mahallesine {grid.Length} waypoint, {linkCount} komşuluk bağlantısıyla " +
+                      $"({rowLines.Count}x{columnLines.Count} ızgara, {spacing:F1}m aralık) eklendi. RouteManager artık " +
+                      "bu bölgede de yola göre çizecek (bina arasından kestirme yok). Sahneyi kaydet (Ctrl+S).");
+        }
+
         /// <summary>
         /// Measures max X/Z footprint across all named prefabs, and records each
         /// prefab's world-space bounds.min.y (measured with the temp instance at
