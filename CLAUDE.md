@@ -2,6 +2,10 @@
 
 This file is the project context for Claude Code. Follow these rules when writing/reviewing code.
 
+## ⚠️ CRITICAL — Read RULES.md First, Every Session
+
+[RULES.md](RULES.md) holds the user's non-negotiable working rules (Input System policy, commit/push discipline, communication style, verify-before-acting, permission to push back). These are not optional preferences — read them at the start of every session and follow them in every response, unless the user explicitly says otherwise in that session.
+
 ## Game Summary
 
 Casual driving / job simulator / economy. The player is an independent courier driver: accept an order → pick up the load from the pickup point → deliver it to the delivery point on time → earn a rating and payment → invest earnings into vehicle/upgrades/cosmetics.
