@@ -6,8 +6,8 @@ namespace DeliverySim
     /// <summary>
     /// Draws a GPS-style route decal from the player vehicle to the current order
     /// target. If Waypoint nodes exist in the scene, the route follows the road
-    /// graph (BFS shortest hop path); otherwise it falls back to a straight line.
-    /// OrderManager calls SetDestination/ClearDestination.
+    /// graph (Dijkstra, real-distance shortest path); otherwise it falls back to a
+    /// straight line. OrderManager calls SetDestination/ClearDestination.
     ///
     /// Rendered as a real flat ribbon MESH lying on the ground (not a LineRenderer)
     /// — a LineRenderer's "TransformZ" alignment only lies flat if the object's
@@ -18,6 +18,9 @@ namespace DeliverySim
     /// </summary>
     public class RouteManager : MonoBehaviour
     {
+        /// <summary>Upcoming maneuver, derived from the angle between consecutive route segments — consumed by the HUD turn indicator.</summary>
+        public enum TurnDirection { None, Straight, Left, Right }
+
         public static RouteManager Instance { get; private set; }
 
         [Header("References")]
@@ -50,6 +53,7 @@ namespace DeliverySim
 
         private Waypoint[] waypoints = new Waypoint[0];
         private Vector3? destination;
+        private TurnDirection nextTurn = TurnDirection.None;
 
         // Reused every frame to avoid per-frame allocations.
         private readonly List<Vector3> pathPoints = new List<Vector3>(32);
@@ -60,6 +64,9 @@ namespace DeliverySim
 
         public Vector3? CurrentDestination => destination;
 
+        /// <summary>Upcoming turn along the currently rendered route — legible-guidance HUD cue (no route = None).</summary>
+        public TurnDirection NextTurn => nextTurn;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -69,6 +76,21 @@ namespace DeliverySim
             }
 
             Instance = this;
+
+            // Self-heal: scenes/inspector values created before the dedicated "Road"
+            // layer existed are still serialized as "everything" (~0). Once that layer
+            // exists in the project, narrow to it automatically so GroundSnap can no
+            // longer hit building/prop colliders — that was the "route ribbon snaps
+            // onto rooftops instead of the street" bug.
+            if (groundLayerMask.value == ~0)
+            {
+                int roadLayer = LayerMask.NameToLayer("Road");
+                if (roadLayer >= 0)
+                {
+                    groundLayerMask = 1 << roadLayer;
+                }
+            }
+
             CreateRouteMesh();
         }
 
@@ -98,26 +120,20 @@ namespace DeliverySim
         {
             if (destination == null || routeStart == null)
             {
-                if (meshRenderer != null && meshRenderer.enabled)
-                {
-                    meshRenderer.enabled = false;
-                }
-
+                SetRouteVisible(false);
                 return;
-            }
-
-            if (meshRenderer != null && !meshRenderer.enabled)
-            {
-                meshRenderer.enabled = true;
             }
 
             // Rebuilt every frame: the path is short (a handful of waypoint hops),
             // so this is cheap, and it's what guarantees the ribbon never lags
             // behind the moving car or the ground it hugs — that staleness was
-            // the actual source of the "kasıyor" / "bazen gözükmüyor" complaints.
+            // the actual source of the "kasıyor" complaint. RebuildMesh() is now the
+            // single place that decides visibility (via SetRouteVisible), so the
+            // renderer's enabled flag and the mesh content can never desync again —
+            // that desync was the "bazen gözükmüyor" flicker bug.
             RebuildMesh();
 
-            if (routeMaterial != null && scrollSpeed != 0f)
+            if (routeMaterial != null && scrollSpeed != 0f && meshRenderer != null && meshRenderer.enabled)
             {
                 // Tiles scroll from the player toward the destination for a GPS "flow" cue.
                 Vector2 offset = routeMaterial.mainTextureOffset;
@@ -134,15 +150,7 @@ namespace DeliverySim
         public void ClearDestination()
         {
             destination = null;
-            if (mesh != null)
-            {
-                mesh.Clear();
-            }
-
-            if (meshRenderer != null)
-            {
-                meshRenderer.enabled = false;
-            }
+            SetRouteVisible(false);
         }
 
         /// <summary>Straight-line distance from the vehicle to the destination (for HUD).</summary>
@@ -154,6 +162,31 @@ namespace DeliverySim
             }
 
             return Vector3.Distance(routeStart.position, destination.Value);
+        }
+
+        /// <summary>
+        /// Single source of truth for route visibility. Every place that used to
+        /// toggle meshRenderer.enabled and mesh.Clear() independently (Update,
+        /// ClearDestination, RebuildMesh's degenerate-path branch) now goes through
+        /// here, so those two states can no longer desync — that desync was the
+        /// "sometimes shows, sometimes doesn't" flicker bug.
+        /// </summary>
+        private void SetRouteVisible(bool visible)
+        {
+            if (meshRenderer != null)
+            {
+                meshRenderer.enabled = visible;
+            }
+
+            if (!visible)
+            {
+                if (mesh != null)
+                {
+                    mesh.Clear();
+                }
+
+                nextTurn = TurnDirection.None;
+            }
         }
 
         private void CreateRouteMesh()
@@ -225,6 +258,7 @@ namespace DeliverySim
         {
             if (mesh == null || destination == null || routeStart == null)
             {
+                SetRouteVisible(false);
                 return;
             }
 
@@ -254,9 +288,11 @@ namespace DeliverySim
 
             if (snappedPoints.Count < 2)
             {
-                mesh.Clear();
+                SetRouteVisible(false);
                 return;
             }
+
+            UpdateNextTurn(snappedPoints);
 
             float halfWidth = lineWidth * 0.5f;
             float cumulativeDistance = 0f;
@@ -312,6 +348,46 @@ namespace DeliverySim
             mesh.SetUVs(0, meshUvs);
             mesh.SetTriangles(meshTriangles, 0);
             mesh.RecalculateBounds();
+
+            SetRouteVisible(true);
+        }
+
+        /// <summary>
+        /// Derives the next maneuver from the angle between consecutive route
+        /// segments (the same direction vectors used for chevron orientation above)
+        /// — no new geometry, just reading data already computed each rebuild.
+        /// </summary>
+        private void UpdateNextTurn(List<Vector3> points)
+        {
+            if (points.Count < 2)
+            {
+                nextTurn = TurnDirection.None;
+                return;
+            }
+
+            const float turnAngleThresholdDegrees = 20f;
+
+            for (int i = 0; i < points.Count - 2; i++)
+            {
+                Vector3 a = points[i + 1] - points[i];
+                Vector3 b = points[i + 2] - points[i + 1];
+                a.y = 0f;
+                b.y = 0f;
+
+                if (a.sqrMagnitude < 0.0001f || b.sqrMagnitude < 0.0001f)
+                {
+                    continue;
+                }
+
+                float angle = Vector3.SignedAngle(a, b, Vector3.up);
+                if (Mathf.Abs(angle) >= turnAngleThresholdDegrees)
+                {
+                    nextTurn = angle > 0f ? TurnDirection.Right : TurnDirection.Left;
+                    return;
+                }
+            }
+
+            nextTurn = TurnDirection.Straight;
         }
 
         private static readonly RaycastHit[] groundHitBuffer = new RaycastHit[16];
@@ -419,27 +495,55 @@ namespace DeliverySim
             return nearest;
         }
 
-        /// <summary>BFS over the waypoint graph (links treated as bidirectional). Returns null when no path exists.</summary>
+        /// <summary>
+        /// Dijkstra over the waypoint graph (links treated as bidirectional), edge cost
+        /// = real world distance between linked nodes. Returns null when no path exists.
+        /// Was plain BFS (minimizes hop COUNT) — on an uneven graph that could surface a
+        /// route with fewer hops but a longer real distance than the alternative; this
+        /// guarantees the shortest actual route. Node counts here are small (tens, not
+        /// thousands), so a linear "pick closest unvisited" scan per step is plenty fast
+        /// without needing a binary-heap priority queue.
+        /// </summary>
         private List<Waypoint> FindGraphPath(Waypoint start, Waypoint end)
         {
+            var dist = new Dictionary<Waypoint, float> { { start, 0f } };
             var cameFrom = new Dictionary<Waypoint, Waypoint> { { start, null } };
-            var queue = new Queue<Waypoint>();
-            queue.Enqueue(start);
+            var visited = new HashSet<Waypoint>();
 
-            while (queue.Count > 0)
+            while (true)
             {
-                Waypoint current = queue.Dequeue();
-                if (current == end)
+                Waypoint current = null;
+                float bestDist = float.MaxValue;
+                foreach (KeyValuePair<Waypoint, float> candidate in dist)
+                {
+                    if (!visited.Contains(candidate.Key) && candidate.Value < bestDist)
+                    {
+                        bestDist = candidate.Value;
+                        current = candidate.Key;
+                    }
+                }
+
+                if (current == null || current == end)
                 {
                     break;
                 }
 
+                visited.Add(current);
+
                 foreach (Waypoint next in EnumerateNeighbors(current))
                 {
-                    if (next != null && !cameFrom.ContainsKey(next))
+                    if (next == null || visited.Contains(next))
                     {
+                        continue;
+                    }
+
+                    float candidateDist = dist[current] + Vector3.Distance(
+                        current.transform.position, next.transform.position);
+
+                    if (!dist.TryGetValue(next, out float existingDist) || candidateDist < existingDist)
+                    {
+                        dist[next] = candidateDist;
                         cameFrom[next] = current;
-                        queue.Enqueue(next);
                     }
                 }
             }

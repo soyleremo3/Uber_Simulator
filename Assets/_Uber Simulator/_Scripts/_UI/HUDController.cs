@@ -20,6 +20,7 @@ namespace DeliverySim
         [SerializeField] private Text distanceText;
         [SerializeField] private Text cargoText;
         [SerializeField] private Text reputationText;
+        [SerializeField] private Text turnText;
 
         [Header("Bars (all optional)")]
         [SerializeField] private Image fuelBar;
@@ -53,6 +54,11 @@ namespace DeliverySim
             fuelBar = fuel;
             conditionBar = condition;
             timerBar = timer;
+        }
+
+        public void SetTurnIndicator(Text turn)
+        {
+            turnText = turn;
         }
 
         private void Start()
@@ -94,6 +100,26 @@ namespace DeliverySim
                     ? RouteManager.Instance.GetDistanceToDestination()
                     : -1f;
                 distanceText.text = distance >= 0f ? $"Hedef: {distance:F0} m" : string.Empty;
+            }
+
+            if (turnText != null)
+            {
+                RouteManager.TurnDirection turn = RouteManager.Instance != null
+                    ? RouteManager.Instance.NextTurn
+                    : RouteManager.TurnDirection.None;
+                turnText.text = TurnLabel(turn);
+            }
+        }
+
+        /// <summary>Legible turn-by-turn cue — the route ribbon alone doesn't communicate direction on its own.</summary>
+        private static string TurnLabel(RouteManager.TurnDirection direction)
+        {
+            switch (direction)
+            {
+                case RouteManager.TurnDirection.Left: return "◄ SOLA DÖN";
+                case RouteManager.TurnDirection.Right: return "SAĞA DÖN ►";
+                case RouteManager.TurnDirection.Straight: return "▲ DÜZ GİT";
+                default: return string.Empty;
             }
         }
 

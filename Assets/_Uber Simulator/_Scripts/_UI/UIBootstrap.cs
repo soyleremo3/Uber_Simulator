@@ -93,9 +93,16 @@ namespace DeliverySim
             Text distance = UIFactory.CreateText(root, "DistanceText", string.Empty, 22, TextAnchor.MiddleCenter, new Color(0.8f, 0.9f, 1f));
             UIFactory.Place((RectTransform)distance.transform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(420f, 30f));
 
+            // Turn-by-turn cue: the ground route ribbon alone doesn't read as guidance
+            // from the driver's eye level, so this is the explicit "which way" text.
+            Text turn = UIFactory.CreateText(root, "TurnText", string.Empty, 26, TextAnchor.MiddleCenter,
+                new Color(1f, 0.85f, 0.3f));
+            UIFactory.Place((RectTransform)turn.transform, new Vector2(0.5f, 1f), new Vector2(0f, -110f), new Vector2(420f, 36f));
+
             HUDController hud = gameObject.AddComponent<HUDController>();
             hud.SetTexts(speed, money, fuel, condition, timer, distance, cargo, reputation);
             hud.SetBars(fuelFill, conditionFill, timerFill);
+            hud.SetTurnIndicator(turn);
         }
 
         private void BuildPrompt(Transform root)

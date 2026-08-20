@@ -20,6 +20,7 @@ namespace DeliverySim.EditorTools
         private const string StreetScenePath = "Assets/TirgamesAssets/StylizedWorld/Locations/Urban/Scenes/StylizedStreet.unity";
         private const string MapRootName = "DowntownStreet";
         private const string WaypointRootName = "_RoadWaypoints";
+        private const string RoadLayerName = "Road";
 
         // Local positions of every road tile (straight + wide "cross" segments) in the
         // vendor's own "WalkingStreet" demo, extracted from that scene's Roads group.
@@ -332,6 +333,116 @@ namespace DeliverySim.EditorTools
             }
 
             EditorUtility.SetDirty(root);
+        }
+
+        // ------------------------------------------------------------------
+        [MenuItem("DeliverySim/Setup/16 - Assign Road Physics Layer (Tüm Harita)")]
+        public static void AssignRoadLayer()
+        {
+            int roadLayer = EnsureRoadLayerExists();
+            if (roadLayer < 0)
+            {
+                Debug.LogError("[Setup] '" + RoadLayerName + "' layer'ı için boş bir Layer slotu bulunamadı (0-31 dolu) — elle bir slot boşalt.");
+                return;
+            }
+
+            int taggedCount = 0;
+
+            // Downtown: every "Roads" group under every district clone (there can be up
+            // to 4 after '12 - Expand Downtown Map'). Without this, RouteManager's
+            // ground-snap raycast (which used to scan every layer) could hit a
+            // building/prop collider before the road and snap the GPS line onto a
+            // rooftop instead of the street.
+            foreach (Transform roadsGroup in FindAllRoadsGroups())
+            {
+                foreach (Collider col in roadsGroup.GetComponentsInChildren<Collider>(true))
+                {
+                    GameObject tileGo = col.gameObject;
+                    if (tileGo.layer != roadLayer)
+                    {
+                        Undo.RecordObject(tileGo, "Assign Road Layer");
+                        tileGo.layer = roadLayer;
+                        EditorUtility.SetDirty(tileGo);
+                        taggedCount++;
+                    }
+                }
+            }
+
+            // Kenney: the whole district drives on one shared ground Plane (it has no
+            // discrete road meshes — see KennyDistrictSetup's doc comment).
+            GameObject plane = GameObject.Find("Plane");
+            if (plane != null && plane.GetComponent<Collider>() != null)
+            {
+                if (plane.layer != roadLayer)
+                {
+                    Undo.RecordObject(plane, "Assign Road Layer");
+                    plane.layer = roadLayer;
+                    EditorUtility.SetDirty(plane);
+                    taggedCount++;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[Setup] Sahnede collider'lı bir 'Plane' bulunamadı — Kenney zemini Road layer'ına alınamadı.");
+            }
+
+            Debug.Log($"[Setup] '{RoadLayerName}' layer'ı (index {roadLayer}) hazır, {taggedCount} obje bu layer'a taşındı. " +
+                      "RouteManager artık sadece yol/zeminden zıplayacak, binalardan değil (RouteManager kendi groundLayerMask'ını " +
+                      "bu layer'a otomatik daraltır). Sahneyi kaydet (Ctrl+S).");
+        }
+
+        private static IEnumerable<Transform> FindAllRoadsGroups()
+        {
+            foreach (Transform t in Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
+            {
+                if (t.name == "Roads" && t.parent != null && t.parent.name.StartsWith(MapRootName))
+                {
+                    yield return t;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates the "Road" Tag Manager layer via SerializedObject (the same
+        /// mechanism the Editor's own Layer inspector uses) instead of hand-editing
+        /// ProjectSettings/TagManager.asset directly — no risk of corrupting or
+        /// reordering the existing 32-slot layer list, and safe to call repeatedly
+        /// (idempotent: returns the existing index if the layer is already there).
+        /// </summary>
+        private static int EnsureRoadLayerExists()
+        {
+            int existing = LayerMask.NameToLayer(RoadLayerName);
+            if (existing >= 0)
+            {
+                return existing;
+            }
+
+            Object[] tagManagerAssets = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset");
+            if (tagManagerAssets.Length == 0)
+            {
+                return -1;
+            }
+
+            var tagManager = new SerializedObject(tagManagerAssets[0]);
+            SerializedProperty layers = tagManager.FindProperty("layers");
+            if (layers == null)
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < layers.arraySize; i++)
+            {
+                SerializedProperty slot = layers.GetArrayElementAtIndex(i);
+                if (string.IsNullOrEmpty(slot.stringValue))
+                {
+                    slot.stringValue = RoadLayerName;
+                    tagManager.ApplyModifiedProperties();
+                    AssetDatabase.SaveAssets();
+                    return i;
+                }
+            }
+
+            return -1;
         }
     }
 }
