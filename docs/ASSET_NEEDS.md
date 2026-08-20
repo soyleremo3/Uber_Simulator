@@ -1,46 +1,46 @@
-# ASSET_NEEDS — Gereken Asset Listesi
+# ASSET_NEEDS — Required Asset List
 
-Kod placeholder varsayımıyla yazılıyor; buradaki her şey sonradan gerçek asset ile değiştirilecek.
-Öncelik: **P0 = MVP için şart**, **P1 = MVP sonrası ilk faz**, **P2 = cila/geç faz**.
+The code is written assuming placeholders; everything here will be replaced with a real asset later.
+Priority: **P0 = required for MVP**, **P1 = first phase after MVP**, **P2 = polish/late phase**.
 
-## 3D Modeller
+## 3D Models
 
-| Öncelik | Asset | Not |
+| Priority | Asset | Note |
 |---|---|---|
-| P0 | 1 adet low-poly araba | Placeholder küp/basit model yeterli — zaten sahnede araç var |
-| P0 | Teker modeli (prefab) | VehicleController `wheelPrefab` alanına atanıyor; pivot merkezde olmalı |
-| P1 | Blockout yerine modüler şehir kiti | Bina, yol, kaldırım, sokak lambası |
-| P1 | 2-3 ek araç (motor, kamyonet) | Mağaza fazı için |
-| P2 | Dekor (ağaç, bank, çöp kutusu) | |
+| P0 | 1 low-poly car | A placeholder cube/simple model is enough — there's already a vehicle in the scene |
+| P0 | Wheel model (prefab) | Assigned to VehicleController's `wheelPrefab` field; pivot must be centered |
+| P1 | A modular city kit instead of the blockout | Buildings, roads, sidewalks, street lamps |
+| P1 | 2-3 additional vehicles (motorcycle, van) | For the shop phase |
+| P2 | Decor (tree, bench, trash can) | |
 
 ## UI / 2D
 
-| Öncelik | Asset | Not |
+| Priority | Asset | Note |
 |---|---|---|
-| P0 | Para simgesi ikonu | HUD + mağaza |
-| P0 | Sipariş tipi ikonları (Yemek / Paket / Kırılabilir) | CargoType enum'una karşılık |
-| P0 | Yıldız/puan ikonu | Değerlendirme ekranı |
-| P1 | Telefon UI çerçevesi | Sipariş ekranı görseli |
+| P0 | Money icon | HUD + shop |
+| P0 | Order type icons (Food / Package / Fragile) | Corresponds to the CargoType enum |
+| P0 | Star/rating icon | Score screen |
+| P1 | Phone UI frame | Order screen visual |
 
-## Ses / Müzik
+## Sound / Music
 
-Hepsi `_Managers` objesindeki **AudioManager** Inspector alanlarına sürüklenecek (alanlar hazır, boşken oyun sessiz çalışır).
+All of these will be dragged onto the **AudioManager**'s Inspector fields on the `_Managers` object (fields are ready, the game runs silently while they're empty).
 
-| Öncelik | Asset | AudioManager alanı |
+| Priority | Asset | AudioManager field |
 |---|---|---|
-| P1 | Sipariş kabul SFX | Order Accepted Clip |
-| P1 | Yük alındı SFX | Cargo Picked Up Clip |
-| P1 | Teslimat tamam SFX | Order Completed Clip |
-| P1 | Sipariş başarısız SFX | Order Failed Clip |
-| P1 | Para kazanma SFX | Money Earned Clip |
-| P1 | Hata SFX | Error Clip |
-| P2 | Arka plan müziği (casual loop) | Background Music |
-| P2 | Motor sesi (loop, RPM pitch) | Ayrı faz — kanca `VehicleEngine.GetRPM()` hazır |
-| P2 | Şehir ambiyansı (loop) | Ayrı source gerektirir, istek üzerine eklenir |
+| P1 | Order accepted SFX | Order Accepted Clip |
+| P1 | Cargo picked up SFX | Cargo Picked Up Clip |
+| P1 | Delivery complete SFX | Order Completed Clip |
+| P1 | Order failed SFX | Order Failed Clip |
+| P1 | Money earned SFX | Money Earned Clip |
+| P1 | Error SFX | Error Clip |
+| P2 | Background music (casual loop) | Background Music |
+| P2 | Engine sound (loop, RPM pitch) | Separate phase — the `VehicleEngine.GetRPM()` hook is ready |
+| P2 | City ambience (loop) | Requires a separate source, will be added on request |
 
-## Efekt / Diğer
+## Effects / Other
 
-| Öncelik | Asset | Not |
+| Priority | Asset | Note |
 |---|---|---|
-| P0 | Skid mark TrailRenderer prefab'ı | VehicleController `skidMarkPrefab` alanı — basit siyah trail yeterli |
-| P2 | Partiküller: toz/duman, teslimat konfeti, para efekti | |
+| P0 | Skid mark TrailRenderer prefab | VehicleController's `skidMarkPrefab` field — a simple black trail is enough |
+| P2 | Particles: dust/smoke, delivery confetti, money effect | |
