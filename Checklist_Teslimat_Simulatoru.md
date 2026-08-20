@@ -1,17 +1,17 @@
-# Geliştirme Checklist'i — Teslimat Şoförü Simülatörü
-### Sıfırdan Bitmiş Oyuna Kadar, Adım Adım
+# Development Checklist — Delivery Driver Simulator
+### Step by Step, From Scratch to Finished Game
 
-> Bu liste sırasıyla takip edilmek üzere tasarlandı. Her ana başlık bir önceki başlığın üzerine inşa edilir. Bir bölümü tamamen bitirmeden sonrakine geçmemeye çalış — özellikle "Çekirdek Döngü" bölümleri (3-6) birbirine bağımlı.
+> This list is designed to be followed in order. Each main heading builds on the previous one. Try not to move to the next section before fully finishing one — especially the "Core Loop" sections (3-6) depend on each other.
 
 ---
 
-## 0. Ön Hazırlık
+## 0. Preparation
 
-- [ ] Unity 6.4 projesini oluştur (3D Core template)
-- [ ] Version control kur (Git + .gitignore — Unity için hazır `.gitignore` şablonu kullan)
-- [ ] Klasör yapısını oluştur:
+- [ ] Create the Unity 6.4 project (3D Core template)
+- [ ] Set up version control (Git + .gitignore — use a ready-made Unity `.gitignore` template)
+- [ ] Create the folder structure:
   - `_Project/Scripts`
-  - `_Project/Scripts/Data` (ScriptableObject'lar)
+  - `_Project/Scripts/Data` (ScriptableObjects)
   - `_Project/Scripts/Managers`
   - `_Project/Scripts/Vehicles`
   - `_Project/Scripts/Orders`
@@ -19,225 +19,225 @@
   - `_Project/Prefabs`
   - `_Project/Art/Models`, `Art/Materials`, `Art/Animations`
   - `_Project/Audio`
-- [ ] Namespace belirle (ör. `DeliverySim`) ve tüm scriptlerde kullan
-- [ ] Input System paketini kur (yeni Input System veya Legacy — karar ver ve sabitle)
-- [ ] Git ilk commit ("Initial project setup")
+- [ ] Decide on a namespace (e.g. `DeliverySim`) and use it in all scripts
+- [ ] Install the Input System package (new Input System or Legacy — decide and lock it in)
+- [ ] Git initial commit ("Initial project setup")
 
 ---
 
-## 1. Mimari Temeller (Kod İskeleti)
+## 1. Architectural Foundations (Code Skeleton)
 
-- [ ] `GameManager` singleton'ı oluştur (sahne geçişleri, genel oyun durumu)
-- [ ] `EconomyManager` oluştur:
-  - [ ] Bakiye (para) alanı + `AddMoney()` / `SpendMoney()` metotları
-  - [ ] Para değişimi event'i (`OnMoneyChanged`) — UI'nin dinlemesi için
-- [ ] `OrderData` ScriptableObject'ini tanımla:
-  - [ ] Alım noktası (Transform/Vector3 referansı ya da ID)
-  - [ ] Teslim noktası
-  - [ ] Ödeme miktarı
-  - [ ] Zaman limiti
-  - [ ] Yük tipi (enum: Yemek, Paket, Kırılabilir vb.)
-- [ ] `IInteractable` arayüzünü tanımla (mevcut Interaction System yapından uyarlanabilir)
-- [ ] `IUsable` veya benzeri bir arayüz (yük taşıma/bırakma eylemleri için)
-- [ ] Basit bir `SaveSystem` iskeleti kur (JSON tabanlı — en azından bakiye ve itibar kaydı için)
-
----
-
-## 2. Araç Kontrolcüsü (Sürüş)
-
-- [ ] Placeholder araç modeli içeri al (cube/basit low-poly araba — asset bekleme)
-- [ ] `Rigidbody` + `WheelCollider` kurulumu yap (4 teker)
-- [ ] `VehicleController.cs` scriptini yaz:
-  - [ ] Gaz/fren input'u
-  - [ ] Direksiyon (steering) input'u
-  - [ ] Motor tork eğrisi (AnimationCurve ile ayarlanabilir)
-  - [ ] El freni (opsiyonel, drift için)
-- [ ] Kamera sistemini kur (Cinemachine ile 3rd person follow)
-- [ ] Test sahnesinde düz bir yolda sürüş hissini test et ve ayarla (hız, tutunma, dönüş)
-- [ ] Basit hasar/denge takibi ekle (opsiyonel — yük kalitesini etkileyecekse şimdi temelini at)
-- [ ] `VehicleData` ScriptableObject'i oluştur (hız, ivme, yakıt kapasitesi, fiyat gibi alanlar) — PRO RACER'daki araç profili yapısını uyarlayabilirsin
+- [ ] Create the `GameManager` singleton (scene transitions, overall game state)
+- [ ] Create `EconomyManager`:
+  - [ ] Balance (money) field + `AddMoney()` / `SpendMoney()` methods
+  - [ ] Money change event (`OnMoneyChanged`) — for the UI to listen to
+- [ ] Define the `OrderData` ScriptableObject:
+  - [ ] Pickup point (Transform/Vector3 reference or ID)
+  - [ ] Delivery point
+  - [ ] Payment amount
+  - [ ] Time limit
+  - [ ] Cargo type (enum: Food, Package, Fragile, etc.)
+- [ ] Define the `IInteractable` interface (can be adapted from your existing Interaction System)
+- [ ] An `IUsable` or similar interface (for cargo pickup/drop-off actions)
+- [ ] Set up a simple `SaveSystem` skeleton (JSON-based — at least for balance and reputation)
 
 ---
 
-## 3. Dünya / Harita (Blockout Aşaması)
+## 2. Vehicle Controller (Driving)
 
-- [ ] Küçük bir test haritası blockout et (gri kutularla yol ağı, bina hacimleri)
-- [ ] Yol ağını Unity'nin NavMesh'i veya basit waypoint sistemiyle işaretle (GPS/rota çizgisi için gerekecek)
-- [ ] 5-8 adet "alım noktası" ve "teslim noktası" konumu belirle ve sahnede işaretle (boş GameObject + tag/etiket)
-- [ ] Spawn noktası (oyuncunun başlangıç garajı) belirle
-- [ ] Basit çevre kolizyonlarını (yol kenarları, bina duvarları) ekle
-- [ ] Post-processing / temel aydınlatmayı kur (bu aşamada minimal, sadece okunabilir olsun yeter)
-
----
-
-## 4. Sipariş Sistemi (Çekirdek Döngü — Bölüm 1)
-
-- [ ] `OrderManager.cs` yaz:
-  - [ ] Aktif sipariş havuzu (Liste/Queue)
-  - [ ] Rastgele sipariş üretme mantığı (elindeki `OrderData` listesinden seçim)
-  - [ ] Sipariş kabul/red metotları
-  - [ ] Sipariş süresi geri sayımı (Coroutine veya `Update` bazlı timer)
-- [ ] Sipariş kabul edildiğinde alım noktasını sahnede işaretleme (rota/ikon)
-- [ ] Alım noktasına ulaşınca "yükü al" etkileşimini tetikle (`IInteractable` üzerinden)
-- [ ] Yük alındıktan sonra teslim noktasını işaretle
-- [ ] Teslim noktasına ulaşınca "teslim et" etkileşimini tetikle
-- [ ] Teslimat tamamlandığında:
-  - [ ] Süreye göre puan hesapla (zamanında / geç / çok geç)
-  - [ ] `EconomyManager.AddMoney()` çağır
-  - [ ] Sipariş listesinden kaldır, yeni sipariş üret
-
-> Bu bölüm bitince minimal bir "tek sipariş al → git → teslim et → para kazan" döngüsü çalışır durumda olmalı. Bu senin **ilk oynanabilir prototipin**.
+- [ ] Import a placeholder vehicle model (cube/simple low-poly car — don't wait for assets)
+- [ ] Set up `Rigidbody` + `WheelCollider` (4 wheels)
+- [ ] Write the `VehicleController.cs` script:
+  - [ ] Throttle/brake input
+  - [ ] Steering input
+  - [ ] Engine torque curve (adjustable via AnimationCurve)
+  - [ ] Handbrake (optional, for drifting)
+- [ ] Set up the camera system (3rd person follow with Cinemachine)
+- [ ] Test and tune the driving feel on a straight road in the test scene (speed, grip, turning)
+- [ ] Add basic damage/balance tracking (optional — if it will affect cargo quality, lay the groundwork now)
+- [ ] Create the `VehicleData` ScriptableObject (fields like speed, acceleration, fuel capacity, price) — you can adapt the vehicle profile structure from PRO RACER
 
 ---
 
-## 5. Puanlama & İtibar Sistemi
+## 3. World / Map (Blockout Phase)
 
-- [ ] `ReputationManager.cs` yaz:
-  - [ ] Ortalama yıldız/puan hesaplama (son N teslimatın ortalaması ya da kümülatif)
-  - [ ] İtibar seviyesi eşikleri (Bronz/Gümüş/Altın/Elmas gibi)
-  - [ ] Seviye değiştiğinde event fırlat (`OnReputationLevelChanged`)
-- [ ] İtibar seviyesine göre sipariş havuzunu filtrele (yüksek seviyede daha iyi ödeyen siparişler açılsın)
-- [ ] Düşük puanın olumsuz sonucunu tanımla (daha az sipariş, düşük ödeme çarpanı vb.)
-
----
-
-## 6. Ekonomi & Gider Sistemi
-
-- [ ] Yakıt sistemini ekle:
-  - [ ] Yakıt seviyesi alanı + sürüşte azalma mantığı
-  - [ ] Yakıt istasyonu etkileşimi (para karşılığı doldurma)
-- [ ] Bakım/tamir maliyeti sistemi (araç hasar aldıkça değer kaybetsin, tamir noktasında ücret ödensin)
-- [ ] Gelir/gider dengesini basitçe test et (kağıt üzerinde ya da Excel'de bir tahmini tablo çıkar — teslimat başı ortalama kazanç vs. yakıt/tamir maliyeti)
+- [ ] Blockout a small test map (gray boxes for the road network, building volumes)
+- [ ] Mark the road network with Unity's NavMesh or a simple waypoint system (needed for the GPS/route line)
+- [ ] Decide and mark 5-8 "pickup point" and "delivery point" locations in the scene (empty GameObject + tag/label)
+- [ ] Determine the spawn point (the player's starting garage)
+- [ ] Add basic environment collisions (road edges, building walls)
+- [ ] Set up post-processing / basic lighting (minimal at this stage, just needs to be readable)
 
 ---
 
-## 7. Mağaza & Yükseltme Sistemi
+## 4. Order System (Core Loop — Part 1)
 
-- [ ] `ShopManager.cs` yaz (satın alma/yükseltme mantığı, bakiye kontrolü)
-- [ ] `VehicleUpgradeData` ScriptableObject'i tanımla (yükseltme tipi, maliyet, etki miktarı)
-- [ ] En az 3 temel yükseltme kategorisi kodla: Motor, Yakıt Deposu, Dayanıklılık
-- [ ] Yeni araç satın alma akışını kur (araç listesi → satın al → garajda seçilebilir hale gelsin)
-- [ ] Kozmetik sistemi (opsiyonel ilk fazda, sonraya bırakılabilir): renk/kaplama değiştirme
+- [ ] Write `OrderManager.cs`:
+  - [ ] Active order pool (List/Queue)
+  - [ ] Random order generation logic (selecting from the `OrderData` list you have)
+  - [ ] Order accept/reject methods
+  - [ ] Order time countdown (Coroutine or `Update`-based timer)
+- [ ] Mark the pickup point in the scene when an order is accepted (route/icon)
+- [ ] Trigger the "pick up cargo" interaction on reaching the pickup point (via `IInteractable`)
+- [ ] Mark the delivery point after the cargo is picked up
+- [ ] Trigger the "deliver" interaction on reaching the delivery point
+- [ ] When a delivery is completed:
+  - [ ] Calculate score based on time (on-time / late / very late)
+  - [ ] Call `EconomyManager.AddMoney()`
+  - [ ] Remove from the order list, generate a new order
 
----
-
-## 8. Kullanıcı Arayüzü (UI)
-
-- [ ] UI Canvas yapısını kur (Screen Space - Overlay veya Camera, projenin ihtiyacına göre)
-- [ ] **Telefon/Sipariş Ekranı:**
-  - [ ] Aktif sipariş kartları (liste halinde)
-  - [ ] Kabul/Red butonları
-  - [ ] Kazanç geçmişi paneli
-- [ ] **HUD (sürüş sırasında):**
-  - [ ] Hız göstergesi
-  - [ ] Rota/mesafe göstergesi
-  - [ ] Kalan süre (sipariş timer'ı)
-  - [ ] Yük durumu ikonu
-- [ ] **Mağaza Ekranı:**
-  - [ ] Araç/yükseltme/kozmetik sekmeleri
-  - [ ] Bakiye göstergesi (EconomyManager'a bağlı)
-- [ ] **İtibar Paneli:**
-  - [ ] Yıldız/puan gösterimi
-  - [ ] Seviye ilerleme çubuğu
-- [ ] Ana Menü / Ayarlar / Duraklatma menüsü
-- [ ] UI'yi tüm manager event'lerine bağla (event-driven güncelleme, her frame kontrol değil)
+> By the end of this section, a minimal "accept one order → go → deliver → earn money" loop should be working. This is your **first playable prototype**.
 
 ---
 
-## 9. Asset Üretimi / Temini
+## 5. Scoring & Reputation System
 
-> Bu aşamayı blockout tamamlandıktan, sistemler çalıştıktan sonra yapmak (placeholder'lardan gerçek assetlere geçiş) zaman kaybını önler.
-
-- [ ] Araç modelleri:
-  - [ ] Kaynak belirle (Asset Store / kendi modelleme / AI destekli 3D üretim)
-  - [ ] En az 3-4 araç tipi (bisiklet, motor, araba, kamyon) için model temin et
-  - [ ] Araçlara doğru collider/wheel pivot noktalarını ayarla
-- [ ] Çevre/şehir assetleri:
-  - [ ] Bina modülleri (modüler kit tercih et — tekrar kullanılabilirlik için)
-  - [ ] Yol/kaldırım/sokak lambası gibi modüler parçalar
-  - [ ] Doğa/dekor öğeleri (ağaç, bank, çöp kutusu vb.)
-- [ ] Karakter modeli (oyuncu görünmüyorsa bu adımı atla, 3. şahıs görünüm varsa gerekli)
-- [ ] UI ikonları (sipariş tipleri, para simgesi, yıldız ikonu vb.)
-- [ ] Ses/müzik varlıkları (bkz. Bölüm 11)
+- [ ] Write `ReputationManager.cs`:
+  - [ ] Average star/score calculation (average of the last N deliveries or cumulative)
+  - [ ] Reputation level thresholds (e.g. Bronze/Silver/Gold/Diamond)
+  - [ ] Fire an event when the level changes (`OnReputationLevelChanged`)
+- [ ] Filter the order pool based on reputation level (higher levels unlock better-paying orders)
+- [ ] Define the negative consequence of a low score (fewer orders, lower payment multiplier, etc.)
 
 ---
 
-## 10. Animasyonlar
+## 6. Economy & Expense System
 
-- [ ] Araç animasyonları:
-  - [ ] Teker dönüşü (kod tabanlı, WheelCollider rotasyonundan otomatik)
-  - [ ] Kapı açma/kapama (teslimat alma anında, varsa)
-  - [ ] Süspansiyon/sarsıntı efekti (opsiyonel, kozmetik)
-- [ ] Karakter animasyonları (3. şahıs görünüm varsa):
-  - [ ] Yürüme/koşma
-  - [ ] Yük taşıma pozu
-  - [ ] Teslimat/etkileşim animasyonu (kapıyı çalma, paketi bırakma vb.)
-- [ ] Animator Controller kurulumu ve state machine tasarımı
-- [ ] UI animasyonları (buton geçişleri, panel açılış/kapanış — basit tween'ler yeterli)
+- [ ] Add the fuel system:
+  - [ ] Fuel level field + depletion logic while driving
+  - [ ] Fuel station interaction (refill for money)
+- [ ] Maintenance/repair cost system (the vehicle should lose value as it takes damage, a fee is paid at the repair point)
+- [ ] Do a simple test of the income/expense balance (produce an estimate table on paper or in Excel — average earnings per delivery vs. fuel/repair cost)
 
 ---
 
-## 11. Ses & Müzik
+## 7. Shop & Upgrade System
 
-- [ ] Motor sesi (hız/RPM'e bağlı pitch değişimi)
-- [ ] Ortam sesleri (şehir ambiyansı, trafik)
-- [ ] UI ses efektleri (sipariş kabul, teslimat tamamlandı, para kazanma, hata sesi)
-- [ ] Arka plan müziği (sakin/casual tonlu, oyunun genel hissine uygun)
-- [ ] `AudioManager.cs` yaz (merkezi ses tetikleme, ses seviyesi ayarları)
-
----
-
-## 12. Görsel Efektler & Cila (Polish)
-
-- [ ] Partikül efektleri: lastik izi/duman, teslimat tamamlanma efekti, para kazanma efekti
-- [ ] Kamera sarsıntısı (çarpışma anında, opsiyonel)
-- [ ] UI geçiş efektleri (fade in/out, panel animasyonları)
-- [ ] Post-processing son ayarları (renk düzeltme, bloom, ambient occlusion — performansı gözeterek)
-- [ ] Işıklandırma son hali (gündüz/gece geçişi varsa bu noktada ekle)
+- [ ] Write `ShopManager.cs` (purchase/upgrade logic, balance check)
+- [ ] Define the `VehicleUpgradeData` ScriptableObject (upgrade type, cost, effect amount)
+- [ ] Code at least 3 basic upgrade categories: Engine, Fuel Tank, Durability
+- [ ] Set up the new vehicle purchase flow (vehicle list → buy → becomes selectable in the garage)
+- [ ] Cosmetic system (optional in the first phase, can be left for later): color/livery change
 
 ---
 
-## 13. Test, Denge & Hata Ayıklama
+## 8. User Interface (UI)
 
-- [ ] Çekirdek döngüyü baştan sona 20-30 kez oynayarak test et (kendi playtesting)
-- [ ] Ekonomi dengesini gözden geçir: ortalama saatlik kazanç mantıklı mı?
-- [ ] Sipariş süre limitlerini zorluk açısından test et (çok kolay/çok zor mu?)
-- [ ] Farklı bilgisayarlarda/ayarlarda performans testi (FPS, yükleme süreleri)
-- [ ] Bug tracking listesi tut (basit bir Trello/Notion tablosu yeterli)
-- [ ] Mümkünse 2-3 kişiye dışarıdan test yaptır ve geri bildirim topla
-
----
-
-## 14. Optimizasyon
-
-- [ ] Draw call / batching kontrolü (statik nesneleri static olarak işaretle)
-- [ ] LOD (Level of Detail) sistemleri ekle (özellikle şehir/bina modellerinde)
-- [ ] Occlusion Culling kur (özellikle büyük harita için)
-- [ ] Object pooling uygula (sık üretilen/yok edilen nesneler için — partiküller, siparişler vb.)
-- [ ] Profiler ile performans darboğazlarını tespit et ve düzelt
-
----
-
-## 15. Build & Yayına Hazırlık
-
-- [ ] Build ayarlarını yapılandır (Player Settings, ikon, isim, versiyon numarası)
-- [ ] Windows build al ve temiz bir makinede test et
-- [ ] Steamworks hesabı oluştur (yayınlamayı düşünüyorsan bu aşamada başlat, süreç zaman alır)
-- [ ] Steam mağaza sayfası materyalleri: kapak görseli, ekran görüntüleri, kısa/uzun açıklama, fragman (opsiyonel ama önerilir)
-- [ ] Achievements / Steam entegrasyonu (opsiyonel)
-- [ ] Yerelleştirme (en azından Türkçe + İngilizce metin desteği düşünülmeli)
-- [ ] Son bug taraması ve kritik hataların kapatılması
-- [ ] Yayın öncesi checklist: save sistemi çalışıyor mu, ayarlar kaydediliyor mu, crash yok mu
+- [ ] Set up the UI Canvas structure (Screen Space - Overlay or Camera, based on the project's needs)
+- [ ] **Phone/Order Screen:**
+  - [ ] Active order cards (in a list)
+  - [ ] Accept/Reject buttons
+  - [ ] Earnings history panel
+- [ ] **HUD (while driving):**
+  - [ ] Speedometer
+  - [ ] Route/distance indicator
+  - [ ] Remaining time (order timer)
+  - [ ] Cargo status icon
+- [ ] **Shop Screen:**
+  - [ ] Vehicle/upgrade/cosmetic tabs
+  - [ ] Balance indicator (bound to EconomyManager)
+- [ ] **Reputation Panel:**
+  - [ ] Star/score display
+  - [ ] Level progress bar
+- [ ] Main Menu / Settings / Pause menu
+- [ ] Wire the UI to all manager events (event-driven updates, not checked every frame)
 
 ---
 
-## Öncelik Sırası Özeti (Kısa Hatırlatma)
+## 9. Asset Production / Sourcing
 
-1. **Bölüm 0-2** → Temel iskelet + sürüş hissi
-2. **Bölüm 3-4** → Blockout harita + çalışan sipariş döngüsü (bu noktada "oyun" diyebileceğin bir prototipin var)
-3. **Bölüm 5-7** → İtibar + ekonomi + mağaza (döngüyü anlamlı kılan katman)
-4. **Bölüm 8** → UI'yi gerçek hale getir
-5. **Bölüm 9-12** → Placeholder'lardan gerçek asset/animasyon/efektlere geçiş
-6. **Bölüm 13-15** → Test, optimizasyon, yayın
+> Doing this stage after the blockout is complete and the systems are working (moving from placeholders to real assets) avoids wasted time.
 
-> Altın kural: **Bölüm 4 tamamlanmadan** (yani "kabul et → git → teslim et → para kazan" çalışmadan) asla asset/animasyon/görsel cila işine geçme. Önce mekanik iskelet, sonra görsel et.
+- [ ] Vehicle models:
+  - [ ] Decide on a source (Asset Store / your own modeling / AI-assisted 3D generation)
+  - [ ] Source models for at least 3-4 vehicle types (bike, motorcycle, car, truck)
+  - [ ] Set up correct collider/wheel pivot points on the vehicles
+- [ ] Environment/city assets:
+  - [ ] Building modules (prefer a modular kit — for reusability)
+  - [ ] Modular pieces like road/sidewalk/street lamp
+  - [ ] Nature/decor elements (tree, bench, trash can, etc.)
+- [ ] Character model (skip this step if the player isn't visible, needed if there's a 3rd-person view)
+- [ ] UI icons (order types, money icon, star icon, etc.)
+- [ ] Sound/music assets (see Section 11)
+
+---
+
+## 10. Animations
+
+- [ ] Vehicle animations:
+  - [ ] Wheel rotation (code-based, automatic from WheelCollider rotation)
+  - [ ] Door open/close (at the moment of picking up a delivery, if applicable)
+  - [ ] Suspension/bounce effect (optional, cosmetic)
+- [ ] Character animations (if there's a 3rd-person view):
+  - [ ] Walk/run
+  - [ ] Carrying-cargo pose
+  - [ ] Delivery/interaction animation (knocking on the door, dropping off the package, etc.)
+- [ ] Animator Controller setup and state machine design
+- [ ] UI animations (button transitions, panel open/close — simple tweens are enough)
+
+---
+
+## 11. Sound & Music
+
+- [ ] Engine sound (pitch change tied to speed/RPM)
+- [ ] Ambient sounds (city ambience, traffic)
+- [ ] UI sound effects (order accepted, delivery completed, earning money, error sound)
+- [ ] Background music (calm/casual tone, matching the game's overall feel)
+- [ ] Write `AudioManager.cs` (centralized sound triggering, volume settings)
+
+---
+
+## 12. Visual Effects & Polish
+
+- [ ] Particle effects: tire tracks/smoke, delivery-completed effect, money-earned effect
+- [ ] Camera shake (on collision, optional)
+- [ ] UI transition effects (fade in/out, panel animations)
+- [ ] Final post-processing tuning (color grading, bloom, ambient occlusion — mindful of performance)
+- [ ] Final lighting pass (add day/night transition here, if applicable)
+
+---
+
+## 13. Testing, Balance & Debugging
+
+- [ ] Play through the core loop 20-30 times end-to-end (your own playtesting)
+- [ ] Review the economy balance: is the average hourly income reasonable?
+- [ ] Test order time limits for difficulty (too easy/too hard?)
+- [ ] Performance test on different computers/settings (FPS, load times)
+- [ ] Keep a bug tracking list (a simple Trello/Notion table is enough)
+- [ ] If possible, have 2-3 outside people test it and collect feedback
+
+---
+
+## 14. Optimization
+
+- [ ] Draw call / batching check (mark static objects as static)
+- [ ] Add LOD (Level of Detail) systems (especially for city/building models)
+- [ ] Set up Occlusion Culling (especially for a large map)
+- [ ] Apply object pooling (for frequently spawned/destroyed objects — particles, orders, etc.)
+- [ ] Identify and fix performance bottlenecks with the Profiler
+
+---
+
+## 15. Build & Release Preparation
+
+- [ ] Configure build settings (Player Settings, icon, name, version number)
+- [ ] Make a Windows build and test it on a clean machine
+- [ ] Create a Steamworks account (start this stage early if you're considering releasing, the process takes time)
+- [ ] Steam store page materials: cover art, screenshots, short/long description, trailer (optional but recommended)
+- [ ] Achievements / Steam integration (optional)
+- [ ] Localization (at least Turkish + English text support should be considered)
+- [ ] Final bug sweep and closing critical bugs
+- [ ] Pre-release checklist: does the save system work, are settings saved, no crashes
+
+---
+
+## Priority Order Summary (Quick Reminder)
+
+1. **Sections 0-2** → Basic skeleton + driving feel
+2. **Sections 3-4** → Blockout map + working order loop (at this point you have something you could call a "game" prototype)
+3. **Sections 5-7** → Reputation + economy + shop (the layer that makes the loop meaningful)
+4. **Section 8** → Make the UI real
+5. **Sections 9-12** → Moving from placeholders to real assets/animations/effects
+6. **Sections 13-15** → Testing, optimization, release
+
+> Golden rule: **never** move on to assets/animation/visual polish work **before Section 4 is complete** (i.e. before "accept → go → deliver → earn money" works). Mechanical skeleton first, then flesh it out visually.
