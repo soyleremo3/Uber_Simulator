@@ -36,11 +36,13 @@ namespace DeliverySim.EditorTools
         public const float WallHeight = 3.5f;   // one story
         private const float RoofBottomOffset = 0.092f; // local min.y of M01Roof01_x, measured
 
-        private static readonly string[] FloorVariants =
-        {
-            "M01Floor01_1", "M01Floor01_2", "M01Floor01_3", "M01Floor01_4", "M01Floor01_5",
-            "M01Floor01_6", "M01Floor01_7", "M01Floor01_8", "M01Floor01_9",
-        };
+        // Only "_1" is actually a 4.5x4.5 slab matching the wall ring — measured all 9
+        // numbered variants and they turn out to be DIFFERENT floor-plan sizes (2.25,
+        // 3.5, 6.75, even a 9x9 slab for _6), not cosmetic re-skins of the same
+        // footprint. Using any of the others made buildings spill into neighboring
+        // lots/streets. Same story for roofs below (M01Roof01_2 is a completely
+        // different flat/thin shape, not a pitch-style variant).
+        private static readonly string[] FloorVariants = { "M01Floor01_1" };
 
         private static readonly string[] DoorWallVariants =
         {
@@ -56,10 +58,12 @@ namespace DeliverySim.EditorTools
             "M01WallWindowTypeH_1", "M01WallWindowTypeH_2",
         };
 
-        private static readonly string[] RoofVariants =
-        {
-            "M01Roof01_1", "M01Roof01_2", "M01Roof01_3", "M01Roof01_4",
-        };
+        // _1 and _4 measured with matching bounds/orientation convention (min.z=-4.5,
+        // same low-north/high-south pitch direction as PlaceBuilding assumes). _2 is a
+        // near-flat 0.38-deep shape (different piece entirely) and _3's Z bounds run
+        // the opposite direction (min.z=0) — neither drops in without extra handling,
+        // so left out rather than risking another floating/misaligned roof.
+        private static readonly string[] RoofVariants = { "M01Roof01_1", "M01Roof01_4" };
 
         // The 4 wall-ring corners of one ModuleSize x ModuleSize floor square, and the
         // Y-rotation that orients a wall (whose own local shape spans X:[-4.5,0] at
@@ -76,51 +80,55 @@ namespace DeliverySim.EditorTools
 
         /// <summary>
         /// Builds one building (1-3 floors, randomized floor/wall/roof variants, a door
-        /// on the ground floor's south side) at basePosition, facing buildingYRotation
-        /// (must be a multiple of 90 to stay socket-aligned with the module grid).
-        /// Parented under parent. Deterministic per seed — same seed always produces
-        /// the same building, so re-running a district builder with the same seed base
-        /// regenerates identically (matches KennyDistrictSetup's RNG convention).
+        /// on one randomly-chosen ground-floor corner) at basePosition. The footprint
+        /// itself is NEVER rotated — it always occupies the fixed square
+        /// X:[-ModuleSize,0] Z:[0,ModuleSize] relative to basePosition (matching
+        /// CornerOffsets exactly), because callers that lay buildings out on a street
+        /// grid (TirgamesCitySetup) size their road cells around that fixed footprint.
+        /// An earlier version let the whole building rotate for "facing" variety, which
+        /// silently shifted the footprint into a neighboring street cell for 3 of every
+        /// 4 buildings — door-corner selection gives the same visual variety (which
+        /// side of the lot the entrance faces) without moving the footprint at all.
+        /// Deterministic per seed — same seed always produces the same building.
         /// </summary>
-        public static GameObject BuildBuilding(Transform parent, string name, Vector3 basePosition,
-            float buildingYRotation, int seed)
+        public static GameObject BuildBuilding(Transform parent, string name, Vector3 basePosition, int seed)
         {
             var rng = new System.Random(seed);
             GameObject root = new GameObject(name);
             root.transform.SetParent(parent, false);
             root.transform.position = basePosition;
-            root.transform.rotation = Quaternion.identity; // per-piece rotations are absolute (baked below), root stays identity
+            root.transform.rotation = Quaternion.identity;
 
-            Quaternion buildingRot = Quaternion.Euler(0f, buildingYRotation, 0f);
             int floorCount = 1 + rng.Next(3); // 1-3 stories
+            int doorCorner = rng.Next(4);
 
             for (int floor = 0; floor < floorCount; floor++)
             {
                 float floorY = floor * WallHeight;
                 string floorVariant = FloorVariants[rng.Next(FloorVariants.Length)];
-                SpawnPiece(root.transform, floorVariant, basePosition, buildingRot, new Vector3(0f, floorY, 0f), 0f);
+                SpawnPiece(root.transform, floorVariant, basePosition, new Vector3(0f, floorY, 0f), 0f);
 
                 for (int corner = 0; corner < 4; corner++)
                 {
-                    bool groundSouth = floor == 0 && corner == 0;
-                    string wallVariant = groundSouth
+                    bool groundDoor = floor == 0 && corner == doorCorner;
+                    string wallVariant = groundDoor
                         ? DoorWallVariants[rng.Next(DoorWallVariants.Length)]
                         : WindowWallVariants[rng.Next(WindowWallVariants.Length)];
 
                     Vector3 localPos = CornerOffsets[corner] + new Vector3(0f, floorY, 0f);
-                    SpawnPiece(root.transform, wallVariant, basePosition, buildingRot, localPos, CornerYRotations[corner]);
+                    SpawnPiece(root.transform, wallVariant, basePosition, localPos, CornerYRotations[corner]);
                 }
             }
 
             float roofY = floorCount * WallHeight + RoofBottomOffset;
             string roofVariant = RoofVariants[rng.Next(RoofVariants.Length)];
-            SpawnPiece(root.transform, roofVariant, basePosition, buildingRot, new Vector3(0f, roofY, ModuleSize), 0f);
+            SpawnPiece(root.transform, roofVariant, basePosition, new Vector3(0f, roofY, ModuleSize), 0f);
 
             return root;
         }
 
         private static void SpawnPiece(Transform parent, string prefabName, Vector3 buildingBasePosition,
-            Quaternion buildingRotation, Vector3 localOffset, float pieceLocalYRotation)
+            Vector3 localOffset, float pieceLocalYRotation)
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{ArchFolder}/{prefabName}.prefab");
             if (prefab == null)
@@ -131,8 +139,8 @@ namespace DeliverySim.EditorTools
 
             GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
             instance.name = prefabName;
-            instance.transform.position = buildingBasePosition + buildingRotation * localOffset;
-            instance.transform.rotation = buildingRotation * Quaternion.Euler(0f, pieceLocalYRotation, 0f);
+            instance.transform.position = buildingBasePosition + localOffset;
+            instance.transform.rotation = Quaternion.Euler(0f, pieceLocalYRotation, 0f);
             Undo.RegisterCreatedObjectUndo(instance, "Build Tirgames Building");
         }
     }
