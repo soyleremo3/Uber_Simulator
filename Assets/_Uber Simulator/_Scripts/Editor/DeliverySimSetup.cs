@@ -13,8 +13,8 @@ namespace DeliverySim.EditorTools
     /// </summary>
     public static class DeliverySimSetup
     {
-        private const string DataFolderRoot = "Assets/_Uber Simulator/_Data";
-        private const string OrdersFolder = DataFolderRoot + "/Orders";
+        internal const string DataFolderRoot = "Assets/_Uber Simulator/_Data";
+        internal const string OrdersFolder = DataFolderRoot + "/Orders";
         private const string StoreFrontFolder = "Assets/TirgamesAssets/StylizedWorld/Locations/Urban/ExteriorProps/Prefabs";
         private const int StoreFrontVariantCount = 6; // StreetStoreFront01_1 .. _6, already in the owned asset pack.
 
@@ -310,6 +310,76 @@ namespace DeliverySim.EditorTools
 
             AssetDatabase.SaveAssets();
             Debug.Log("[Setup] Örnek içerik hazır: 2 alım, 3 teslim noktası, yakıt+tamir istasyonu, 9 sipariş asset'i.");
+        }
+
+        // ------------------------------------------------------------------
+        /// <summary>
+        /// Adds orders that pair a Kenney point with a Downtown point (in both
+        /// directions), on top of whatever '4 - Create Sample Orders + Points' already
+        /// put in orderPool — appended, never clears, so re-running '4' doesn't wipe
+        /// these and re-running this doesn't duplicate them (checked via CreateOrderAsset's
+        /// own idempotency plus a duplicate-reference guard on the pool itself).
+        /// Requires Kenney's points ('20 - Populate Kenney Gameplay Points') to exist.
+        /// </summary>
+        [MenuItem("DeliverySim/Setup/21 - Create Kenney + Cross-District Orders")]
+        public static void CreateCrossDistrictOrders()
+        {
+            EnsureFolder(DataFolderRoot);
+            EnsureFolder(OrdersFolder);
+
+            // Picked as the longest available straight-line pairs given current point
+            // placement (Downtown sample points sit within ~35m of origin, Kenney spans
+            // roughly X:-76..-113) — real cross-map drives even though, at ~90-140m,
+            // none quite reach OrderManager's ~198m distance-based-timer floor (see
+            // GetEstimatedTimeLimit: max(45, distance*0.126+20)). They still exercise
+            // real cross-district routing (the Downtown<->Kenney bridge waypoint) and
+            // are meaningfully longer drives than any same-district order today.
+            var orders = new List<OrderData>
+            {
+                CreateOrderAsset("order_cross_shop_to_housea", "Kenney Dükkanından Downtown Eve", "kenney_pickup_shop", "delivery_house_a", 260f, 120f, CargoType.Package),
+                CreateOrderAsset("order_cross_restaurant_to_kenneya", "Downtown Restorandan Kenney Mahallesine", "pickup_restaurant", "kenney_delivery_house_a", 250f, 110f, CargoType.Food),
+                CreateOrderAsset("order_cross_office_to_housea", "Kenney Ofisinden Downtown Eve", "kenney_pickup_office", "delivery_house_a", 240f, 100f, CargoType.Fragile),
+                CreateOrderAsset("order_cross_restaurant_to_kenneyc", "Downtown Restorandan Kenney Evine (C)", "pickup_restaurant", "kenney_delivery_house_c", 220f, 95f, CargoType.Food),
+                CreateOrderAsset("order_cross_restaurant_to_kenneyb", "Downtown Restorandan Kenney Evine (B)", "pickup_restaurant", "kenney_delivery_house_b", 215f, 90f, CargoType.Package),
+                CreateOrderAsset("order_cross_shop_to_office", "Kenney Dükkanından Downtown Ofise", "kenney_pickup_shop", "delivery_office", 210f, 90f, CargoType.Fragile),
+            };
+
+            OrderManager orderManager = Object.FindFirstObjectByType<OrderManager>();
+            if (orderManager != null)
+            {
+                var so = new SerializedObject(orderManager);
+                SerializedProperty pool = so.FindProperty("orderPool");
+
+                var existingRefs = new HashSet<Object>();
+                for (int i = 0; i < pool.arraySize; i++)
+                {
+                    existingRefs.Add(pool.GetArrayElementAtIndex(i).objectReferenceValue);
+                }
+
+                int added = 0;
+                foreach (OrderData order in orders)
+                {
+                    if (existingRefs.Contains(order))
+                    {
+                        continue; // Already in the pool from a previous run.
+                    }
+
+                    int index = pool.arraySize;
+                    pool.InsertArrayElementAtIndex(index);
+                    pool.GetArrayElementAtIndex(index).objectReferenceValue = order;
+                    added++;
+                }
+
+                so.ApplyModifiedProperties();
+                Debug.Log($"[Setup] OrderManager.orderPool'a {added} çapraz bölge siparişi eklendi (toplam pool: {pool.arraySize}).");
+            }
+            else
+            {
+                Debug.LogWarning("[Setup] Sahnede OrderManager yok — önce '1 - Create Managers' çalıştır, sonra bunu tekrarla.");
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Setup] 6 çapraz bölge sipariş asset'i hazır (Kenney<->Downtown, her iki yönde).");
         }
 
         // ------------------------------------------------------------------
@@ -698,7 +768,7 @@ namespace DeliverySim.EditorTools
             return component;
         }
 
-        private static void CreatePoint<T>(string objectName, string pointId, Vector3 position)
+        internal static void CreatePoint<T>(string objectName, string pointId, Vector3 position)
             where T : InteractionPoint
         {
             if (GameObject.Find(objectName) != null)
@@ -730,7 +800,7 @@ namespace DeliverySim.EditorTools
             so.ApplyModifiedProperties();
         }
 
-        private static void CreateStation<T>(string objectName, Vector3 position) where T : Component
+        internal static void CreateStation<T>(string objectName, Vector3 position) where T : Component
         {
             if (GameObject.Find(objectName) != null)
             {
@@ -756,7 +826,7 @@ namespace DeliverySim.EditorTools
             go.AddComponent<T>();
         }
 
-        private static OrderData CreateOrderAsset(string orderId, string orderName,
+        internal static OrderData CreateOrderAsset(string orderId, string orderName,
             string pickupId, string deliveryId, float payment, float timeLimit, CargoType cargo)
         {
             string path = $"{OrdersFolder}/{orderId}.asset";
@@ -781,7 +851,7 @@ namespace DeliverySim.EditorTools
             return order;
         }
 
-        private static void EnsureFolder(string path)
+        internal static void EnsureFolder(string path)
         {
             if (AssetDatabase.IsValidFolder(path))
             {
