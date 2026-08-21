@@ -282,24 +282,84 @@ namespace DeliverySim.EditorTools
         // "Roads" child bounds (the real drivable/walkable footprint, smaller than the
         // full building extent): X:[-33.75,33.75] Z:[-40.5,45].
         //
-        // Cloning the WHOLE cross repeatedly would either overlap (HouseSet3/4's arms
-        // reach further than a naive 90m grid step allows) or look mechanically
-        // identical every time. Instead: the original import stays a full cross
-        // ("town square" landmark, all 4 HouseSets visible), and BuildCityArms grows
-        // FOUR distinct avenues outward from it — north/south arms show only
-        // HouseSet1/2 (matches their natural street-facing axis), east/west arms show
-        // only HouseSet3/4 — so every arm is genuinely different building content, not
-        // a rotated copy of the same thing, and each arm's buildings already face the
-        // direction that street actually runs.
-        private const float ArmSpacing = 140f; // clears the landmark's HouseSet3/4 arm reach (measured ~61m) with margin
-        private const int ClonesPerArm = 2;
+        // Cloning the WHOLE cross repeatedly in a symmetric star (equal spacing, every
+        // block hanging directly off the landmark) read as mechanical copy-paste — a
+        // real screenshot review called this out directly, correctly. A real city
+        // doesn't grow as a perfectly mirrored 4-point star: streets branch off OTHER
+        // streets, not always back to one center; block spacing varies; some streets
+        // have secondary hubs. CityBlocks/CityLinks below is a hand-placed irregular
+        // TREE, not a formula loop: most links connect two NON-landmark blocks (e.g.
+        // "E1"->"NE1" branches a residential side-street off the commercial east
+        // avenue), spacing varies per link (130-170m, not one constant), and "S1" is a
+        // second small full-cross hub (not every block hides HouseSet3/4) so the map
+        // doesn't read as "one center, N clones." Every block still shows the HouseSet
+        // pair matching ITS OWN street direction (see BlockKind), same reasoning as
+        // before — only the LAYOUT changed.
         private const float RoadsHalfX = 33.75f;
         private const float RoadsMinZ = -40.5f;
         private const float RoadsMaxZ = 45f;
 
-        private enum ArmDirection { North, South, East, West }
-
         private const string WalkingStreetPrefabPath = "Assets/_Uber Simulator/Prefabs/WalkingStreetBlock.prefab";
+
+        // Which HouseSet pair a block shows: NorthSouth (1/2, hides 3/4), EastWest
+        // (3/4, hides 1/2), or Both (a secondary hub — needed wherever a block has
+        // links running BOTH axes, e.g. S1 branches west to SW1 while also continuing
+        // the landmark's own north-south avenue).
+        private enum BlockKind { NorthSouth, EastWest, Both }
+
+        private readonly struct BlockSpec
+        {
+            public readonly string Name;
+            public readonly Vector3 Position;
+            public readonly BlockKind Kind;
+
+            public BlockSpec(string name, Vector3 position, BlockKind kind)
+            {
+                Name = name;
+                Position = position;
+                Kind = kind;
+            }
+        }
+
+        private readonly struct LinkSpec
+        {
+            public readonly string From;
+            public readonly string To;
+
+            public LinkSpec(string from, string to)
+            {
+                From = from;
+                To = to;
+            }
+        }
+
+        // Irregular tree, hand-placed (not a spacing formula): landmark has 4 direct
+        // neighbors, but two of THOSE (E1, S1) branch further on their own instead of
+        // every block reporting straight back to the landmark — an actual network,
+        // not a star.
+        private static readonly BlockSpec[] CityBlocks =
+        {
+            new BlockSpec("E1", new Vector3(150f, 0f, 0f), BlockKind.EastWest),
+            new BlockSpec("E2", new Vector3(280f, 0f, 0f), BlockKind.EastWest),
+            new BlockSpec("NE1", new Vector3(150f, 0f, 140f), BlockKind.NorthSouth),
+            new BlockSpec("W1", new Vector3(-160f, 0f, 0f), BlockKind.EastWest),
+            new BlockSpec("S1", new Vector3(0f, 0f, -140f), BlockKind.Both), // secondary hub
+            new BlockSpec("S2", new Vector3(0f, 0f, -290f), BlockKind.NorthSouth),
+            new BlockSpec("SW1", new Vector3(-130f, 0f, -140f), BlockKind.EastWest),
+            new BlockSpec("N1", new Vector3(0f, 0f, 170f), BlockKind.NorthSouth),
+        };
+
+        private static readonly LinkSpec[] CityLinks =
+        {
+            new LinkSpec(MapRootName, "E1"),
+            new LinkSpec("E1", "E2"),
+            new LinkSpec("E1", "NE1"),   // branches off E1, not the landmark
+            new LinkSpec(MapRootName, "W1"),
+            new LinkSpec(MapRootName, "S1"),
+            new LinkSpec("S1", "S2"),
+            new LinkSpec("S1", "SW1"),   // branches off S1, not the landmark
+            new LinkSpec(MapRootName, "N1"),
+        };
 
         [MenuItem("DeliverySim/Setup/12 - Expand Downtown Map (Kollar Ekle)")]
         public static void ExpandDowntownMap()
@@ -312,11 +372,12 @@ namespace DeliverySim.EditorTools
             }
 
             // First run: turn the imported WalkingStreet into a real Prefab ASSET, and
-            // reconnect the landmark to it. This is not just tidiness — instantiating 8
-            // clones with Object.Instantiate on a plain scene hierarchy serialized every
-            // one of WalkingStreet's ~10,000+ individual pieces into MainScene.unity
-            // 9 times over (162 MB, over GitHub's 100 MB limit). PrefabInstances store
-            // only the prefab reference + any overrides, not the full hierarchy again.
+            // reconnect the landmark to it. This is not just tidiness — instantiating
+            // clones with Object.Instantiate on a plain scene hierarchy serialized
+            // every one of WalkingStreet's ~10,000+ individual pieces into
+            // MainScene.unity again per clone (hit 162 MB, over GitHub's 100 MB
+            // limit, with the old 8-clone version). PrefabInstances store only the
+            // prefab reference + any overrides, not the full hierarchy again.
             GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(WalkingStreetPrefabPath);
             if (prefabAsset == null)
             {
@@ -331,70 +392,70 @@ namespace DeliverySim.EditorTools
             }
 
             int built = 0;
-            built += BuildArm(prefabAsset, ArmDirection.North, new[] { "HouseSet3", "HouseSet4" });
-            built += BuildArm(prefabAsset, ArmDirection.South, new[] { "HouseSet3", "HouseSet4" });
-            built += BuildArm(prefabAsset, ArmDirection.East, new[] { "HouseSet1", "HouseSet2" });
-            built += BuildArm(prefabAsset, ArmDirection.West, new[] { "HouseSet1", "HouseSet2" });
-
-            Debug.Log($"[Setup] Şehir kolları kuruldu: {built} yeni blok (kuzey/güney: mağazalı cadde, doğu/batı: sakin cadde), " +
-                      "aralar '26 - Connect City Arms With Roads' ile döşenecek. Sahneyi kaydet (Ctrl+S).");
-        }
-
-        private static int BuildArm(GameObject prefabAsset, ArmDirection direction, string[] hiddenHouseSets)
-        {
-            int builtCount = 0;
-            for (int i = 1; i <= ClonesPerArm; i++)
+            foreach (BlockSpec spec in CityBlocks)
             {
-                string name = $"{MapRootName}_{direction}{i}";
+                string name = $"{MapRootName}_{spec.Name}";
                 if (GameObject.Find(name) != null)
                 {
                     continue;
                 }
 
-                Vector3 offset = ArmOffset(direction, i);
                 GameObject clone = (GameObject)PrefabUtility.InstantiatePrefab(prefabAsset);
                 clone.name = name;
-                clone.transform.position = offset;
-                clone.transform.rotation = Quaternion.identity; // HouseSets are already correctly oriented — no rotation needed
+                clone.transform.position = spec.Position;
+                clone.transform.rotation = Quaternion.identity;
                 Undo.RegisterCreatedObjectUndo(clone, "Expand Downtown Map");
 
-                foreach (string hidden in hiddenHouseSets)
+                string[] hidden = spec.Kind switch
                 {
-                    Transform group = clone.transform.Find(hidden);
+                    BlockKind.NorthSouth => new[] { "HouseSet3", "HouseSet4" },
+                    BlockKind.EastWest => new[] { "HouseSet1", "HouseSet2" },
+                    _ => System.Array.Empty<string>(), // Both: full cross, hide nothing
+                };
+
+                foreach (string h in hidden)
+                {
+                    Transform group = clone.transform.Find(h);
                     if (group != null)
                     {
                         group.gameObject.SetActive(false);
                     }
                 }
 
-                ExtendWaypointGraph(clone.transform, name);
+                ExtendWaypointGraph(clone.transform, spec.Name);
                 EditorUtility.SetDirty(clone);
-                builtCount++;
+                built++;
             }
 
-            return builtCount;
+            Debug.Log($"[Setup] Şehir ağı kuruldu: {built} yeni blok, düzensiz dallanan sokak ağı (tek merkezden değil, " +
+                      "bloktan bloğa). Aralar '26 - Connect City Arms With Roads' ile döşenecek. Sahneyi kaydet (Ctrl+S).");
         }
 
-        private static Vector3 ArmOffset(ArmDirection direction, int index)
+        private static Vector3 ResolveBlockPosition(string name)
         {
-            float d = ArmSpacing * index;
-            return direction switch
+            if (name == MapRootName)
             {
-                ArmDirection.North => new Vector3(0f, 0f, d),
-                ArmDirection.South => new Vector3(0f, 0f, -d),
-                ArmDirection.East => new Vector3(d, 0f, 0f),
-                ArmDirection.West => new Vector3(-d, 0f, 0f),
-                _ => Vector3.zero,
-            };
+                return Vector3.zero; // landmark sits at the origin
+            }
+
+            foreach (BlockSpec spec in CityBlocks)
+            {
+                if (spec.Name == name)
+                {
+                    return spec.Position;
+                }
+            }
+
+            Debug.LogError($"[Setup] '{name}' CityBlocks içinde tanımlı değil.");
+            return Vector3.zero;
         }
 
         // ------------------------------------------------------------------
         /// <summary>
-        /// Fills the gap between the landmark and each arm's clones (and between
-        /// consecutive clones in the same arm) with real driveable road tiles — without
-        /// this, the arms would be visually disconnected islands separated by bare
-        /// ground Plane. Reuses the same flat, direction-agnostic M02Road01_1 tile
-        /// verified in TirgamesCitySetup (no rotation-correctness risk). Run this
+        /// Fills the gap on every CityLinks pair with real driveable road tiles —
+        /// without this, the network would be visually disconnected islands separated
+        /// by bare ground Plane. Reuses the same flat, direction-agnostic M02Road01_1
+        /// tile verified in TirgamesCitySetup (no rotation-correctness risk). Run this
         /// AFTER '12 - Expand Downtown Map'.
         /// </summary>
         [MenuItem("DeliverySim/Setup/26 - Connect City Arms With Roads")]
@@ -423,54 +484,47 @@ namespace DeliverySim.EditorTools
             Undo.RegisterCreatedObjectUndo(connectorsRoot, "Connect City Arms");
 
             int totalTiles = 0;
-            foreach (ArmDirection dir in new[] { ArmDirection.North, ArmDirection.South, ArmDirection.East, ArmDirection.West })
+            foreach (LinkSpec link in CityLinks)
             {
-                Vector3 prevCenter = Vector3.zero; // landmark
-                for (int i = 1; i <= ClonesPerArm; i++)
-                {
-                    Vector3 thisCenter = ArmOffset(dir, i);
-                    totalTiles += PlaceConnector(connectorsRoot.transform, prefab, prevCenter, thisCenter, dir, tile, roadLayer, $"{dir}{i}");
-                    prevCenter = thisCenter;
-                }
+                Vector3 fromCenter = ResolveBlockPosition(link.From);
+                Vector3 toCenter = ResolveBlockPosition(link.To);
+                totalTiles += PlaceConnector(connectorsRoot.transform, prefab, fromCenter, toCenter, tile, roadLayer, $"{link.From}_{link.To}");
             }
 
             EditorUtility.SetDirty(connectorsRoot);
-            Debug.Log($"[Setup] {totalTiles} bağlantı yol tile'ı döşendi (4 kol x {ClonesPerArm} segment). Sahneyi kaydet (Ctrl+S).");
+            Debug.Log($"[Setup] {totalTiles} bağlantı yol tile'ı döşendi ({CityLinks.Length} bağlantı, düzensiz uzunluklarda). Sahneyi kaydet (Ctrl+S).");
         }
 
         private static int PlaceConnector(Transform parent, GameObject prefab, Vector3 fromCenter, Vector3 toCenter,
-            ArmDirection dir, float tile, int roadLayer, string label)
+            float tile, int roadLayer, string label)
         {
             // Every block (landmark and every clone) is an UNROTATED copy of the same
             // source, so "Roads" always spans the same local offsets from its own
-            // pivot: X:[-RoadsHalfX,+RoadsHalfX], Z:[RoadsMinZ,RoadsMaxZ] — regardless
-            // of which arm it's in. Explicit per-direction edges (not a clever signed
-            // formula) so each case is directly checkable against those offsets.
-            bool alongZ;
+            // pivot: X:[-RoadsHalfX,+RoadsHalfX], Z:[RoadsMinZ,RoadsMaxZ]. Every link in
+            // CityLinks shares exactly one axis coordinate by construction — detect
+            // which one instead of hardcoding a direction per link, so CityLinks stays
+            // pure data (position pairs), no separate "which way does this run" field
+            // to keep in sync.
+            bool alongZ = Mathf.Approximately(fromCenter.x, toCenter.x);
+
             float gapStart;
             float gapEnd;
-            switch (dir)
+            float fixedCoord;
+            if (alongZ)
             {
-                case ArmDirection.North:
-                    alongZ = true;
-                    gapStart = fromCenter.z + RoadsMaxZ; // from's north edge
-                    gapEnd = toCenter.z + RoadsMinZ;      // to's south edge
-                    break;
-                case ArmDirection.South:
-                    alongZ = true;
-                    gapStart = toCenter.z + RoadsMaxZ;    // to's north edge
-                    gapEnd = fromCenter.z + RoadsMinZ;    // from's south edge
-                    break;
-                case ArmDirection.East:
-                    alongZ = false;
-                    gapStart = fromCenter.x + RoadsHalfX; // from's east edge
-                    gapEnd = toCenter.x - RoadsHalfX;      // to's west edge
-                    break;
-                default: // West
-                    alongZ = false;
-                    gapStart = toCenter.x + RoadsHalfX;    // to's east edge
-                    gapEnd = fromCenter.x - RoadsHalfX;    // from's west edge
-                    break;
+                fixedCoord = fromCenter.x;
+                Vector3 south = fromCenter.z < toCenter.z ? fromCenter : toCenter;
+                Vector3 north = fromCenter.z < toCenter.z ? toCenter : fromCenter;
+                gapStart = south.z + RoadsMaxZ; // south block's own north edge
+                gapEnd = north.z + RoadsMinZ;    // north block's own south edge
+            }
+            else
+            {
+                fixedCoord = fromCenter.z;
+                Vector3 west = fromCenter.x < toCenter.x ? fromCenter : toCenter;
+                Vector3 east = fromCenter.x < toCenter.x ? toCenter : fromCenter;
+                gapStart = west.x + RoadsHalfX;  // west block's own east edge
+                gapEnd = east.x - RoadsHalfX;     // east block's own west edge
             }
 
             float length = gapEnd - gapStart;
@@ -490,8 +544,8 @@ namespace DeliverySim.EditorTools
                 // ground Plane's level instead of leaving it invisible underneath.
                 const float meshPivotOffset = 0.1f;
                 Vector3 pos = alongZ
-                    ? new Vector3(0f, meshPivotOffset, axisPos)
-                    : new Vector3(axisPos, meshPivotOffset, 0f);
+                    ? new Vector3(fixedCoord, meshPivotOffset, axisPos)
+                    : new Vector3(axisPos, meshPivotOffset, fixedCoord);
 
                 GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
                 instance.name = $"Connector_{label}_{t}";
@@ -502,7 +556,7 @@ namespace DeliverySim.EditorTools
                 }
 
                 BoxCollider collider = instance.AddComponent<BoxCollider>();
-                collider.center = new Vector3(0f, -0.1f, 0f); // M02Road01_1's mesh sits 0.1m below its own pivot
+                collider.center = new Vector3(0f, -0.1f, 0f); // matches the -0.1 mesh offset above
                 collider.size = new Vector3(tile, 0.1f, tile);
 
                 Undo.RegisterCreatedObjectUndo(instance, "Connect City Arms");
@@ -524,7 +578,10 @@ namespace DeliverySim.EditorTools
             // Mevcut tüm node'ları köprü bağlantısı için topla (sadece bu bölgeye ait olanlar hariç, henüz yok zaten).
             var existingNodes = new List<Waypoint>(root.GetComponentsInChildren<Waypoint>());
 
-            string prefix = "RW_" + slotName.Substring(slotName.Length - 1) + "_";
+            // Full slot name, not just its last character — "E1" and "NE1" used to
+            // collide on a shared "RW_1_*" prefix (Substring(Length-1) grabbed only
+            // the trailing digit), silently merging two blocks' waypoint IDs.
+            string prefix = "RW_" + slotName + "_";
             var newNodes = new List<Waypoint>(RoadTilePositions.Length);
             for (int i = 0; i < RoadTilePositions.Length; i++)
             {
