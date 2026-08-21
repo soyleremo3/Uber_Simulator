@@ -72,6 +72,83 @@ namespace DeliverySim.EditorTools
         private const float WaypointHeight = 0.15f;
 
         // ------------------------------------------------------------------
+        /// <summary>
+        /// Full reset for a from-scratch map rebuild: removes every map-related object
+        /// (both the Tirgames Downtown clones and the Kenney district from the previous
+        /// iteration, plus their road/waypoint graphs), every gameplay point (pickup/
+        /// delivery/fuel/repair — they'd be orphaned anyway once their host districts are
+        /// gone), clears OrderManager's pool (nothing left for those orders to resolve
+        /// against), and deletes the now-meaningless OrderData assets from disk. Leaves
+        /// _Managers/_Gameplay/_UI, the player vehicle, cameras, and the ground Plane
+        /// untouched — those aren't "map content".
+        /// </summary>
+        [MenuItem("DeliverySim/Setup/22 - Clear Entire Map (Sıfırdan Başla)")]
+        public static void ClearEntireMap()
+        {
+            string[] rootsToDelete =
+            {
+                "DowntownStreet", "DowntownStreet_2", "DowntownStreet_3", "DowntownStreet_4",
+                "KennyDistrict", "_RoadWaypoints", "_KennyRoadWaypoints", "_KennyRoadNetwork",
+                "_KennyRoadProbe",
+            };
+
+            int destroyedRoots = 0;
+            foreach (string name in rootsToDelete)
+            {
+                GameObject go = GameObject.Find(name);
+                if (go != null)
+                {
+                    Undo.DestroyObjectImmediate(go);
+                    destroyedRoots++;
+                }
+            }
+
+            int destroyedPoints = 0;
+            foreach (InteractionPoint point in Object.FindObjectsByType<InteractionPoint>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Undo.DestroyObjectImmediate(point.gameObject);
+                destroyedPoints++;
+            }
+
+            foreach (FuelStation station in Object.FindObjectsByType<FuelStation>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Undo.DestroyObjectImmediate(station.gameObject);
+                destroyedPoints++;
+            }
+
+            foreach (RepairStation station in Object.FindObjectsByType<RepairStation>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Undo.DestroyObjectImmediate(station.gameObject);
+                destroyedPoints++;
+            }
+
+            OrderManager orderManager = Object.FindFirstObjectByType<OrderManager>();
+            if (orderManager != null)
+            {
+                var so = new SerializedObject(orderManager);
+                SerializedProperty pool = so.FindProperty("orderPool");
+                pool.ClearArray();
+                so.ApplyModifiedProperties();
+            }
+
+            int deletedOrderAssets = 0;
+            string[] orderGuids = AssetDatabase.FindAssets("t:OrderData", new[] { "Assets/_Uber Simulator/_Data/Orders" });
+            foreach (string guid in orderGuids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (AssetDatabase.DeleteAsset(path))
+                {
+                    deletedOrderAssets++;
+                }
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[Setup] Harita sıfırlandı: {destroyedRoots} kök obje, {destroyedPoints} gameplay noktası, " +
+                      $"{deletedOrderAssets} sipariş asset'i silindi, OrderManager.orderPool boşaltıldı. Yer/kamera/araç/manager'lara dokunulmadı. " +
+                      "Sahneyi kaydet (Ctrl+S).");
+        }
+
+        // ------------------------------------------------------------------
         [MenuItem("DeliverySim/Setup/9 - Import Downtown Street Map")]
         public static void ImportDowntownMap()
         {
