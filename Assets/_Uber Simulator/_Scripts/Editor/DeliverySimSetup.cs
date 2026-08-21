@@ -16,7 +16,42 @@ namespace DeliverySim.EditorTools
         internal const string DataFolderRoot = "Assets/_Uber Simulator/_Data";
         internal const string OrdersFolder = DataFolderRoot + "/Orders";
         private const string StoreFrontFolder = "Assets/TirgamesAssets/StylizedWorld/Locations/Urban/ExteriorProps/Prefabs";
-        private const int StoreFrontVariantCount = 6; // StreetStoreFront01_1 .. _6, already in the owned asset pack.
+        private const string NatureFolder = "Assets/TirgamesAssets/StylizedWorld/Environment/Nature/Prefabs";
+
+        // Themed per point-type dressing (replaces the old one-size-fits-all random
+        // storefront pick). Theme is inferred from the point's own id/display name —
+        // points don't carry cargo type directly (that lives on OrderData, and many
+        // orders can share one point), so naming is the only stable signal available.
+        // "StreetStoreFront01_3" and "_5" do NOT exist on disk (only _1/_2/_4/_6 were
+        // ever exported) — the old code picked all 6 by hash and silently skipped the
+        // two missing ones; fixed here by only ever listing what's actually present.
+        private static readonly string[] FoodThemeProps =
+        {
+            StoreFrontFolder + "/StreetCafeSet01_1", StoreFrontFolder + "/StreetCafeSet01_2",
+            StoreFrontFolder + "/StreetCafeSet02_1", StoreFrontFolder + "/StreetCafeSet02_2",
+            StoreFrontFolder + "/StreetCafeBarrier01_1",
+        };
+
+        private static readonly string[] DepotThemeProps =
+        {
+            StoreFrontFolder + "/StreetFence02_A1", StoreFrontFolder + "/StreetFence02_A4",
+            StoreFrontFolder + "/StreetFence02_A7", StoreFrontFolder + "/StreetFence03_2",
+            StoreFrontFolder + "/StreetFence03_5", StoreFrontFolder + "/StreetBarrierPole01_1",
+        };
+
+        private static readonly string[] HouseThemeProps =
+        {
+            NatureFolder + "/Bush01B", NatureFolder + "/Bush02", NatureFolder + "/Bush03A",
+            NatureFolder + "/Hedge01_1", NatureFolder + "/Hedge01_3",
+            StoreFrontFolder + "/StreetPlanter01_1", StoreFrontFolder + "/StreetPlanter02_1",
+        };
+
+        private static readonly string[] OfficeThemeProps =
+        {
+            StoreFrontFolder + "/StreetStoreFront01_1", StoreFrontFolder + "/StreetStoreFront01_2",
+            StoreFrontFolder + "/StreetStoreFront01_4", StoreFrontFolder + "/StreetStoreFront01_6",
+            StoreFrontFolder + "/StreetBench01", StoreFrontFolder + "/StreetBench02",
+        };
 
         // ------------------------------------------------------------------
         [MenuItem("DeliverySim/Setup/1 - Create Managers")]
@@ -606,7 +641,7 @@ namespace DeliverySim.EditorTools
                 new Vector3(0f, 2.1f, 0.75f), new Vector3(1.8f, 0.5f, 0.15f),
                 new Vector3(0f, 2.1f, 0.83f));
 
-            AddStoreFrontProp(root, point.PointId);
+            AddThemedProp(root, point.PointId, InferTheme(point.PointId));
 
             markerProp.objectReferenceValue = ring;
             beaconProp.objectReferenceValue = kiosk; // Identity object is now the named kiosk, not a pole.
@@ -639,31 +674,69 @@ namespace DeliverySim.EditorTools
                 new Vector3(0f, 3.3f, 1.15f), new Vector3(1.8f, 0.5f, 0.15f),
                 new Vector3(0f, 3.3f, 1.23f));
 
-            AddStoreFrontProp(stationRoot.transform, displayName);
+            // Fuel/repair stations are utilitarian infrastructure, not a shop — always
+            // the depot theme (fence/barrier), regardless of the station's display name.
+            AddThemedProp(stationRoot.transform, displayName, "depot");
         }
 
         /// <summary>
-        /// Instantiates one of the owned "StreetStoreFront01_1..6" props (real modeled
-        /// shopfront — awning + detail, not a primitive) beside the point as pure set
+        /// Naming-based theme inference — points don't carry cargo type directly (an
+        /// id can be reused by several OrderData with different CargoType), so the
+        /// point's own id/name is the only stable signal at prop-decoration time.
+        /// Matches the "pickup_restaurant"/"pickup_depot"/"delivery_house_*"/
+        /// "delivery_office" naming already used for every point in the scene.
+        /// </summary>
+        private static string InferTheme(string pointId)
+        {
+            string id = pointId.ToLowerInvariant();
+            if (id.Contains("restaurant") || id.Contains("food") || id.Contains("cafe"))
+            {
+                return "food";
+            }
+
+            if (id.Contains("depot"))
+            {
+                return "depot";
+            }
+
+            if (id.Contains("house"))
+            {
+                return "house";
+            }
+
+            return "office";
+        }
+
+        /// <summary>
+        /// Instantiates one prop from the theme's pool (real modeled prop — awning,
+        /// café furniture, fence, hedge, whatever fits — not a primitive) beside the
+        /// point as pure set
         /// dressing, so pickup/delivery/fuel/repair each reads as belonging to an actual
         /// storefront instead of an anonymous colored box. Offset to the side (not
         /// overlapping the kiosk/visual/sign) since we don't know its exact footprint.
         /// Deterministic per point (hash of the id) so re-running doesn't reshuffle it,
         /// and idempotent — skips if already placed.
         /// </summary>
-        private static void AddStoreFrontProp(Transform root, string seed)
+        private static void AddThemedProp(Transform root, string seed, string theme)
         {
             if (FindChild(root, "StoreFrontProp") != null)
             {
                 return;
             }
 
-            int variant = 1 + (Mathf.Abs(seed.GetHashCode()) % StoreFrontVariantCount);
-            string prefabPath = $"{StoreFrontFolder}/StreetStoreFront01_{variant}.prefab";
+            string[] pool = theme switch
+            {
+                "food" => FoodThemeProps,
+                "depot" => DepotThemeProps,
+                "house" => HouseThemeProps,
+                _ => OfficeThemeProps,
+            };
+
+            string prefabPath = pool[Mathf.Abs(seed.GetHashCode()) % pool.Length] + ".prefab";
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (prefab == null)
             {
-                Debug.LogWarning($"[Setup] '{prefabPath}' bulunamadı — StoreFront prop atlandı.");
+                Debug.LogWarning($"[Setup] '{prefabPath}' bulunamadı — '{theme}' temalı prop atlandı.");
                 return;
             }
 
@@ -671,7 +744,7 @@ namespace DeliverySim.EditorTools
             instance.name = "StoreFrontProp";
             instance.transform.localPosition = new Vector3(2.4f, 0f, -0.6f);
             instance.transform.localRotation = Quaternion.identity;
-            Undo.RegisterCreatedObjectUndo(instance, "Add StoreFront Prop");
+            Undo.RegisterCreatedObjectUndo(instance, "Add Themed Prop");
         }
 
         /// <summary>
