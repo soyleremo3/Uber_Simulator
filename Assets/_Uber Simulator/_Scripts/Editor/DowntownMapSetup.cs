@@ -299,27 +299,48 @@ namespace DeliverySim.EditorTools
 
         private enum ArmDirection { North, South, East, West }
 
+        private const string WalkingStreetPrefabPath = "Assets/_Uber Simulator/Prefabs/WalkingStreetBlock.prefab";
+
         [MenuItem("DeliverySim/Setup/12 - Expand Downtown Map (Kollar Ekle)")]
         public static void ExpandDowntownMap()
         {
-            GameObject original = GameObject.Find(MapRootName);
-            if (original == null)
+            GameObject landmark = GameObject.Find(MapRootName);
+            if (landmark == null)
             {
                 Debug.LogError("[Setup] '" + MapRootName + "' sahnede yok — önce '9 - Import Downtown Street Map' çalıştır.");
                 return;
             }
 
+            // First run: turn the imported WalkingStreet into a real Prefab ASSET, and
+            // reconnect the landmark to it. This is not just tidiness — instantiating 8
+            // clones with Object.Instantiate on a plain scene hierarchy serialized every
+            // one of WalkingStreet's ~10,000+ individual pieces into MainScene.unity
+            // 9 times over (162 MB, over GitHub's 100 MB limit). PrefabInstances store
+            // only the prefab reference + any overrides, not the full hierarchy again.
+            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(WalkingStreetPrefabPath);
+            if (prefabAsset == null)
+            {
+                prefabAsset = PrefabUtility.SaveAsPrefabAsset(landmark, WalkingStreetPrefabPath, out bool saved);
+                if (!saved || prefabAsset == null)
+                {
+                    Debug.LogError("[Setup] WalkingStreet prefab'ı oluşturulamadı.");
+                    return;
+                }
+
+                Debug.Log("[Setup] '" + WalkingStreetPrefabPath + "' prefab'ı oluşturuldu (landmark otomatik buna bağlandı).");
+            }
+
             int built = 0;
-            built += BuildArm(original, ArmDirection.North, new[] { "HouseSet3", "HouseSet4" });
-            built += BuildArm(original, ArmDirection.South, new[] { "HouseSet3", "HouseSet4" });
-            built += BuildArm(original, ArmDirection.East, new[] { "HouseSet1", "HouseSet2" });
-            built += BuildArm(original, ArmDirection.West, new[] { "HouseSet1", "HouseSet2" });
+            built += BuildArm(prefabAsset, ArmDirection.North, new[] { "HouseSet3", "HouseSet4" });
+            built += BuildArm(prefabAsset, ArmDirection.South, new[] { "HouseSet3", "HouseSet4" });
+            built += BuildArm(prefabAsset, ArmDirection.East, new[] { "HouseSet1", "HouseSet2" });
+            built += BuildArm(prefabAsset, ArmDirection.West, new[] { "HouseSet1", "HouseSet2" });
 
             Debug.Log($"[Setup] Şehir kolları kuruldu: {built} yeni blok (kuzey/güney: mağazalı cadde, doğu/batı: sakin cadde), " +
-                      "aralar '13 - Connect City Arms With Roads' ile döşenecek. Sahneyi kaydet (Ctrl+S).");
+                      "aralar '26 - Connect City Arms With Roads' ile döşenecek. Sahneyi kaydet (Ctrl+S).");
         }
 
-        private static int BuildArm(GameObject original, ArmDirection direction, string[] hiddenHouseSets)
+        private static int BuildArm(GameObject prefabAsset, ArmDirection direction, string[] hiddenHouseSets)
         {
             int builtCount = 0;
             for (int i = 1; i <= ClonesPerArm; i++)
@@ -331,7 +352,7 @@ namespace DeliverySim.EditorTools
                 }
 
                 Vector3 offset = ArmOffset(direction, i);
-                GameObject clone = Object.Instantiate(original);
+                GameObject clone = (GameObject)PrefabUtility.InstantiatePrefab(prefabAsset);
                 clone.name = name;
                 clone.transform.position = offset;
                 clone.transform.rotation = Quaternion.identity; // HouseSets are already correctly oriented — no rotation needed
