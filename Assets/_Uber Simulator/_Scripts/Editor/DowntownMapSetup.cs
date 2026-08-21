@@ -274,7 +274,32 @@ namespace DeliverySim.EditorTools
         }
 
         // ------------------------------------------------------------------
-        [MenuItem("DeliverySim/Setup/12 - Expand Downtown Map (Yeni Bölge Ekle)")]
+        // WalkingStreet is actually a CROSS-shaped intersection, not a plain straight
+        // block: HouseSet1/2 flank a north-south street (they run along Z), HouseSet3/4
+        // flank an east-west street (they run along X) — confirmed by reading every
+        // HouseSet's actual placed bounds and its child buildings' roof-piece
+        // rotations directly out of the vendor's own StylizedStreet.unity. Measured
+        // "Roads" child bounds (the real drivable/walkable footprint, smaller than the
+        // full building extent): X:[-33.75,33.75] Z:[-40.5,45].
+        //
+        // Cloning the WHOLE cross repeatedly would either overlap (HouseSet3/4's arms
+        // reach further than a naive 90m grid step allows) or look mechanically
+        // identical every time. Instead: the original import stays a full cross
+        // ("town square" landmark, all 4 HouseSets visible), and BuildCityArms grows
+        // FOUR distinct avenues outward from it — north/south arms show only
+        // HouseSet1/2 (matches their natural street-facing axis), east/west arms show
+        // only HouseSet3/4 — so every arm is genuinely different building content, not
+        // a rotated copy of the same thing, and each arm's buildings already face the
+        // direction that street actually runs.
+        private const float ArmSpacing = 140f; // clears the landmark's HouseSet3/4 arm reach (measured ~61m) with margin
+        private const int ClonesPerArm = 2;
+        private const float RoadsHalfX = 33.75f;
+        private const float RoadsMinZ = -40.5f;
+        private const float RoadsMaxZ = 45f;
+
+        private enum ArmDirection { North, South, East, West }
+
+        [MenuItem("DeliverySim/Setup/12 - Expand Downtown Map (Kollar Ekle)")]
         public static void ExpandDowntownMap()
         {
             GameObject original = GameObject.Find(MapRootName);
@@ -284,65 +309,186 @@ namespace DeliverySim.EditorTools
                 return;
             }
 
-            // 3 olası yeni bölge slotu: kuzey, doğu, kuzey-doğu. Orijinal blok X:-31.5..31.5 Z:-38.25..42.75
-            // (~63x81 birim) kapladığı için 90 birimlik adım aralarında rahat bir yol koridoru bırakıyor.
-            // Her slotun kendi rotasyonu ve gizlenen HouseSet alt kümesi var, ki yan yana konan
-            // bölgeler birbirinin BİREBİR aynısı gibi durmasın — aynı silüet tekrar etmesin diye
-            // her seferinde farklı bina kombinasyonu ve farklı yön görünsün.
-            var slots = new[]
-            {
-                new DistrictSlot("DowntownStreet_2", new Vector3(0f, 0f, 90f), 180f, new[] { "HouseSet2", "HouseSet4" }),
-                new DistrictSlot("DowntownStreet_3", new Vector3(90f, 0f, 0f), 0f, new[] { "HouseSet1", "HouseSet3" }),
-                new DistrictSlot("DowntownStreet_4", new Vector3(90f, 0f, 90f), 180f, new[] { "HouseSet3" }),
-            };
+            int built = 0;
+            built += BuildArm(original, ArmDirection.North, new[] { "HouseSet3", "HouseSet4" });
+            built += BuildArm(original, ArmDirection.South, new[] { "HouseSet3", "HouseSet4" });
+            built += BuildArm(original, ArmDirection.East, new[] { "HouseSet1", "HouseSet2" });
+            built += BuildArm(original, ArmDirection.West, new[] { "HouseSet1", "HouseSet2" });
 
-            foreach (DistrictSlot slot in slots)
+            Debug.Log($"[Setup] Şehir kolları kuruldu: {built} yeni blok (kuzey/güney: mağazalı cadde, doğu/batı: sakin cadde), " +
+                      "aralar '13 - Connect City Arms With Roads' ile döşenecek. Sahneyi kaydet (Ctrl+S).");
+        }
+
+        private static int BuildArm(GameObject original, ArmDirection direction, string[] hiddenHouseSets)
+        {
+            int builtCount = 0;
+            for (int i = 1; i <= ClonesPerArm; i++)
             {
-                if (GameObject.Find(slot.Name) != null)
+                string name = $"{MapRootName}_{direction}{i}";
+                if (GameObject.Find(name) != null)
                 {
-                    continue; // Bu slot dolu, sıradakine bak.
+                    continue;
                 }
 
+                Vector3 offset = ArmOffset(direction, i);
                 GameObject clone = Object.Instantiate(original);
-                clone.name = slot.Name;
-                clone.transform.position = slot.Offset;
-                clone.transform.rotation = Quaternion.Euler(0f, slot.YRotation, 0f);
+                clone.name = name;
+                clone.transform.position = offset;
+                clone.transform.rotation = Quaternion.identity; // HouseSets are already correctly oriented — no rotation needed
                 Undo.RegisterCreatedObjectUndo(clone, "Expand Downtown Map");
 
-                foreach (string hiddenGroup in slot.HiddenHouseSets)
+                foreach (string hidden in hiddenHouseSets)
                 {
-                    Transform group = clone.transform.Find(hiddenGroup);
+                    Transform group = clone.transform.Find(hidden);
                     if (group != null)
                     {
                         group.gameObject.SetActive(false);
                     }
                 }
 
-                ExtendWaypointGraph(clone.transform, slot.Name);
-
-                Selection.activeGameObject = clone;
+                ExtendWaypointGraph(clone.transform, name);
                 EditorUtility.SetDirty(clone);
-                Debug.Log($"[Setup] Yeni bölge eklendi: '{slot.Name}' ({slot.Offset}, {slot.YRotation}°, gizli: {string.Join(", ", slot.HiddenHouseSets)}). Sahneyi kaydet (Ctrl+S). Tekrar çalıştırırsan bir sonraki boş slot doldurulur (toplam 4 bölgeye kadar).");
+                builtCount++;
+            }
+
+            return builtCount;
+        }
+
+        private static Vector3 ArmOffset(ArmDirection direction, int index)
+        {
+            float d = ArmSpacing * index;
+            return direction switch
+            {
+                ArmDirection.North => new Vector3(0f, 0f, d),
+                ArmDirection.South => new Vector3(0f, 0f, -d),
+                ArmDirection.East => new Vector3(d, 0f, 0f),
+                ArmDirection.West => new Vector3(-d, 0f, 0f),
+                _ => Vector3.zero,
+            };
+        }
+
+        // ------------------------------------------------------------------
+        /// <summary>
+        /// Fills the gap between the landmark and each arm's clones (and between
+        /// consecutive clones in the same arm) with real driveable road tiles — without
+        /// this, the arms would be visually disconnected islands separated by bare
+        /// ground Plane. Reuses the same flat, direction-agnostic M02Road01_1 tile
+        /// verified in TirgamesCitySetup (no rotation-correctness risk). Run this
+        /// AFTER '12 - Expand Downtown Map'.
+        /// </summary>
+        [MenuItem("DeliverySim/Setup/26 - Connect City Arms With Roads")]
+        public static void ConnectCityArmsWithRoads()
+        {
+            const string connectorRoadPrefab = "Assets/TirgamesAssets/StylizedWorld/Architecture/Prefabs/M02Road01_1.prefab";
+            const float tile = 4.5f;
+
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(connectorRoadPrefab);
+            if (prefab == null)
+            {
+                Debug.LogError("[Setup] '" + connectorRoadPrefab + "' bulunamadı — bağlantı yolları döşenemedi.");
                 return;
             }
 
-            Debug.Log("[Setup] Tüm bölge slotları (4/4) dolu — harita zaten maksimum genişlikte.");
+            int roadLayer = EnsureRoadLayerExists();
+
+            GameObject connectorsRoot = GameObject.Find("_ArmConnectors");
+            if (connectorsRoot != null)
+            {
+                Debug.Log("[Setup] '_ArmConnectors' zaten var — tekrar oluşturulmadı. Değiştirmek için önce elle sil.");
+                return;
+            }
+
+            connectorsRoot = new GameObject("_ArmConnectors");
+            Undo.RegisterCreatedObjectUndo(connectorsRoot, "Connect City Arms");
+
+            int totalTiles = 0;
+            foreach (ArmDirection dir in new[] { ArmDirection.North, ArmDirection.South, ArmDirection.East, ArmDirection.West })
+            {
+                Vector3 prevCenter = Vector3.zero; // landmark
+                for (int i = 1; i <= ClonesPerArm; i++)
+                {
+                    Vector3 thisCenter = ArmOffset(dir, i);
+                    totalTiles += PlaceConnector(connectorsRoot.transform, prefab, prevCenter, thisCenter, dir, tile, roadLayer, $"{dir}{i}");
+                    prevCenter = thisCenter;
+                }
+            }
+
+            EditorUtility.SetDirty(connectorsRoot);
+            Debug.Log($"[Setup] {totalTiles} bağlantı yol tile'ı döşendi (4 kol x {ClonesPerArm} segment). Sahneyi kaydet (Ctrl+S).");
         }
 
-        private readonly struct DistrictSlot
+        private static int PlaceConnector(Transform parent, GameObject prefab, Vector3 fromCenter, Vector3 toCenter,
+            ArmDirection dir, float tile, int roadLayer, string label)
         {
-            public readonly string Name;
-            public readonly Vector3 Offset;
-            public readonly float YRotation;
-            public readonly string[] HiddenHouseSets;
-
-            public DistrictSlot(string name, Vector3 offset, float yRotation, string[] hiddenHouseSets)
+            // Every block (landmark and every clone) is an UNROTATED copy of the same
+            // source, so "Roads" always spans the same local offsets from its own
+            // pivot: X:[-RoadsHalfX,+RoadsHalfX], Z:[RoadsMinZ,RoadsMaxZ] — regardless
+            // of which arm it's in. Explicit per-direction edges (not a clever signed
+            // formula) so each case is directly checkable against those offsets.
+            bool alongZ;
+            float gapStart;
+            float gapEnd;
+            switch (dir)
             {
-                Name = name;
-                Offset = offset;
-                YRotation = yRotation;
-                HiddenHouseSets = hiddenHouseSets;
+                case ArmDirection.North:
+                    alongZ = true;
+                    gapStart = fromCenter.z + RoadsMaxZ; // from's north edge
+                    gapEnd = toCenter.z + RoadsMinZ;      // to's south edge
+                    break;
+                case ArmDirection.South:
+                    alongZ = true;
+                    gapStart = toCenter.z + RoadsMaxZ;    // to's north edge
+                    gapEnd = fromCenter.z + RoadsMinZ;    // from's south edge
+                    break;
+                case ArmDirection.East:
+                    alongZ = false;
+                    gapStart = fromCenter.x + RoadsHalfX; // from's east edge
+                    gapEnd = toCenter.x - RoadsHalfX;      // to's west edge
+                    break;
+                default: // West
+                    alongZ = false;
+                    gapStart = toCenter.x + RoadsHalfX;    // to's east edge
+                    gapEnd = fromCenter.x - RoadsHalfX;    // from's west edge
+                    break;
             }
+
+            float length = gapEnd - gapStart;
+            if (length <= 0f)
+            {
+                Debug.LogWarning($"[Setup] '{label}' bağlantısı için boşluk yok (gapStart={gapStart:F1}, gapEnd={gapEnd:F1}) — atlandı.");
+                return 0;
+            }
+
+            int tileCount = Mathf.CeilToInt(length / tile);
+            int placed = 0;
+            for (int t = 0; t < tileCount; t++)
+            {
+                float axisPos = gapStart + tile * 0.5f + t * tile;
+                // M02Road01_1's mesh sits 0.1m below its own pivot (learned the hard way
+                // in TirgamesCitySetup) — +0.1 lifts the visible surface back to the
+                // ground Plane's level instead of leaving it invisible underneath.
+                const float meshPivotOffset = 0.1f;
+                Vector3 pos = alongZ
+                    ? new Vector3(0f, meshPivotOffset, axisPos)
+                    : new Vector3(axisPos, meshPivotOffset, 0f);
+
+                GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
+                instance.name = $"Connector_{label}_{t}";
+                instance.transform.position = pos;
+                if (roadLayer >= 0)
+                {
+                    instance.layer = roadLayer;
+                }
+
+                BoxCollider collider = instance.AddComponent<BoxCollider>();
+                collider.center = new Vector3(0f, -0.1f, 0f); // M02Road01_1's mesh sits 0.1m below its own pivot
+                collider.size = new Vector3(tile, 0.1f, tile);
+
+                Undo.RegisterCreatedObjectUndo(instance, "Connect City Arms");
+                placed++;
+            }
+
+            return placed;
         }
 
         private static void ExtendWaypointGraph(Transform districtTransform, string slotName)
