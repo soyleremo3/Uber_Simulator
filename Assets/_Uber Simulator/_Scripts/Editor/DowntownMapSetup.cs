@@ -486,7 +486,7 @@ namespace DeliverySim.EditorTools
         /// reordering the existing 32-slot layer list, and safe to call repeatedly
         /// (idempotent: returns the existing index if the layer is already there).
         /// </summary>
-        private static int EnsureRoadLayerExists()
+        internal static int EnsureRoadLayerExists()
         {
             int existing = LayerMask.NameToLayer(RoadLayerName);
             if (existing >= 0)
