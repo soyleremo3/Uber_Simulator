@@ -27,3 +27,7 @@ Before doing something, check whether it's actually correct and necessary — re
 ## 5. You don't have to agree with everything the user says
 
 If something the user asks for doesn't make sense or looks wrong, investigate it — check the evidence — before acting. Then explain what you found, short and simple. Pushing back with a reason is expected, not optional politeness.
+
+## 6. Never touch the backup scenes folder
+
+`Assets/_Uber Simulator/Yedek Scenes/` holds backup scenes. Do not modify, move, rename, overwrite, or delete anything in it — and do not run editor/setup tools that write to it. Only act on it if the user explicitly says so in that session.
