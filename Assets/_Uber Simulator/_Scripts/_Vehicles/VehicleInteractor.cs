@@ -15,13 +15,14 @@ namespace DeliverySim
         [SerializeField] private float interactRadius = 6f;
         [Tooltip("Seconds between proximity scans (scanning every frame is wasteful).")]
         [SerializeField] private float scanInterval = 0.2f;
+        [Tooltip("Restrict to the Interactable layer — in a collider-dense scene an all-layers scan overflows the fixed buffer before the pickup/delivery trigger is even reached.")]
         [SerializeField] private LayerMask interactMask = ~0;
 
         [Header("Input")]
         // E = industry-standard interact. Gears moved to LShift/LCtrl to free it up.
         [SerializeField] private KeyCode interactKey = KeyCode.E;
 
-        private readonly Collider[] scanBuffer = new Collider[16];
+        private readonly Collider[] scanBuffer = new Collider[32];
         private IInteractable currentInteractable;
         private float scanTimer;
         private string currentPrompt = string.Empty;

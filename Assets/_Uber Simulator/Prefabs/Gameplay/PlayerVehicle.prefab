@@ -373,7 +373,7 @@ MonoBehaviour:
   scanInterval: 0.2
   interactMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 256
   interactKey: 101
 --- !u!114 &6895648295700878160
 MonoBehaviour:
