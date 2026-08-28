@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace DeliverySim
 {
     /// <summary>
     /// Draws a GPS-style route decal from the player vehicle to the current order
-    /// target. If Waypoint nodes exist in the scene, the route follows the road
-    /// graph (Dijkstra, real-distance shortest path); otherwise it falls back to a
-    /// straight line. OrderManager calls SetDestination/ClearDestination.
+    /// target. Path source, in order: the baked NavMesh (routes around buildings —
+    /// primary), then the scene Waypoint graph (Dijkstra, real-distance shortest
+    /// path), then a straight line. OrderManager calls SetDestination/ClearDestination.
     ///
     /// Rendered as a real flat ribbon MESH lying on the ground (not a LineRenderer)
     /// — a LineRenderer's "TransformZ" alignment only lies flat if the object's
@@ -37,6 +38,12 @@ namespace DeliverySim
         [Tooltip("World-space length (meters) of one arrow tile along the route.")]
         [SerializeField] private float tileLength = 3f;
 
+        [Header("Pathfinding")]
+        [Tooltip("Route around obstacles using the baked NavMesh. Falls back to the Waypoint graph, then a straight line, if no NavMesh path is found.")]
+        [SerializeField] private bool useNavMesh = true;
+        [Tooltip("How far from a point to search for the NavMesh when snapping the vehicle / destination onto it.")]
+        [SerializeField] private float navMeshSampleRadius = 8f;
+
         [Header("Ground Snapping")]
         [Tooltip("Raycasts each point down onto the ground so the decal hugs road/terrain height instead of floating at a flat Y.")]
         [SerializeField] private bool snapToGround = true;
@@ -54,6 +61,10 @@ namespace DeliverySim
         private Waypoint[] waypoints = new Waypoint[0];
         private Vector3? destination;
         private TurnDirection nextTurn = TurnDirection.None;
+
+        // Reused every frame to avoid per-frame allocations. Constructed lazily —
+        // NavMeshPath can't be built from a field initializer / constructor.
+        private NavMeshPath navMeshPath;
 
         // Reused every frame to avoid per-frame allocations.
         private readonly List<Vector3> pathPoints = new List<Vector3>(32);
@@ -451,6 +462,12 @@ namespace DeliverySim
         {
             result.Add(from);
 
+            if (useNavMesh && TryAppendNavMeshPath(from, to, result))
+            {
+                result.Add(to);
+                return;
+            }
+
             if (waypoints != null && waypoints.Length >= 2)
             {
                 Waypoint startNode = FindNearest(from);
@@ -470,6 +487,42 @@ namespace DeliverySim
             }
 
             result.Add(to);
+        }
+
+        /// <summary>
+        /// Appends the interior corners of a NavMesh path between <paramref name="from"/>
+        /// and <paramref name="to"/> to <paramref name="result"/>. The NavMesh is baked
+        /// with buildings/fences as obstacles, so this path can never cut through a wall
+        /// — that was the "route ribbon goes through the house" bug. Returns false (so the
+        /// caller can fall back to the Waypoint graph) when either end is off-mesh or no
+        /// path exists.
+        /// </summary>
+        private bool TryAppendNavMeshPath(Vector3 from, Vector3 to, List<Vector3> result)
+        {
+            navMeshPath ??= new NavMeshPath();
+
+            if (!NavMesh.SamplePosition(from, out NavMeshHit fromHit, navMeshSampleRadius, NavMesh.AllAreas) ||
+                !NavMesh.SamplePosition(to, out NavMeshHit toHit, navMeshSampleRadius, NavMesh.AllAreas))
+            {
+                return false;
+            }
+
+            if (!NavMesh.CalculatePath(fromHit.position, toHit.position, NavMesh.AllAreas, navMeshPath) ||
+                navMeshPath.status == NavMeshPathStatus.PathInvalid ||
+                navMeshPath.corners.Length < 2)
+            {
+                return false;
+            }
+
+            // Skip corner 0 (== fromHit) and the last (== toHit); BuildPath brackets the
+            // list with the real from/to, and the RebuildMesh dedup pass drops the rest.
+            Vector3[] corners = navMeshPath.corners;
+            for (int i = 1; i < corners.Length - 1; i++)
+            {
+                result.Add(corners[i]);
+            }
+
+            return true;
         }
 
         private Waypoint FindNearest(Vector3 position)
