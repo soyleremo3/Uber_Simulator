@@ -95,6 +95,7 @@ Unless the user says otherwise for a specific asset:
 - The user saves every generated model into `C:\Users\Emrullah Soyler\Desktop\Uber Simulator Assets\`, in a `Tripo\` or `Hunyuan\` subfolder by which generator made it.
 - The file is named with the exact **File name** from the asset request (point 2) — so always include that line, PascalCase, no spaces.
 - When importing, Claude copies the file from that drop folder into the project at `Assets/_Uber Simulator/Art/Assets/Generated/<Tripo|Hunyuan>/<Name>/`, then wires it in. The desktop folder stays as the user's staging area — do not delete from it.
+- **Texture max size on import:** `512` for ordinary props (a station, a street object). `1024` for a hero / close-up object. `2048` only for the player vehicle or a large landmark. Set any map the material does not actually use (e.g. metallic / roughness on a flat matte material) to `64`. This is non-destructive (importer setting, revert anytime). Revisit the whole texture budget when the generated-asset count grows — see `TODO.md`.
 
 ## 7. Verify before acting — evidence over assumption
 
