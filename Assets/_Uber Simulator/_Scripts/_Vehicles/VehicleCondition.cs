@@ -15,13 +15,20 @@ namespace DeliverySim
         [SerializeField] private float maxCondition = 100f;
 
         [Header("Collision Damage")]
-        [Tooltip("Collision impulse below this is ignored (small scrapes).")]
-        [SerializeField] private float minImpulseThreshold = 300f;
-        [Tooltip("Condition points lost per 1000 units of collision impulse.")]
-        [SerializeField] private float damagePerThousandImpulse = 2.5f;
+        [Tooltip("Bu hızın (m/s) altındaki temaslar hasar vermez — hafif sürtme/park teması. 3 m/s ≈ 11 km/s.")]
+        [SerializeField] private float minImpactSpeed = 3f;
+        [Tooltip("Hasar eğrisinin dikliği. 1 = doğrusal; >1 => sert çarpışmalar orantısız fazla hasar (çarpma sertliğine göre).")]
+        [SerializeField] private float impactSpeedExponent = 1.6f;
+        [Tooltip("Eşiği aşan her 1 m/s için taban hasar çarpanı.")]
+        [SerializeField] private float damagePerUnitImpact = 1.1f;
+        [Tooltip("Tek çarpışmada verilebilecek en fazla condition hasarı.")]
+        [SerializeField] private float maxDamagePerHit = 60f;
+        [Tooltip("Aynı temastan art arda hasar almayı engelleyen çarpışmalar arası en kısa süre (sn).")]
+        [SerializeField] private float hitCooldown = 0.2f;
 
         private float currentCondition;
         private float durabilityMultiplier = 1f;
+        private float lastHitTime = -999f;
 
         public float MaxCondition => maxCondition;
         public float CurrentCondition => currentCondition;
@@ -41,15 +48,36 @@ namespace DeliverySim
 
         private void OnCollisionEnter(Collision collision)
         {
-            float impulse = collision.impulse.magnitude;
-            if (impulse < minImpulseThreshold)
+            if (Time.time - lastHitTime < hitCooldown || collision.contactCount == 0)
             {
                 return;
             }
 
+            // Impact severity = closing speed ALONG the contact normal, NOT the full
+            // relativeVelocity (which would punish merely sliding along a wall).
+            // This is mass-independent on purpose: the old Collision.impulse path
+            // never cleared its threshold on this ~1 kg Rigidbody, so no crash ever
+            // registered any damage.
+            Vector3 normal = collision.GetContact(0).normal;
+            float impactSpeed = Mathf.Abs(Vector3.Dot(collision.relativeVelocity, normal));
+            if (impactSpeed < minImpactSpeed)
+            {
+                return;
+            }
+
+            lastHitTime = Time.time;
+
+            float over = impactSpeed - minImpactSpeed;
+            float damage = Mathf.Pow(over, impactSpeedExponent) * damagePerUnitImpact;
             // Durability upgrade divides incoming damage (multiplier >= 1).
-            float damage = (impulse / 1000f) * damagePerThousandImpulse / Mathf.Max(1f, durabilityMultiplier);
+            damage = Mathf.Min(maxDamagePerHit, damage) / Mathf.Max(1f, durabilityMultiplier);
+            if (damage <= 0f)
+            {
+                return;
+            }
+
             ApplyDamage(damage);
+            NotificationService.Raise($"Çarpışma! Araç hasarı -{damage:F0} (kalan %{currentCondition:F0})");
         }
 
         public void ApplyDamage(float amount)

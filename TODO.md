@@ -50,9 +50,11 @@ Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sıra
 
 ### Araç / fizik
 
-- [ ] **1.** Araç durmadan teslim alamasın / veremesin (pickup/teslim için hız ~0 şartı).
-- [ ] **2.** Ani hızlanma çok sert — ivmelenme yumuşatılsın / kademelendirilsin.
+- [x] **1.** Araç durmadan teslim alamasın / veremesin (pickup/teslim için hız ~0 şartı).
+- [x] **2.** Ani hızlanma çok sert — ivmelenme yumuşatılsın / kademelendirilsin.
 - [ ] **3.** Bir yere çarpınca hasar olayı (`VehicleCondition` çarpışma hasarı).
+  - [ ] Düşük condition'da sürüşün kötüleşmesi (motor gücü / direksiyon zayıflasın). Kod
+    yorumunda "henüz fiziksel ceza yok" diyor. Şimdilik yapılmayacak — sonra eklenecek.
 - [ ] **4.** Belirli bir hasar eşiğinin altına düşünce araç pert olsun.
 - [ ] **26.** Çarpma / çarpmama tespitinin sağlaması (collision detection doğrulama).
 - [ ] **35.** Araç kirlenmesi + yıkama / temizleme istasyonu.
