@@ -105,3 +105,7 @@ If something the user asks for doesn't make sense or looks wrong, investigate it
 ## 9. Never touch the backup scenes folder
 
 `Assets/_Uber Simulator/Yedek Scenes/` holds backup scenes. Do not modify, move, rename, overwrite, or delete anything in it — and do not run editor/setup tools that write to it. Only act on it if the user explicitly says so in that session.
+
+## 10. When any part is unclear — ask, don't guess
+
+If anything about a task is not fully clear, stop and ask the user before acting. Ask as many questions as needed — the user would rather answer every question than have the wrong thing built. Getting it right after asking always beats guessing and getting it wrong. If the user's answer raises a new uncertainty, ask again — repeat until it is fully clear, then do it right.
