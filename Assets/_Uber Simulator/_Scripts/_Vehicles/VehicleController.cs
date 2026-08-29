@@ -170,6 +170,12 @@ namespace DeliverySim
         public bool throttleAssist = true;
         public bool brakeAssist = true;
 
+        [Header("Throttle Feel")]
+        [Tooltip("Gaza basınca gazın 0'dan tama ulaşma hızı (birim/sn). Düşük değer = daha yumuşak, kademeli kalkış. 1.6 ≈ tam gaza ~0.6 sn.")]
+        public float throttleRampRate = 1.6f;
+        [Tooltip("Gazı bırakınca veya ileri/geri yön değiştirince tepki hızı (birim/sn). Yüksek tutulur ki gaz-fren geçişi anında olsun.")]
+        public float throttleReleaseRate = 6f;
+
         [Header("Input Keys")]
         [Tooltip("Manual gear override keys. Racing standard: LShift up / LCtrl down. Automatic shifting stays active.")]
         [SerializeField] private KeyCode gearUpKey = KeyCode.LeftShift;
@@ -236,7 +242,16 @@ namespace DeliverySim
         private void Update()
         {
             userInput.x = Mathf.Lerp(userInput.x, Input.GetAxisRaw("Horizontal") / (1 + rb.linearVelocity.magnitude / 28f), 0.2f);
-            userInput.y = Mathf.Lerp(userInput.y, Input.GetAxisRaw("Vertical"), 0.2f);
+
+            // Yumuşak gaz: gaza basınca tork kademeli gelsin (ani fırlama önlenir).
+            // Gaz artıyorsa (aynı yönde ve daha büyük) yavaş oran; bırakırken / yön
+            // değiştirirken hızlı oran, ki fren-gaz tepkisi anında kalsın.
+            float targetThrottle = Input.GetAxisRaw("Vertical");
+            bool accelerating = Mathf.Abs(targetThrottle) > Mathf.Abs(userInput.y) + 0.001f &&
+                                (Mathf.Approximately(userInput.y, 0f) ||
+                                 Mathf.Sign(targetThrottle) == Mathf.Sign(userInput.y));
+            float throttleRate = accelerating ? throttleRampRate : throttleReleaseRate;
+            userInput.y = Mathf.MoveTowards(userInput.y, targetThrottle, throttleRate * Time.deltaTime);
 
             bool brakingNow = Input.GetKey(KeyCode.S) && forwards;
             isBraking = brakingNow ? 1f : 0f;
