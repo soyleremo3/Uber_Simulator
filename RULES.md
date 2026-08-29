@@ -73,6 +73,19 @@ Pick low for this game — it is a PC driving game and the scene is already rend
 
 If a temporary stand-in is genuinely needed to keep a system testable while the real asset is being made, treat it as extra work — see rule 5: ask first, and mark it clearly as a placeholder.
 
+### Hunyuan 3D vs Tripo — which generator to use
+
+Two AI generators are available. Pick by how much the asset's quality actually matters:
+
+- **Hunyuan 3D** (https://3d.hunyuanglobal.com/) — the **default**. Free, no practical limit. Use it for simple / background / filler / low-detail assets and blockout stand-ins — anything where "good enough" is fine. Spec it with the four points above.
+- **Tripo** (the user's **free** account — via the `generate_model` MCP tool or the Tripo web app) — only for assets that genuinely have to look good: hero props the player sees up close, key gameplay objects, anything that would cheapen the game if it looked rough. The free account is capped at about **13 models per month**.
+
+Default to Hunyuan. Use Tripo only when the quality is truly needed **and** the monthly budget in [TRIPO_QUOTA.md](TRIPO_QUOTA.md) still has room.
+
+### Keep [TRIPO_QUOTA.md](TRIPO_QUOTA.md) current
+
+That file tracks how many Tripo models are left this month (starts at 13, resets on the 1st of each calendar month). **Every time** a model is generated on Tripo: subtract 1 in that file, write the new number, add a log row, and commit it. On the first Tripo use in a new month, set the new month and reset the count to 13 first. The user flags any out-of-band changes (bought credits, plan change, refunded failure, etc.).
+
 ## 7. Verify before acting — evidence over assumption
 
 Before doing something, check whether it's actually correct and necessary — read the relevant code, docs, or project state first. Work from evidence, not assumption. Stay critical of the approach, including your own — don't just default to "okay, sure" on every idea (yours or the user's).
