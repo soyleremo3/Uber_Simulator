@@ -44,7 +44,7 @@ When a task needs a new 3D art asset, **do not** build it out of Unity primitive
 Instead, stop and hand the user an **asset request** they can produce at **https://3d.hunyuanglobal.com/** (Tencent Hunyuan 3D). For **each** asset give all four of the following:
 
 1. **What it is** — one line: what the object is and where it goes in the game.
-2. **Prompt** — in a copy-paste code block. English. **Hard limit 500 characters** (count them). Pack it: object name, overall form and proportions, art style (stylised low-poly to sit next to the Tirgames "Stylized Street" + Kenney City Kit assets), main materials and colours, the few details that matter, orientation, "single object", "neutral pose", "no ground plane / no base".
+2. **Prompt** — in a copy-paste code block. English. **Hard limit 500 characters, spaces and punctuation included** — Hunyuan silently truncates at 500, so an over-long prompt loses its ending. Do **not** eyeball the length: verify the exact count (`printf '%s' "$prompt" | wc -c`, bash `${#var}`, or a character counter) and keep it **≤ 480** to leave margin. Pack it: object name, overall form and proportions, art style (stylised low-poly to sit next to the Tirgames "Stylized Street" + Kenney City Kit assets), main materials and colours, the few details that matter, orientation, "single object", "neutral pose", "no ground plane / no base".
 3. **Model** — one of `3DGeneration-V2.5`, `3DGeneration-V3.0`, `3DGeneration-V3.1` — and one sentence on why that one.
 4. **Model face count** — a value from that model's allowed list (below).
 
