@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: order_003
   m_EditorClassIdentifier: Assembly-CSharp::DeliverySim.OrderData
   orderId: order_003
-  orderName: Sicak Yemek C
+  orderName: Butik Paketi
   pickupPointId: pickup_C
-  deliveryPointId: delivery_C
-  paymentAmount: 65
-  timeLimitSeconds: 180
-  cargoType: 1
+  deliveryPointId: delivery_F
+  paymentAmount: 75
+  timeLimitSeconds: 240
+  cargoType: 0
   description: 
   minReputationTier: 0

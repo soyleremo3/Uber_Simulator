@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: order_006
   m_EditorClassIdentifier: Assembly-CSharp::DeliverySim.OrderData
   orderId: order_006
-  orderName: Merkeze Kargo
-  pickupPointId: pickup_B
+  orderName: Boutique Ekspres
+  pickupPointId: pickup_F
   deliveryPointId: delivery_D
-  paymentAmount: 70
+  paymentAmount: 65
   timeLimitSeconds: 210
-  cargoType: 0
+  cargoType: 1
   description: 
   minReputationTier: 0

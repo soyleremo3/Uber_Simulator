@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: order_005
   m_EditorClassIdentifier: Assembly-CSharp::DeliverySim.OrderData
   orderId: order_005
-  orderName: Merkez Teslimat
-  pickupPointId: pickup_D
-  deliveryPointId: delivery_A
-  paymentAmount: 60
-  timeLimitSeconds: 200
+  orderName: Gentlemen Kargo
+  pickupPointId: pickup_E
+  deliveryPointId: delivery_C
+  paymentAmount: 70
+  timeLimitSeconds: 230
   cargoType: 0
   description: 
   minReputationTier: 0

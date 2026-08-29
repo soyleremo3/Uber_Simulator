@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: order_002
   m_EditorClassIdentifier: Assembly-CSharp::DeliverySim.OrderData
   orderId: order_002
-  orderName: Kargo Paketi B
+  orderName: Kitapci Siparisi
   pickupPointId: pickup_B
-  deliveryPointId: delivery_B
-  paymentAmount: 80
-  timeLimitSeconds: 220
+  deliveryPointId: delivery_E
+  paymentAmount: 85
+  timeLimitSeconds: 260
   cargoType: 0
   description: 
   minReputationTier: 0
