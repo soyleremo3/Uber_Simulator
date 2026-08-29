@@ -24,6 +24,10 @@ namespace DeliverySim
         [Tooltip("ALWAYS-VISIBLE identity marker (yer adını gösteren tabelalı durak). Never hidden — players can always see where pickup/delivery locations are.")]
         [SerializeField] private GameObject permanentBeacon;
 
+        [Header("Interaction Rules")]
+        [Tooltip("Yük alma/verme için aracın bu hızın (km/s) altında olması gerekir. Araç durmadan yük alınamaz/verilemez.")]
+        [SerializeField] private float maxInteractSpeedKmh = 5f;
+
         private static readonly Dictionary<string, InteractionPoint> registry = new Dictionary<string, InteractionPoint>();
 
         public string PointId => pointId;
@@ -78,6 +82,29 @@ namespace DeliverySim
             {
                 markerVisual.SetActive(active);
             }
+        }
+
+        /// <summary>
+        /// True when the interactor is stopped (or slow enough) to hand over cargo.
+        /// You can't grab or drop a load at speed — the vehicle must be nearly still.
+        /// Returns true (no block) when the interactor has no VehicleController.
+        /// </summary>
+        protected bool InteractorIsStopped(GameObject interactor, out float speedKmh)
+        {
+            speedKmh = 0f;
+            if (interactor == null)
+            {
+                return true;
+            }
+
+            VehicleController vehicle = interactor.GetComponentInParent<VehicleController>();
+            if (vehicle == null)
+            {
+                return true;
+            }
+
+            speedKmh = Mathf.Abs(vehicle.CurrentSpeedKph);
+            return speedKmh <= maxInteractSpeedKmh;
         }
 
         public abstract void Interact(GameObject interactor);

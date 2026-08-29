@@ -18,6 +18,12 @@ namespace DeliverySim
                 return;
             }
 
+            if (!InteractorIsStopped(interactor, out float speedKmh))
+            {
+                NotificationService.Raise($"Teslim etmek için dur (hız {speedKmh:F0} km/s).");
+                return;
+            }
+
             OrderManager.Instance.TryDeliver(this);
         }
 
