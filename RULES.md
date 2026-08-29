@@ -41,12 +41,13 @@ Do only what the user asked for. If, while doing it, something else looks worth 
 
 When a task needs a new 3D art asset, **do not** build it out of Unity primitives (Cube, Sphere, Cylinder, Capsule, Plane, Quad) or flat single-colour meshes. Placeholder-looking geometry breaks the game's visual style and is not acceptable in the scene.
 
-Instead, stop and hand the user an **asset request** they can produce at **https://3d.hunyuanglobal.com/** (Tencent Hunyuan 3D). For **each** asset give all four of the following:
+Instead, stop and hand the user an **asset request** they can produce at **https://3d.hunyuanglobal.com/** (Tencent Hunyuan 3D). For **each** asset give all five of the following:
 
 1. **What it is** — one line: what the object is and where it goes in the game.
-2. **Prompt** — in a copy-paste code block. English. **Hard limit 500 characters, spaces and punctuation included** — Hunyuan silently truncates at 500, so an over-long prompt loses its ending. Do **not** eyeball the length: verify the exact count (`printf '%s' "$prompt" | wc -c`, bash `${#var}`, or a character counter) and keep it **≤ 480** to leave margin. Pack it: object name, overall form and proportions, art style (stylised low-poly to sit next to the Tirgames "Stylized Street" + Kenney City Kit assets), main materials and colours, the few details that matter, orientation, "single object", "neutral pose", "no ground plane / no base".
-3. **Model** — one of `3DGeneration-V2.5`, `3DGeneration-V3.0`, `3DGeneration-V3.1` — and one sentence on why that one.
-4. **Model face count** — a value from that model's allowed list (below).
+2. **File name** — a short PascalCase, filesystem-safe name, no spaces (e.g. `FuelPump`, `RepairLift`), plus the expected extension(s) (`.glb` / `.fbx`). The user names the downloaded file exactly this — see "Where generated files go" below.
+3. **Prompt** — in a copy-paste code block. English. **Hard limit 500 characters, spaces and punctuation included** — Hunyuan silently truncates at 500, so an over-long prompt loses its ending. Do **not** eyeball the length: verify the exact count (`printf '%s' "$prompt" | wc -c`, bash `${#var}`, or a character counter) and keep it **≤ 480** to leave margin. Pack it: object name, overall form and proportions, art style (stylised low-poly to sit next to the Tirgames "Stylized Street" + Kenney City Kit assets), main materials and colours, the few details that matter, orientation, "single object", "neutral pose", "no ground plane / no base".
+4. **Model** — one of `3DGeneration-V2.5`, `3DGeneration-V3.0`, `3DGeneration-V3.1` — and one sentence on why that one.
+5. **Model face count** — a value from that model's allowed list (below).
 
 ### Which model to recommend
 
@@ -77,7 +78,7 @@ If a temporary stand-in is genuinely needed to keep a system testable while the 
 
 Two AI generators are available. Pick by how much the asset's quality actually matters:
 
-- **Hunyuan 3D** (https://3d.hunyuanglobal.com/) — the **default**. Free, no practical limit. Use it for simple / background / filler / low-detail assets and blockout stand-ins — anything where "good enough" is fine. Spec it with the four points above.
+- **Hunyuan 3D** (https://3d.hunyuanglobal.com/) — the **default**. Free, no practical limit. Use it for simple / background / filler / low-detail assets and blockout stand-ins — anything where "good enough" is fine. Spec it with the five points above.
 - **Tripo** (the user's **free** account — via the `generate_model` MCP tool or the Tripo web app) — only for assets that genuinely have to look good: hero props the player sees up close, key gameplay objects, anything that would cheapen the game if it looked rough. The free account is capped at about **13 models per month**.
 
 Default to Hunyuan. Use Tripo only when the quality is truly needed **and** the monthly budget in [TRIPO_QUOTA.md](TRIPO_QUOTA.md) still has room.
@@ -85,6 +86,14 @@ Default to Hunyuan. Use Tripo only when the quality is truly needed **and** the 
 ### Keep [TRIPO_QUOTA.md](TRIPO_QUOTA.md) current
 
 That file tracks how many Tripo models are left this month (starts at 13, resets on the 1st of each calendar month). **Every time** a model is generated on Tripo: subtract 1 in that file, write the new number, add a log row, and commit it. On the first Tripo use in a new month, set the new month and reset the count to 13 first. The user flags any out-of-band changes (bought credits, plan change, refunded failure, etc.).
+
+### Where generated files go, and naming
+
+Unless the user says otherwise for a specific asset:
+
+- The user saves every generated model into `C:\Users\Emrullah Soyler\Desktop\Uber Simulator Assets\`, in a `Tripo\` or `Hunyuan\` subfolder by which generator made it.
+- The file is named with the exact **File name** from the asset request (point 2) — so always include that line, PascalCase, no spaces.
+- When importing, Claude copies the file from that drop folder into the project at `Assets/_Uber Simulator/Art/Assets/Generated/<Tripo|Hunyuan>/<Name>/`, then wires it in. The desktop folder stays as the user's staging area — do not delete from it.
 
 ## 7. Verify before acting — evidence over assumption
 
