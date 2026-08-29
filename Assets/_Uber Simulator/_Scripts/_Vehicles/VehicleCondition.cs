@@ -13,6 +13,8 @@ namespace DeliverySim
     {
         [Header("Condition")]
         [SerializeField] private float maxCondition = 100f;
+        [Tooltip("Condition bu değere (dahil) düşünce araç pert sayılır ve OnVehicleTotaled tetiklenir (oyun sonu ekranı).")]
+        [SerializeField] private float totaledThreshold = 15f;
 
         [Header("Collision Damage")]
         [Tooltip("Bu hızın (m/s) altındaki temaslar hasar vermez — hafif sürtme/park teması. 3 m/s ≈ 11 km/s.")]
@@ -33,8 +35,14 @@ namespace DeliverySim
         public float MaxCondition => maxCondition;
         public float CurrentCondition => currentCondition;
 
+        /// <summary>True once condition fell to/below totaledThreshold. Cleared by a full repair.</summary>
+        public bool IsTotaled { get; private set; }
+
         /// <summary>(current, max) — UI listens to this.</summary>
         public event Action<float, float> OnConditionChanged;
+
+        /// <summary>Fires once when the vehicle drops to/below the totaled threshold (game over).</summary>
+        public event Action OnVehicleTotaled;
 
         private void Awake()
         {
@@ -89,12 +97,19 @@ namespace DeliverySim
 
             currentCondition = Mathf.Max(0f, currentCondition - amount);
             OnConditionChanged?.Invoke(currentCondition, maxCondition);
+
+            if (!IsTotaled && currentCondition <= totaledThreshold)
+            {
+                IsTotaled = true;
+                OnVehicleTotaled?.Invoke();
+            }
         }
 
-        /// <summary>Full repair; cost logic lives in RepairStation.</summary>
+        /// <summary>Full repair; cost logic lives in RepairStation. Also clears the totaled flag.</summary>
         public void RepairFully()
         {
             currentCondition = maxCondition;
+            IsTotaled = false;
             OnConditionChanged?.Invoke(currentCondition, maxCondition);
         }
 

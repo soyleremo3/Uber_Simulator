@@ -36,6 +36,7 @@ namespace DeliverySim
             BuildOrderPanel(root);
             BuildShopPanel(root);
             BuildPauseMenu(root);
+            BuildGameOver(root);
             BuildHelpText(root);
         }
 
@@ -194,6 +195,29 @@ namespace DeliverySim
 
             Button quit = UIFactory.CreateButton(panel, "QuitButton", "Çıkış", UIFactory.RejectColor, controller.QuitGame);
             UIFactory.Place((RectTransform)quit.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, -88f), new Vector2(240f, 52f));
+        }
+
+        private void BuildGameOver(Transform root)
+        {
+            RectTransform panel = UIFactory.CreatePanel(root, "GameOverPanel", new Color(0.05f, 0f, 0f, 0.85f));
+            UIFactory.Stretch(panel);
+
+            Text title = UIFactory.CreateText(panel, "Title", "ARAÇ PERT OLDU", 46, TextAnchor.MiddleCenter,
+                new Color(1f, 0.3f, 0.3f));
+            UIFactory.Place((RectTransform)title.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, 140f), new Vector2(700f, 64f));
+
+            Text subtitle = UIFactory.CreateText(panel, "Subtitle", "Araç kullanılamaz hale geldi.", 22, TextAnchor.MiddleCenter,
+                new Color(1f, 0.85f, 0.85f));
+            UIFactory.Place((RectTransform)subtitle.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, 90f), new Vector2(700f, 32f));
+
+            GameOverController controller = gameObject.AddComponent<GameOverController>();
+            controller.SetReferences(panel.gameObject);
+
+            Button restart = UIFactory.CreateButton(panel, "RestartButton", "Yeniden Başla", UIFactory.AcceptColor, controller.Restart);
+            UIFactory.Place((RectTransform)restart.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, 20f), new Vector2(240f, 52f));
+
+            Button quit = UIFactory.CreateButton(panel, "QuitButton", "Çıkış", UIFactory.RejectColor, controller.QuitGame);
+            UIFactory.Place((RectTransform)quit.transform, new Vector2(0.5f, 0.5f), new Vector2(0f, -44f), new Vector2(240f, 52f));
         }
 
         private void BuildHelpText(Transform root)

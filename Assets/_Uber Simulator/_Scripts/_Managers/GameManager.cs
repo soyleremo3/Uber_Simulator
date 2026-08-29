@@ -52,7 +52,7 @@ namespace DeliverySim
             CurrentState = newState;
             OnGameStateChanged?.Invoke(newState);
 
-            if (newState == GameState.Paused)
+            if (newState == GameState.Paused || newState == GameState.GameOver)
             {
                 previousTimeScale = Time.timeScale;
                 Time.timeScale = 0f;
