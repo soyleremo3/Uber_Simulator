@@ -43,3 +43,72 @@ Not bugs. Things intentionally left for later, with enough context to pick up.
 - [ ] Cosmetic system — does not exist yet.
 - [ ] Economy income/expense ratio — not numerically playtested/balanced.
 - [ ] Asset licensing (Tirgames Asset Store EULA, Kenney CC0) — verify before any Steam release.
+
+## Yapılacaklar — kullanıcı listesi (eklendi 2026-08-30)
+
+Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sırayla.
+
+### Araç / fizik
+
+- [ ] **1.** Araç durmadan teslim alamasın / veremesin (pickup/teslim için hız ~0 şartı).
+- [ ] **2.** Ani hızlanma çok sert — ivmelenme yumuşatılsın / kademelendirilsin.
+- [ ] **3.** Bir yere çarpınca hasar olayı (`VehicleCondition` çarpışma hasarı).
+- [ ] **4.** Belirli bir hasar eşiğinin altına düşünce araç pert olsun.
+- [ ] **26.** Çarpma / çarpmama tespitinin sağlaması (collision detection doğrulama).
+- [ ] **35.** Araç kirlenmesi + yıkama / temizleme istasyonu.
+- [ ] **38.** Trailer (römork) eklenmesi.
+- [ ] **39.** Lastik ve araç değişimi.
+- [ ] **40.** Araç modifiye sistemi.
+
+### Benzin / tamir istasyonları
+
+- [ ] **5.** Tamir etme animasyonu.
+- [ ] **6.** Benzin alma animasyonu.
+- [ ] **7.** Benzin ve tamir noktalarının çeşitlenmesi / yerlerinin değişmesi.
+- [ ] **8.** İstasyon yanında animasyonlu karakter + doldurma / onarma animasyonları.
+- [ ] **9.** Tamir sırasında aletlerin gelmesi.
+- [ ] **34.** Ücretli geçiş yerleri (toll) — gider kalemi.
+
+### Karakter / NPC
+
+- [ ] **10.** Karakter animasyonları.
+- [ ] **23.** NPC yayalar (insanlar).
+- [ ] **24.** NPC araçlar (trafik).
+
+### Dünya / mekan / harita
+
+- [ ] **11.** Yeni alım noktaları ve teslim noktaları eklenmesi.
+- [ ] **12.** Yeni mekanların gelmesi.
+- [ ] **16.** Yaya yolunun düzenlenmesi.
+- [ ] **19.** Yeni evlerin eklenmesi.
+- [ ] **20.** Boş alanların doldurulması.
+- [ ] **21.** Daha çok asset (karton kutular, kargo eşyaları vs.).
+- [ ] **22.** Kargo mekanlarının yapılması ve eklenmesi.
+- [ ] **37.** Oyuncunun kendi evi.
+- [ ] **36.** Havanın kararması (gündüz / gece döngüsü).
+- [ ] **18.** Blender MCP bağlanması ve düzenlemenin orada yapılması.
+
+### Trafik / ceza
+
+- [ ] **13.** Ceza kesilmesi.
+- [ ] **14.** Trafik polisinin gelmesi.
+- [ ] **15.** Radarın gelmesi.
+
+### Navigasyon / rota
+
+- [ ] **17.** Yol göstergecinin düzenlenmesi + mini map üzerinde gösterilmesi.
+- [ ] **29.** Ters yönden rota göstermemesi.
+- [ ] **30.** Rota göstergecinin yol yönlerine göre ayarlanması.
+- [ ] **31.** HUD'daki "sola dön / sağa dön" göstergesinin düzeltilmesi.
+- [ ] **32.** Navigasyon ribbon'unun bina içinden geçmesi bug'ı (ground-snap raycast).
+- [ ] **33.** Rotanın en kısa yolu göstermesi (NOT: Dijkstra hâlihazırda mesafe-ağırlıklı — doğrula).
+
+### Ekonomi / sipariş
+
+- [ ] **25.** İtibarın (Gümüş vb. tier) hemen yükselmemesi — kademeli olsun.
+- [ ] **27.** Siparişlerin ve sipariş eden kişilerin çeşitlenmesi / değişmesi.
+- [ ] **28.** Aynı anda 3'ten fazla sipariş olabilmesi.
+- [ ] **41.** Teslim süresinin uzaklığa göre ayarlanması (NOT: distance-based limit kodda var — gözden geçir).
+- [ ] **42.** Teslim ALMAK için de ayrı bir süre limiti.
+- [ ] **43.** Sipariş listesinde yazan isim ile kabul sonrası görünen isim uyuşmazlığı bug'ı.
+- [ ] **44.** Ödemenin mesafeye göre hesaplanması.
