@@ -74,27 +74,24 @@ Pick low for this game — it is a PC driving game and the scene is already rend
 
 If a temporary stand-in is genuinely needed to keep a system testable while the real asset is being made, treat it as extra work — see rule 5: ask first, and mark it clearly as a placeholder.
 
-### Hunyuan 3D vs Tripo — which generator to use
+### Generator: Hunyuan 3D only (Tripo not usable)
 
-Two AI generators are available. Pick by how much the asset's quality actually matters:
+**Hunyuan 3D** (https://3d.hunyuanglobal.com/) is the only generator — free, no practical
+limit, and it lets you download the result. It also takes an **input image** (image-to-3D),
+not just a text prompt — use that when a good concept image exists (better control than text).
 
-- **Hunyuan 3D** (https://3d.hunyuanglobal.com/) — the **default**. Free, no practical limit. Use it for simple / background / filler / low-detail assets and blockout stand-ins — anything where "good enough" is fine. Spec it with the five points above.
-- **Tripo** (the user's **free** account — via the `generate_model` MCP tool or the Tripo web app) — only for assets that genuinely have to look good: hero props the player sees up close, key gameplay objects, anything that would cheapen the game if it looked rough. The free account is capped at about **13 models per month**.
-
-Default to Hunyuan. Use Tripo only when the quality is truly needed **and** the monthly budget in [TRIPO_QUOTA.md](TRIPO_QUOTA.md) still has room.
-
-### Keep [TRIPO_QUOTA.md](TRIPO_QUOTA.md) current
-
-That file tracks how many Tripo models are left this month (starts at 13, resets on the 1st of each calendar month). **Every time** a model is generated on Tripo: subtract 1 in that file, write the new number, add a log row, and commit it. On the first Tripo use in a new month, set the new month and reset the count to 13 first. The user flags any out-of-band changes (bought credits, plan change, refunded failure, etc.).
+**Tripo** was evaluated (2026-08). Its free tier generates fine but **blocks export/download —
+paid only** — so it is not used. Revisit only if the user buys a paid Tripo plan.
+(There is no `TRIPO_QUOTA.md` any more.)
 
 ### Where generated files go, and naming
 
 Unless the user says otherwise for a specific asset:
 
 - **Export format: prefer `.fbx`, `.glb` acceptable.** FBX imports natively (no package, matches the Kenney/Tirgames pipeline). Mesh quality is identical between the two — the only difference is material/texture transfer, which barely matters here since stylised props get a fresh URP/Lit material anyway. If the generator only offers GLB, take GLB and add the `glTFast` package once. When the option exists, ask for textures embedded/baked, Y-up, metre scale.
-- The user saves every generated model into `C:\Users\Emrullah Soyler\Desktop\Uber Simulator Assets\`, in a `Tripo\` or `Hunyuan\` subfolder by which generator made it.
+- The user saves every generated model into `C:\Users\Emrullah Soyler\Desktop\Uber Simulator Assets\Hunyuan\`.
 - The file is named with the exact **File name** from the asset request (point 2) — so always include that line, PascalCase, no spaces.
-- When importing, Claude copies the file from that drop folder into the project at `Assets/_Uber Simulator/Art/Assets/Generated/<Tripo|Hunyuan>/<Name>/`, then wires it in. The desktop folder stays as the user's staging area — do not delete from it.
+- When importing, Claude copies the file from that drop folder into the project at `Assets/_Uber Simulator/Art/Assets/Generated/Hunyuan/<Name>/`, then wires it in. The desktop folder stays as the user's staging area — do not delete from it.
 - **Texture max size on import:** `512` for ordinary props (a station, a street object). `1024` for a hero / close-up object. `2048` only for the player vehicle or a large landmark. Set any map the material does not actually use (e.g. metallic / roughness on a flat matte material) to `64`. This is non-destructive (importer setting, revert anytime). Revisit the whole texture budget when the generated-asset count grows — see `TODO.md`.
 
 ## 7. Verify before acting — evidence over assumption
