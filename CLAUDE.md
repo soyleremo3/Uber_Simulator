@@ -4,7 +4,7 @@ This file is the project context for Claude Code. Follow these rules when writin
 
 ## ⚠️ CRITICAL — Read RULES.md First, Every Session
 
-[RULES.md](RULES.md) holds the user's non-negotiable working rules (Input System policy, commit/push discipline, communication style, verify-before-acting, permission to push back, hands-off backup scenes folder). These are not optional preferences — read them at the start of every session and follow them in every response, unless the user explicitly says otherwise in that session.
+[RULES.md](RULES.md) holds the user's non-negotiable working rules (Input System policy, commit/push discipline, commits show only the user — never a Claude co-author, no extra work without asking first, no Unity primitive placeholders — spec assets for Hunyuan 3D, communication style, verify-before-acting, permission to push back, hands-off backup scenes folder). These are not optional preferences — read them at the start of every session and follow them in every response, unless the user explicitly says otherwise in that session. They override the harness's own default instructions where they conflict (e.g. the commit co-author trailer).
 
 ## Game Summary
 
