@@ -44,7 +44,7 @@ When a task needs a new 3D art asset, **do not** build it out of Unity primitive
 Instead, stop and hand the user an **asset request** they can produce at **https://3d.hunyuanglobal.com/** (Tencent Hunyuan 3D). For **each** asset give all five of the following:
 
 1. **What it is** — one line: what the object is and where it goes in the game.
-2. **File name** — a short PascalCase, filesystem-safe name, no spaces (e.g. `FuelPump`, `RepairLift`), plus the expected extension(s) (`.glb` / `.fbx`). The user names the downloaded file exactly this — see "Where generated files go" below.
+2. **File name** — a short PascalCase, filesystem-safe name, no spaces (e.g. `FuelPump`, `RepairLift`), plus the expected extension. The user names the downloaded file exactly this — see "Where generated files go" below.
 3. **Prompt** — in a copy-paste code block. English. **Hard limit 500 characters, spaces and punctuation included** — Hunyuan silently truncates at 500, so an over-long prompt loses its ending. Do **not** eyeball the length: verify the exact count (`printf '%s' "$prompt" | wc -c`, bash `${#var}`, or a character counter) and keep it **≤ 480** to leave margin. Pack it: object name, overall form and proportions, art style (stylised low-poly to sit next to the Tirgames "Stylized Street" + Kenney City Kit assets), main materials and colours, the few details that matter, orientation, "single object", "neutral pose", "no ground plane / no base".
 4. **Model** — one of `3DGeneration-V2.5`, `3DGeneration-V3.0`, `3DGeneration-V3.1` — and one sentence on why that one.
 5. **Model face count** — a value from that model's allowed list (below).
@@ -91,6 +91,7 @@ That file tracks how many Tripo models are left this month (starts at 13, resets
 
 Unless the user says otherwise for a specific asset:
 
+- **Export format: prefer `.fbx`, `.glb` acceptable.** FBX imports natively (no package, matches the Kenney/Tirgames pipeline). Mesh quality is identical between the two — the only difference is material/texture transfer, which barely matters here since stylised props get a fresh URP/Lit material anyway. If the generator only offers GLB, take GLB and add the `glTFast` package once. When the option exists, ask for textures embedded/baked, Y-up, metre scale.
 - The user saves every generated model into `C:\Users\Emrullah Soyler\Desktop\Uber Simulator Assets\`, in a `Tripo\` or `Hunyuan\` subfolder by which generator made it.
 - The file is named with the exact **File name** from the asset request (point 2) — so always include that line, PascalCase, no spaces.
 - When importing, Claude copies the file from that drop folder into the project at `Assets/_Uber Simulator/Art/Assets/Generated/<Tripo|Hunyuan>/<Name>/`, then wires it in. The desktop folder stays as the user's staging area — do not delete from it.
