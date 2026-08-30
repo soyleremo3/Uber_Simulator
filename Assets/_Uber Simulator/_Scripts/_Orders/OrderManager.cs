@@ -76,6 +76,14 @@ namespace DeliverySim
         [Tooltip("Oyun başında panoya doğrudan eklenecek teklif sayısı (ilk açılışta pano boş kalmasın).")]
         [SerializeField] private int seedOffers = 2;
 
+        [Header("Cluster arrivals (batches)")]
+        [Tooltip("Bir gelişin arkasından kısa süre içinde 1-2 ek gelişi tetikleme ihtimali (restoranın toplu sipariş vermesi hissi).")]
+        [Range(0f, 1f)][SerializeField] private float clusterChance = 0.35f;
+        [SerializeField] private int clusterMinExtra = 1;
+        [SerializeField] private int clusterMaxExtra = 2;
+        [SerializeField] private float clusterDelayMin = 3f;
+        [SerializeField] private float clusterDelayMax = 8f;
+
         [Header("Time Limit (distance-based)")]
         [Tooltip("When on, the delivery time limit is computed from the real pickup->delivery distance instead of OrderData's fixed value.")]
         [SerializeField] private bool useDistanceBasedTimeLimit = true;
@@ -164,6 +172,9 @@ namespace DeliverySim
 
         private float emptyBoardSeconds;
 
+        // Cluster arrivals: absolute Time.time stamps at which to spawn a batched extra.
+        private readonly List<float> pendingClusterArrivals = new List<float>();
+
         public event Action<IReadOnlyList<OrderOffer>> OnOffersChanged;
         public event Action<OrderData> OnOrderAccepted;
         public event Action<OrderData> OnCargoPickedUp;
@@ -226,10 +237,10 @@ namespace DeliverySim
 
             if (useArrivals)
             {
-                // Don't start on a dead board — drop a few offers in immediately.
+                // Don't start on a dead board — drop a few offers in immediately (no cluster on seed).
                 for (int i = 0; i < seedOffers; i++)
                 {
-                    SpawnArrival();
+                    SpawnArrival(allowCluster: false);
                 }
             }
             else
@@ -442,11 +453,21 @@ namespace DeliverySim
         /// </summary>
         private void TickArrivals()
         {
+            // Fire any due cluster ("batch") arrivals first.
+            for (int i = pendingClusterArrivals.Count - 1; i >= 0; i--)
+            {
+                if (Time.time >= pendingClusterArrivals[i])
+                {
+                    pendingClusterArrivals.RemoveAt(i);
+                    SpawnArrival(allowCluster: false);
+                }
+            }
+
             float lambda = CurrentLambda();                 // offers per real minute
             float p = lambda * Time.deltaTime / 60f;        // arrival prob this frame
             if (currentOffers.Count < maxOffers && UnityEngine.Random.value < p)
             {
-                SpawnArrival();
+                SpawnArrival(allowCluster: true);
             }
 
             bool night = GameClock.Instance != null && GameClock.Instance.IsNight;
@@ -464,7 +485,7 @@ namespace DeliverySim
                 currentOffers.Count < DaytimeFloor() &&
                 emptyBoardSeconds > daytimeFloorEmptySeconds)
             {
-                SpawnArrival();
+                SpawnArrival(allowCluster: true);
                 emptyBoardSeconds = 0f;
             }
         }
@@ -501,8 +522,12 @@ namespace DeliverySim
             return Mathf.Max(0, daytimeFloorByTier[t]);
         }
 
-        /// <summary>Adds ONE fresh offer to the board (if a template is available and there's room).</summary>
-        private void SpawnArrival()
+        /// <summary>
+        /// Adds ONE fresh offer to the board (if a template is available and there's
+        /// room). When <paramref name="allowCluster"/> is set, may schedule 1-2
+        /// batched extra arrivals a few seconds later (the "restaurant batch" feel).
+        /// </summary>
+        private void SpawnArrival(bool allowCluster)
         {
             if (currentOffers.Count >= maxOffers)
             {
@@ -517,6 +542,16 @@ namespace DeliverySim
 
             currentOffers.Add(BuildOffer(template));
             OnOffersChanged?.Invoke(currentOffers);
+
+            if (allowCluster && UnityEngine.Random.value < clusterChance)
+            {
+                int extra = UnityEngine.Random.Range(clusterMinExtra, clusterMaxExtra + 1);
+                for (int i = 0; i < extra; i++)
+                {
+                    pendingClusterArrivals.Add(
+                        Time.time + UnityEngine.Random.Range(clusterDelayMin, clusterDelayMax));
+                }
+            }
         }
 
         /// <summary>
