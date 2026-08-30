@@ -47,6 +47,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeliverySim.OrderManager
   orderPool: []
+  customerPool: {fileID: 11400000, guid: 2b7d26f46436b7847beb3f7cea7ec0f5, type: 2}
+  individualRecipientChance: 0.72
   maxOffers: 10
   offerRefreshInterval: 15
   useDistanceBasedTimeLimit: 1

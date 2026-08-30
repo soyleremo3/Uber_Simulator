@@ -108,7 +108,9 @@ Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sıra
 ### Ekonomi / sipariş
 
 - [x] **25.** İtibar kademeli. `docs/design/reputation-redesign.md` adım 1-7 uygulandı + play'de doğrulandı: RP/XP + level eğrisi (Bronz L1 başlar, L2≈6 teslimat, Gümüş≈30, tek 5★ tier atlatmaz), çok faktörlü yıldız (çarpışma/hasar/hız/gecikme, Kırılır ×1.6, ±jitter), Diamond form-gate, aynı-rota farm cezası, Save v3, HUD level+XP barı. Adım 8 (teslimat sonrası sonuç kartı) opsiyonel — yapılmadı. ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK** (sayılar playtest ile ayarlanacak).
-- [ ] **27.** Sipariş + sipariş eden çeşitliliği. ONAYLANDI → `docs/design/order-board-redesign.md` D bölümü (`CustomerPoolData`, Regular müşteri). ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK**.
+- [ ] **27.** Sipariş + sipariş eden çeşitliliği. `docs/design/order-board-redesign.md` D bölümü.
+  - [x] `CustomerPoolData` SO (40 ad × 30 soyad + 15 işletme) + `CustomerPool.asset`; her sipariş `BuildOffer`'da rastgele müşteri (birey %72 / işletme) alır; panel satırında "Kime: Ayşe Y." gösterilir. Play test OK.
+  - [ ] Prosedürel sipariş kompozisyonu (rastgele nokta çifti, `namePatterns`, `weightByTier`, Regular müşteri kalıcılığı) — asset/nokta az olduğu için ertelendi. ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK**.
 - [ ] **28.** Tab panelinde maks 10 sipariş, dalgalı akış, oyuncuyu tutan sistem. ONAYLANDI → `docs/design/order-board-redesign.md` (hybrid şablon + Poisson λ(t) + 4 kanca). Adım adım uygulanıyor. ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK**.
   - [x] Her sipariş satırında mesafe + ücret yazıyor (`OrderManager.GetOrderDistance` / `GetOrderPayment`).
 - [ ] **41.** Teslim süresinin uzaklığa göre ayarlanması (NOT: distance-based limit kodda var — gözden geçir).

@@ -39,8 +39,12 @@ namespace DeliverySim
         public static OrderManager Instance { get; private set; }
 
         [Header("Order Pool")]
-        [Tooltip("All order definitions this scene can offer.")]
+        [Tooltip("All order definitions this scene can offer (used as archetype templates).")]
         [SerializeField] private List<OrderData> orderPool = new List<OrderData>();
+        [Tooltip("Her siparişe rastgele bir müşteri (alıcı) adı vermek için havuz. Boşsa müşteri gösterilmez.")]
+        [SerializeField] private CustomerPoolData customerPool;
+        [Tooltip("Alıcının birey (ev teslimatı) olma olasılığı; kalanı işletme.")]
+        [Range(0f, 1f)][SerializeField] private float individualRecipientChance = 0.72f;
 
         [Header("Offers")]
         [Tooltip("Panoda aynı anda görünebilecek en fazla teklif (her zaman dolu olmak zorunda değil).")]
@@ -659,6 +663,14 @@ namespace DeliverySim
             offer.DistanceMeters = Mathf.Max(0f, GetOrderDistance(template));
             offer.TimeLimit = ResolveOfferTimeLimit(offer);
             offer.Payment = ResolveOfferPayment(offer);
+
+            if (customerPool != null && customerPool.HasContent)
+            {
+                offer.Customer = UnityEngine.Random.value < individualRecipientChance
+                    ? customerPool.RollIndividual()
+                    : customerPool.RollBusiness();
+            }
+
             return offer;
         }
 

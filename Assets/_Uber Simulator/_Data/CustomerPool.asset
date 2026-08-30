@@ -1,0 +1,117 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67924cbdb724939408f08be66cf7847d, type: 3}
+  m_Name: CustomerPool
+  m_EditorClassIdentifier: Assembly-CSharp::DeliverySim.CustomerPoolData
+  firstNames:
+  - "Ay\u015Fe"
+  - Mehmet
+  - Deniz
+  - Elif
+  - Can
+  - Zeynep
+  - Emir
+  - Defne
+  - Yusuf
+  - Ecrin
+  - Mert
+  - Nehir
+  - Kerem
+  - Azra
+  - Ali
+  - Miray
+  - "\xD6mer"
+  - Asya
+  - Efe
+  - Ada
+  - Burak
+  - Selin
+  - Kaan
+  - Ela
+  - Arda
+  - Nil
+  - Berk
+  - "\u0130pek"
+  - Poyraz
+  - Duru
+  - Baran
+  - Cansu
+  - Onur
+  - Melis
+  - Tuna
+  - Sude
+  - Eren
+  - Yaren
+  - Bora
+  - Lara
+  lastNames:
+  - "Y\u0131lmaz"
+  - Kaya
+  - Demir
+  - "\xC7elik"
+  - "\u015Eahin"
+  - "Y\u0131ld\u0131z"
+  - "Y\u0131ld\u0131r\u0131m"
+  - "\xD6zt\xFCrk"
+  - "Ayd\u0131n"
+  - "\xD6zdemir"
+  - Arslan
+  - "Do\u011Fan"
+  - "K\u0131l\u0131\xE7"
+  - Aslan
+  - "\xC7etin"
+  - Kara
+  - "Ko\xE7"
+  - Kurt
+  - "\xD6zkan"
+  - "\u015Eim\u015Fek"
+  - Polat
+  - Korkmaz
+  - "\xC7ak\u0131r"
+  - "Erdo\u011Fan"
+  - Yavuz
+  - "G\xFCne\u015F"
+  - Aksoy
+  - Bulut
+  - "Ta\u015F"
+  - Acar
+  businesses:
+  - name: "Kardelen \xC7i\xE7ek\xE7ilik"
+    type: 2
+  - name: "Lezzet Dura\u011F\u0131"
+    type: 1
+  - name: Anadolu Kitabevi
+    type: 2
+  - name: Merkez Eczanesi
+    type: 4
+  - name: "\xD6zt\xFCrk Kuyumculuk"
+    type: 2
+  - name: "G\xFCndo\u011Fdu Market"
+    type: 2
+  - name: Nar Cafe & Bistro
+    type: 1
+  - name: "Y\u0131ld\u0131z Teknoloji"
+    type: 3
+  - name: Papatya Pastanesi
+    type: 1
+  - name: Deniz Butik
+    type: 2
+  - name: "Aile Sa\u011Fl\u0131k Merkezi"
+    type: 4
+  - name: Kervan Lojistik
+    type: 3
+  - name: Sofra Ev Yemekleri
+    type: 1
+  - name: "Bereket F\u0131r\u0131n\u0131"
+    type: 2
+  - name: "Mavi Ofis K\u0131rtasiye"
+    type: 3
