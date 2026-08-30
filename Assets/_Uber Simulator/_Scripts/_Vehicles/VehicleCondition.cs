@@ -38,11 +38,17 @@ namespace DeliverySim
         /// <summary>True once condition fell to/below totaledThreshold. Cleared by a full repair.</summary>
         public bool IsTotaled { get; private set; }
 
+        /// <summary>Lifetime count of registered collision impacts. OrderManager snapshots this at pickup and diffs it at delivery for the star rating (careful-driving component).</summary>
+        public int CollisionCount { get; private set; }
+
         /// <summary>(current, max) — UI listens to this.</summary>
         public event Action<float, float> OnConditionChanged;
 
         /// <summary>Fires once when the vehicle drops to/below the totaled threshold (game over).</summary>
         public event Action OnVehicleTotaled;
+
+        /// <summary>Fires on every registered collision impact; arg = damage dealt by that hit.</summary>
+        public event Action<float> OnCollision;
 
         private void Awake()
         {
@@ -85,6 +91,11 @@ namespace DeliverySim
             }
 
             ApplyDamage(damage);
+
+            // Careful-driving signal for the delivery star rating (see reputation-redesign.md A).
+            CollisionCount++;
+            OnCollision?.Invoke(damage);
+
             NotificationService.Raise($"Çarpışma! Araç hasarı -{damage:F0} (kalan %{currentCondition:F0})");
         }
 
