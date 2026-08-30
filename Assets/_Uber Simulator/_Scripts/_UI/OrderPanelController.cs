@@ -139,14 +139,20 @@ namespace DeliverySim
                 ? "—"
                 : (distanceM >= 1000f ? $"{distanceM / 1000f:0.0} km" : $"{distanceM:0} m");
 
+            bool priority = offer.HasFlag(OfferFlags.Priority);
+            if (priority)
+            {
+                row.GetComponent<Image>().color = new Color(0.30f, 0.26f, 0.12f, 0.97f); // gold-tinted
+            }
+
             string customerLine = offer.Customer != null && !string.IsNullOrEmpty(offer.Customer.DisplayName)
                 ? $"Kime: {offer.Customer.DisplayName}   •   "
                 : string.Empty;
-            string surgeTag = offer.SurgeMultiplier > 1.01f ? "⚡ " : string.Empty;
+            string tag = priority ? "⭐ ÖNCELİKLİ  " : (offer.SurgeMultiplier > 1.01f ? "⚡ " : string.Empty);
 
             Text info = UIFactory.CreateText(row, "Info",
-                $"{surgeTag}{offer.DisplayName}  ({offer.CargoType.Label()})\n{customerLine}₺{offer.Payment:F0}  •  {distanceText}  •  {timeLimitMinutes:00}:{timeLimitSeconds:00}",
-                18, TextAnchor.UpperLeft, Color.white);
+                $"{tag}{offer.DisplayName}  ({offer.CargoType.Label()})\n{customerLine}₺{offer.Payment:F0}  •  {distanceText}  •  {timeLimitMinutes:00}:{timeLimitSeconds:00}",
+                18, TextAnchor.UpperLeft, priority ? new Color(1f, 0.9f, 0.5f) : Color.white);
             UIFactory.Place((RectTransform)info.transform, new Vector2(0f, 1f),
                 new Vector2(12f, -8f), new Vector2(280f, rowHeight - 16f));
 

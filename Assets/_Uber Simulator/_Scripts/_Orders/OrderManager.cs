@@ -88,6 +88,20 @@ namespace DeliverySim
         [SerializeField] private float clusterDelayMin = 3f;
         [SerializeField] private float clusterDelayMax = 8f;
 
+        [Header("Priority / VIP offer")]
+        [Tooltip("Nadir, yüksek ödemeli ama daha sıkı süreli + kısa TTL'li 'ÖNCELİKLİ' sipariş.")]
+        [SerializeField] private bool usePriorityOffers = true;
+        [Range(0f, 1f)][SerializeField] private float priorityChance = 0.04f;
+        [SerializeField] private ReputationTier priorityMinTier = ReputationTier.Silver;
+        [SerializeField] private float priorityPayMin = 2.2f;
+        [SerializeField] private float priorityPayMax = 3.5f;
+        [Tooltip("Öncelikli siparişin süresi normal sürenin bu katı (daha kısa = daha zor).")]
+        [SerializeField] private float priorityTimeFactor = 0.8f;
+        [Tooltip("Öncelikli siparişin panoda kalma süresi (kısa — anlık karar).")]
+        [SerializeField] private float priorityTtl = 40f;
+        [Tooltip("İki öncelikli sipariş arası en kısa süre.")]
+        [SerializeField] private float priorityCooldown = 90f;
+
         [Header("Surge pricing")]
         [Tooltip("Talep patlamasında / kıtlıkta yeni tekliflerin ödemesini geçici olarak yükseltir (durgunlukta beklemeyi ödüllendirir).")]
         [SerializeField] private bool useSurge = true;
@@ -217,6 +231,8 @@ namespace DeliverySim
         private int streak;
         public int Streak => streak;
         public event Action<int> OnStreakChanged;
+
+        private float lastPriorityTime = -999f;
 
         public event Action<IReadOnlyList<OrderOffer>> OnOffersChanged;
         public event Action<OrderData> OnOrderAccepted;
@@ -640,7 +656,9 @@ namespace DeliverySim
                 return;
             }
 
-            currentOffers.Add(BuildOffer(template));
+            OrderOffer offer = BuildOffer(template);
+            MaybeMakePriority(offer);
+            currentOffers.Add(offer);
             arrivalTimestamps.Enqueue(Time.time);
             OnOffersChanged?.Invoke(currentOffers);
 
@@ -828,6 +846,55 @@ namespace DeliverySim
             }
 
             return 1f;
+        }
+
+        /// <summary>
+        /// Rolls the rare "priority / VIP" upgrade on a just-built offer: much higher
+        /// pay, tighter time, very short TTL. Silver+ only, at most one on the board,
+        /// with a cooldown between spawns.
+        /// </summary>
+        private void MaybeMakePriority(OrderOffer offer)
+        {
+            if (!usePriorityOffers || offer == null)
+            {
+                return;
+            }
+
+            if (ReputationManager.Instance != null && ReputationManager.Instance.CurrentTier < priorityMinTier)
+            {
+                return;
+            }
+
+            if (Time.time - lastPriorityTime < priorityCooldown || BoardHasPriority())
+            {
+                return;
+            }
+
+            if (UnityEngine.Random.value >= priorityChance)
+            {
+                return;
+            }
+
+            offer.Flags |= OfferFlags.Priority;
+            offer.Payment *= UnityEngine.Random.Range(priorityPayMin, priorityPayMax);
+            offer.TimeLimit = Mathf.Max(minTimeLimitSeconds, offer.TimeLimit * priorityTimeFactor);
+            offer.Ttl = priorityTtl;
+            lastPriorityTime = Time.time;
+
+            NotificationService.Raise($"⭐ ÖNCELİKLİ sipariş! {offer.DisplayName} — ₺{offer.Payment:F0}, sadece {priorityTtl:F0} sn panoda.");
+        }
+
+        private bool BoardHasPriority()
+        {
+            for (int i = 0; i < currentOffers.Count; i++)
+            {
+                if (currentOffers[i] != null && currentOffers[i].HasFlag(OfferFlags.Priority))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void RememberRecent(OrderData order)
