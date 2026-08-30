@@ -107,7 +107,7 @@ Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sıra
 
 ### Ekonomi / sipariş
 
-- [ ] **25.** İtibar kademeli olsun. ONAYLANDI → `docs/design/reputation-redesign.md` (XP/level "RP" + çok faktörlü yıldız). Adım adım uygulanıyor. ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK** (ilk geçiş sonrası).
+- [x] **25.** İtibar kademeli. `docs/design/reputation-redesign.md` adım 1-7 uygulandı + play'de doğrulandı: RP/XP + level eğrisi (Bronz L1 başlar, L2≈6 teslimat, Gümüş≈30, tek 5★ tier atlatmaz), çok faktörlü yıldız (çarpışma/hasar/hız/gecikme, Kırılır ×1.6, ±jitter), Diamond form-gate, aynı-rota farm cezası, Save v3, HUD level+XP barı. Adım 8 (teslimat sonrası sonuç kartı) opsiyonel — yapılmadı. ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK** (sayılar playtest ile ayarlanacak).
 - [ ] **27.** Sipariş + sipariş eden çeşitliliği. ONAYLANDI → `docs/design/order-board-redesign.md` D bölümü (`CustomerPoolData`, Regular müşteri). ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK**.
 - [ ] **28.** Tab panelinde maks 10 sipariş, dalgalı akış, oyuncuyu tutan sistem. ONAYLANDI → `docs/design/order-board-redesign.md` (hybrid şablon + Poisson λ(t) + 4 kanca). Adım adım uygulanıyor. ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK**.
   - [x] Her sipariş satırında mesafe + ücret yazıyor (`OrderManager.GetOrderDistance` / `GetOrderPayment`).
