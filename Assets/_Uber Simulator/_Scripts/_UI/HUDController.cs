@@ -21,6 +21,7 @@ namespace DeliverySim
         [SerializeField] private Text cargoText;
         [SerializeField] private Text reputationText;
         [SerializeField] private Text turnText;
+        [SerializeField] private Text surgeText;
 
         [Header("Bars (all optional)")]
         [SerializeField] private Image fuelBar;
@@ -65,6 +66,11 @@ namespace DeliverySim
         public void SetTurnIndicator(Text turn)
         {
             turnText = turn;
+        }
+
+        public void SetSurgeText(Text surge)
+        {
+            surgeText = surge;
         }
 
         private void Start()
@@ -146,6 +152,7 @@ namespace DeliverySim
                 OrderManager.Instance.OnCargoPickedUp += HandleOrderStateChanged;
                 OrderManager.Instance.OnOrderCompleted += HandleOrderCompleted;
                 OrderManager.Instance.OnOrderFailed += HandleOrderStateChanged;
+                OrderManager.Instance.OnSurgeChanged += HandleSurgeChanged;
             }
 
             if (ReputationManager.Instance != null)
@@ -180,6 +187,7 @@ namespace DeliverySim
                 OrderManager.Instance.OnCargoPickedUp -= HandleOrderStateChanged;
                 OrderManager.Instance.OnOrderCompleted -= HandleOrderCompleted;
                 OrderManager.Instance.OnOrderFailed -= HandleOrderStateChanged;
+                OrderManager.Instance.OnSurgeChanged -= HandleSurgeChanged;
             }
 
             if (ReputationManager.Instance != null)
@@ -342,6 +350,14 @@ namespace DeliverySim
             {
                 timerText.text = $"ALIM GECİKME: {Mathf.Abs(remaining):F0} sn";
                 timerText.color = new Color(1f, 0.25f, 0.25f);
+            }
+        }
+
+        private void HandleSurgeChanged(float multiplier)
+        {
+            if (surgeText != null)
+            {
+                surgeText.text = multiplier > 1.01f ? $"⚡ SURGE ×{multiplier:0.0}" : string.Empty;
             }
         }
 

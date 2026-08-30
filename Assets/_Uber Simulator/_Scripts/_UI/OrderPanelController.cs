@@ -142,9 +142,10 @@ namespace DeliverySim
             string customerLine = offer.Customer != null && !string.IsNullOrEmpty(offer.Customer.DisplayName)
                 ? $"Kime: {offer.Customer.DisplayName}   •   "
                 : string.Empty;
+            string surgeTag = offer.SurgeMultiplier > 1.01f ? "⚡ " : string.Empty;
 
             Text info = UIFactory.CreateText(row, "Info",
-                $"{offer.DisplayName}  ({offer.CargoType.Label()})\n{customerLine}₺{offer.Payment:F0}  •  {distanceText}  •  {timeLimitMinutes:00}:{timeLimitSeconds:00}",
+                $"{surgeTag}{offer.DisplayName}  ({offer.CargoType.Label()})\n{customerLine}₺{offer.Payment:F0}  •  {distanceText}  •  {timeLimitMinutes:00}:{timeLimitSeconds:00}",
                 18, TextAnchor.UpperLeft, Color.white);
             UIFactory.Place((RectTransform)info.transform, new Vector2(0f, 1f),
                 new Vector2(12f, -8f), new Vector2(280f, rowHeight - 16f));

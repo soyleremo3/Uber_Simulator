@@ -88,6 +88,18 @@ namespace DeliverySim
         [SerializeField] private float clusterDelayMin = 3f;
         [SerializeField] private float clusterDelayMax = 8f;
 
+        [Header("Surge pricing")]
+        [Tooltip("Talep patlamasında / kıtlıkta yeni tekliflerin ödemesini geçici olarak yükseltir (durgunlukta beklemeyi ödüllendirir).")]
+        [SerializeField] private bool useSurge = true;
+        [Tooltip("Son 120 sn'deki geliş / beklenen oranı bunu aşarsa surge devreye girer.")]
+        [SerializeField] private float surgeDemandThreshold = 1.6f;
+        [Tooltip("Pano bu kadar saniye ≤1 teklifte kalırsa (kıtlık) surge devreye girer.")]
+        [SerializeField] private float scarcitySeconds = 40f;
+        [SerializeField] private float surgeMin = 1.15f;
+        [SerializeField] private float surgeMax = 2.0f;
+        [SerializeField] private float surgeScarcityMultiplier = 1.35f;
+        [SerializeField] private float surgeRecalcInterval = 5f;
+
         [Header("Time Limit (distance-based)")]
         [Tooltip("When on, the delivery time limit is computed from the real pickup->delivery distance instead of OrderData's fixed value.")]
         [SerializeField] private bool useDistanceBasedTimeLimit = true;
@@ -185,6 +197,15 @@ namespace DeliverySim
         // Cluster arrivals: absolute Time.time stamps at which to spawn a batched extra.
         private readonly List<float> pendingClusterArrivals = new List<float>();
 
+        // Surge: rolling window of arrival timestamps + the current multiplier.
+        private readonly Queue<float> arrivalTimestamps = new Queue<float>();
+        private float surgeMultiplier = 1f;
+        private float surgeTimer;
+        private float lowBoardSeconds;
+
+        public float SurgeMultiplier => surgeMultiplier;
+        public event Action<float> OnSurgeChanged;
+
         public event Action<IReadOnlyList<OrderOffer>> OnOffersChanged;
         public event Action<OrderData> OnOrderAccepted;
         public event Action<OrderData> OnCargoPickedUp;
@@ -266,6 +287,11 @@ namespace DeliverySim
 
             if (useArrivals)
             {
+                if (useSurge)
+                {
+                    TickSurge();
+                }
+
                 TickArrivals();
             }
             else
@@ -500,6 +526,58 @@ namespace DeliverySim
             }
         }
 
+        /// <summary>
+        /// Recomputes the surge multiplier every surgeRecalcInterval seconds from the
+        /// last-120s arrival count vs. expected, plus a "board starved" scarcity
+        /// trigger. New offers spawned while surge is up get their payment multiplied.
+        /// </summary>
+        private void TickSurge()
+        {
+            while (arrivalTimestamps.Count > 0 && Time.time - arrivalTimestamps.Peek() > 120f)
+            {
+                arrivalTimestamps.Dequeue();
+            }
+
+            if (currentOffers.Count <= 1)
+            {
+                lowBoardSeconds += Time.deltaTime;
+            }
+            else
+            {
+                lowBoardSeconds = 0f;
+            }
+
+            surgeTimer -= Time.deltaTime;
+            if (surgeTimer > 0f)
+            {
+                return;
+            }
+
+            surgeTimer = surgeRecalcInterval;
+
+            float expected = Mathf.Max(0.5f, CurrentLambda() * 2f); // arrivals expected per 120 s
+            float demandRatio = arrivalTimestamps.Count / expected;
+
+            float previous = surgeMultiplier;
+            if (demandRatio > surgeDemandThreshold)
+            {
+                surgeMultiplier = Mathf.Clamp(1f + 0.5f * (demandRatio - 1f), surgeMin, surgeMax);
+            }
+            else if (lowBoardSeconds > scarcitySeconds)
+            {
+                surgeMultiplier = surgeScarcityMultiplier;
+            }
+            else if (surgeMultiplier > 1f && demandRatio < 1.2f && currentOffers.Count > 2)
+            {
+                surgeMultiplier = 1f;
+            }
+
+            if (!Mathf.Approximately(previous, surgeMultiplier))
+            {
+                OnSurgeChanged?.Invoke(surgeMultiplier);
+            }
+        }
+
         private float CurrentLambda()
         {
             float baseLambda = fallbackLambda;
@@ -551,6 +629,7 @@ namespace DeliverySim
             }
 
             currentOffers.Add(BuildOffer(template));
+            arrivalTimestamps.Enqueue(Time.time);
             OnOffersChanged?.Invoke(currentOffers);
 
             if (allowCluster && UnityEngine.Random.value < clusterChance)
@@ -669,6 +748,13 @@ namespace DeliverySim
                 offer.Customer = UnityEngine.Random.value < individualRecipientChance
                     ? customerPool.RollIndividual()
                     : customerPool.RollBusiness();
+            }
+
+            // Surge: an offer that arrives while prices are surging pays more.
+            offer.SurgeMultiplier = surgeMultiplier;
+            if (surgeMultiplier > 1f)
+            {
+                offer.Payment *= surgeMultiplier;
             }
 
             return offer;

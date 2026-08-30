@@ -106,11 +106,17 @@ namespace DeliverySim
                 new Color(1f, 0.85f, 0.3f));
             UIFactory.Place((RectTransform)turn.transform, new Vector2(0.5f, 1f), new Vector2(0f, -110f), new Vector2(420f, 36f));
 
+            // Surge banner: shown only while order prices are surging.
+            Text surge = UIFactory.CreateText(root, "SurgeText", string.Empty, 22, TextAnchor.MiddleCenter,
+                new Color(1f, 0.55f, 0.2f));
+            UIFactory.Place((RectTransform)surge.transform, new Vector2(0.5f, 1f), new Vector2(0f, -146f), new Vector2(420f, 32f));
+
             HUDController hud = gameObject.AddComponent<HUDController>();
             hud.SetTexts(speed, money, fuel, condition, timer, distance, cargo, reputation);
             hud.SetBars(fuelFill, conditionFill, timerFill);
             hud.SetReputationBar(reputationFill);
             hud.SetTurnIndicator(turn);
+            hud.SetSurgeText(surge);
         }
 
         private void BuildPrompt(Transform root)
