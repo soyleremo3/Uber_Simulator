@@ -45,11 +45,36 @@ namespace DeliverySim
         [Header("Offers")]
         [Tooltip("Panoda aynı anda görünebilecek en fazla teklif (her zaman dolu olmak zorunda değil).")]
         [SerializeField] private int maxOffers = 10;
-        [Tooltip("Seconds between automatic offer refills (backfill; replaced by Poisson arrivals in a later step).")]
+        [Tooltip("Seconds between automatic offer refills — only used when Arrivals is OFF (legacy backfill).")]
         [SerializeField] private float offerRefreshInterval = 15f;
         [Tooltip("Her teklif kendi TTL'i (sn) kadar panoda kalır, sonra kendiliğinden düşer.")]
         [SerializeField] private float offerTtlMin = 75f;
         [SerializeField] private float offerTtlMax = 150f;
+
+        [Header("Arrivals (time-varying Poisson — see order-board-redesign.md A)")]
+        [Tooltip("Açıkken teklifler GameClock'a bağlı λ(t) hızıyla rastgele 'gelir' (yığın + durgunluk). Kapalıyken eski sabit backfill kullanılır.")]
+        [SerializeField] private bool useArrivals = true;
+        [Tooltip("Oyun-içi saate göre gelme hızı (teklif/gerçek dk), indeks 0..23. 24 giriş yoksa fallbackLambda kullanılır.")]
+        [SerializeField] private float[] lambdaByHour =
+        {
+            0.15f, 0.15f, 0.15f, 0.15f, 0.15f, 0.15f, // 00-06 late night
+            0.5f, 0.5f,                               // 06-08 early morning
+            1.6f, 1.6f, 1.6f,                         // 08-11 morning rush
+            0.4f,                                     // 11-12 midday lull
+            2.2f, 2.2f,                               // 12-14 lunch rush
+            0.9f, 0.9f, 0.9f,                         // 14-17 afternoon
+            2.4f, 2.4f, 2.4f,                         // 17-20 evening rush
+            0.7f, 0.7f, 0.7f, 0.7f                    // 20-24 night
+        };
+        [SerializeField] private float fallbackLambda = 1.2f;
+        [Tooltip("Gelme hızı tier çarpanı: {Bronze, Silver, Gold, Diamond}.")]
+        [SerializeField] private float[] tierArrivalMultiplier = { 0.8f, 1.0f, 1.25f, 1.5f };
+        [Tooltip("Gündüz (06:00-22:00) pano bu kadar saniye boş kalırsa bir teklif zorla eklenir.")]
+        [SerializeField] private float daytimeFloorEmptySeconds = 45f;
+        [Tooltip("Gündüz taban teklif sayısı: {Bronze, Silver, Gold, Diamond}. Gece taban 0.")]
+        [SerializeField] private int[] daytimeFloorByTier = { 1, 1, 2, 2 };
+        [Tooltip("Oyun başında panoya doğrudan eklenecek teklif sayısı (ilk açılışta pano boş kalmasın).")]
+        [SerializeField] private int seedOffers = 2;
 
         [Header("Time Limit (distance-based)")]
         [Tooltip("When on, the delivery time limit is computed from the real pickup->delivery distance instead of OrderData's fixed value.")]
@@ -137,6 +162,8 @@ namespace DeliverySim
         // Anti-farm: last few completed "pickupId>deliveryId" routes; repeating one damps its RP.
         private readonly List<string> recentRoutes = new List<string>();
 
+        private float emptyBoardSeconds;
+
         public event Action<IReadOnlyList<OrderOffer>> OnOffersChanged;
         public event Action<OrderData> OnOrderAccepted;
         public event Action<OrderData> OnCargoPickedUp;
@@ -197,21 +224,37 @@ namespace DeliverySim
                 cachedVehicleCondition = cachedVehicle.GetComponent<VehicleCondition>();
             }
 
-            RefreshOffers();
+            if (useArrivals)
+            {
+                // Don't start on a dead board — drop a few offers in immediately.
+                for (int i = 0; i < seedOffers; i++)
+                {
+                    SpawnArrival();
+                }
+            }
+            else
+            {
+                RefreshOffers();
+            }
         }
 
         private void Update()
         {
-            // Each offer leaves the board on its own TTL (the board "churns"), then a
-            // periodic backfill tops the count back up. The old fixed 15s "retire the
-            // oldest" rotation is gone; Poisson arrivals replace the backfill later.
+            // Each offer leaves the board on its own TTL — the board "churns".
             TickOfferTtl();
 
-            offerTimer -= Time.deltaTime;
-            if (offerTimer <= 0f)
+            if (useArrivals)
             {
-                offerTimer = offerRefreshInterval;
-                RefreshOffers();
+                TickArrivals();
+            }
+            else
+            {
+                offerTimer -= Time.deltaTime;
+                if (offerTimer <= 0f)
+                {
+                    offerTimer = offerRefreshInterval;
+                    RefreshOffers();
+                }
             }
 
             if (phase == OrderPhase.AwaitingPickup && activeOrder != null && activePickupTimeLimit > 0f)
@@ -380,25 +423,111 @@ namespace DeliverySim
             if (removed)
             {
                 OnOffersChanged?.Invoke(currentOffers);
-                RefreshOffers();
+
+                // With arrivals ON the freed slot is NOT instantly refilled — an
+                // arrival (or the daytime floor) does that. Only the legacy path backfills.
+                if (!useArrivals)
+                {
+                    RefreshOffers();
+                }
             }
         }
 
-        /// <summary>Backfills the board toward maxOffers from the template pool. (Poisson arrivals replace this in a later step.)</summary>
-        public void RefreshOffers()
-        {
-            bool changed = false;
+        // ---------- Arrivals (time-varying Poisson) ----------
 
-            for (int i = currentOffers.Count - 1; i >= 0; i--)
+        /// <summary>
+        /// Stochastic offer arrivals whose rate λ(t) varies over the in-game day
+        /// (rush hours vs lulls) — randomness alone produces the burst/quiet feel.
+        /// Plus a daytime "soft floor" so the board is never dead for long in daylight.
+        /// </summary>
+        private void TickArrivals()
+        {
+            float lambda = CurrentLambda();                 // offers per real minute
+            float p = lambda * Time.deltaTime / 60f;        // arrival prob this frame
+            if (currentOffers.Count < maxOffers && UnityEngine.Random.value < p)
             {
-                if (currentOffers[i] == null)
-                {
-                    currentOffers.RemoveAt(i);
-                    changed = true;
-                }
+                SpawnArrival();
             }
 
+            bool night = GameClock.Instance != null && GameClock.Instance.IsNight;
+
+            if (currentOffers.Count == 0)
+            {
+                emptyBoardSeconds += Time.deltaTime;
+            }
+            else
+            {
+                emptyBoardSeconds = 0f;
+            }
+
+            if (!night &&
+                currentOffers.Count < DaytimeFloor() &&
+                emptyBoardSeconds > daytimeFloorEmptySeconds)
+            {
+                SpawnArrival();
+                emptyBoardSeconds = 0f;
+            }
+        }
+
+        private float CurrentLambda()
+        {
+            float baseLambda = fallbackLambda;
+            if (lambdaByHour != null && lambdaByHour.Length == 24 && GameClock.Instance != null)
+            {
+                int h = Mathf.Clamp(Mathf.FloorToInt(GameClock.Instance.Hour), 0, 23);
+                baseLambda = lambdaByHour[h];
+            }
+
+            float tierMultiplier = 1f;
+            if (ReputationManager.Instance != null && tierArrivalMultiplier != null && tierArrivalMultiplier.Length > 0)
+            {
+                int t = Mathf.Clamp((int)ReputationManager.Instance.CurrentTier, 0, tierArrivalMultiplier.Length - 1);
+                tierMultiplier = tierArrivalMultiplier[t];
+            }
+
+            return Mathf.Max(0f, baseLambda) * tierMultiplier;
+        }
+
+        private int DaytimeFloor()
+        {
+            if (daytimeFloorByTier == null || daytimeFloorByTier.Length == 0)
+            {
+                return 1;
+            }
+
+            int t = ReputationManager.Instance != null
+                ? Mathf.Clamp((int)ReputationManager.Instance.CurrentTier, 0, daytimeFloorByTier.Length - 1)
+                : 0;
+            return Mathf.Max(0, daytimeFloorByTier[t]);
+        }
+
+        /// <summary>Adds ONE fresh offer to the board (if a template is available and there's room).</summary>
+        private void SpawnArrival()
+        {
+            if (currentOffers.Count >= maxOffers)
+            {
+                return;
+            }
+
+            OrderData template = PickTemplate();
+            if (template == null)
+            {
+                return;
+            }
+
+            currentOffers.Add(BuildOffer(template));
+            OnOffersChanged?.Invoke(currentOffers);
+        }
+
+        /// <summary>
+        /// Picks an unlocked template not already on the board, preferring ones
+        /// outside recent history. Returns null when nothing qualifies.
+        /// </summary>
+        private OrderData PickTemplate()
+        {
             var candidates = new List<OrderData>();
+            var preferred = new List<OrderData>();
+
             foreach (OrderData order in orderPool)
             {
                 if (order == null || order == activeOrder || OffersContainTemplate(order))
@@ -413,28 +542,41 @@ namespace DeliverySim
                 }
 
                 candidates.Add(order);
-            }
-
-            // Prefer templates outside recent history so the same offer doesn't
-            // instantly reappear; fall back to the full list when variety runs out.
-            var preferred = new List<OrderData>();
-            foreach (OrderData candidate in candidates)
-            {
-                if (!recentHistory.Contains(candidate))
+                if (!recentHistory.Contains(order))
                 {
-                    preferred.Add(candidate);
+                    preferred.Add(order);
                 }
             }
 
-            while (currentOffers.Count < maxOffers && candidates.Count > 0)
+            List<OrderData> pool = preferred.Count > 0 ? preferred : candidates;
+            return pool.Count > 0 ? pool[UnityEngine.Random.Range(0, pool.Count)] : null;
+        }
+
+        // ---------- Legacy backfill (Arrivals OFF) ----------
+
+        /// <summary>Fills the board toward maxOffers from the template pool. Only used when Arrivals is off.</summary>
+        public void RefreshOffers()
+        {
+            bool changed = false;
+
+            for (int i = currentOffers.Count - 1; i >= 0; i--)
             {
-                List<OrderData> pool = preferred.Count > 0 ? preferred : candidates;
-                int index = UnityEngine.Random.Range(0, pool.Count);
-                OrderData picked = pool[index];
+                if (currentOffers[i] == null)
+                {
+                    currentOffers.RemoveAt(i);
+                    changed = true;
+                }
+            }
+
+            while (currentOffers.Count < maxOffers)
+            {
+                OrderData picked = PickTemplate();
+                if (picked == null)
+                {
+                    break;
+                }
 
                 currentOffers.Add(BuildOffer(picked));
-                candidates.Remove(picked);
-                preferred.Remove(picked);
                 changed = true;
             }
 
@@ -690,7 +832,10 @@ namespace DeliverySim
 
             ClearActiveOrder();
             OnOrderCompleted?.Invoke(result);
-            RefreshOffers();
+            if (!useArrivals)
+            {
+                RefreshOffers();
+            }
         }
 
         /// <summary>
@@ -746,7 +891,10 @@ namespace DeliverySim
             NotificationService.Raise(reason);
             ClearActiveOrder();
             OnOrderFailed?.Invoke(failed);
-            RefreshOffers();
+            if (!useArrivals)
+            {
+                RefreshOffers();
+            }
         }
 
         private void ClearActiveOrder()
