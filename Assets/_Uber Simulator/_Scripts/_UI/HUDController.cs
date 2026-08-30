@@ -22,6 +22,7 @@ namespace DeliverySim
         [SerializeField] private Text reputationText;
         [SerializeField] private Text turnText;
         [SerializeField] private Text surgeText;
+        [SerializeField] private Text streakText;
 
         [Header("Bars (all optional)")]
         [SerializeField] private Image fuelBar;
@@ -71,6 +72,11 @@ namespace DeliverySim
         public void SetSurgeText(Text surge)
         {
             surgeText = surge;
+        }
+
+        public void SetStreakText(Text streak)
+        {
+            streakText = streak;
         }
 
         private void Start()
@@ -153,6 +159,7 @@ namespace DeliverySim
                 OrderManager.Instance.OnOrderCompleted += HandleOrderCompleted;
                 OrderManager.Instance.OnOrderFailed += HandleOrderStateChanged;
                 OrderManager.Instance.OnSurgeChanged += HandleSurgeChanged;
+                OrderManager.Instance.OnStreakChanged += HandleStreakChanged;
             }
 
             if (ReputationManager.Instance != null)
@@ -188,6 +195,7 @@ namespace DeliverySim
                 OrderManager.Instance.OnOrderCompleted -= HandleOrderCompleted;
                 OrderManager.Instance.OnOrderFailed -= HandleOrderStateChanged;
                 OrderManager.Instance.OnSurgeChanged -= HandleSurgeChanged;
+                OrderManager.Instance.OnStreakChanged -= HandleStreakChanged;
             }
 
             if (ReputationManager.Instance != null)
@@ -358,6 +366,14 @@ namespace DeliverySim
             if (surgeText != null)
             {
                 surgeText.text = multiplier > 1.01f ? $"⚡ SURGE ×{multiplier:0.0}" : string.Empty;
+            }
+        }
+
+        private void HandleStreakChanged(int streak)
+        {
+            if (streakText != null)
+            {
+                streakText.text = streak >= 2 ? $"🔥 ×{streak}" : string.Empty;
             }
         }
 

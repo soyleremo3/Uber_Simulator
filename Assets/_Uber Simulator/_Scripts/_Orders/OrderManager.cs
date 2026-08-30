@@ -147,6 +147,14 @@ namespace DeliverySim
         [Tooltip("Fraction of the payment still paid at the very last late moment.")]
         [Range(0f, 1f)][SerializeField] private float latePayFraction = 0.4f;
 
+        [Header("Delivery Streak (session-scoped, not saved)")]
+        [Tooltip("Üst üste zamanında ve ≥ bu yıldız olan teslimatlar seriyi büyütür; geç/başarısız teslimat sıfırlar.")]
+        [SerializeField] private float streakOnTimeStarThreshold = 4f;
+        [Tooltip("Seri seviyesi başına ödeme bonusu (0.04 = her seri +%4).")]
+        [SerializeField] private float streakBonusPerLevel = 0.04f;
+        [Tooltip("Seri bonusunun üst sınırı (0.40 = maks +%40).")]
+        [SerializeField] private float streakBonusMax = 0.40f;
+
         [Header("Star Rating (multi-factor — see reputation-redesign.md A)")]
         [Tooltip("Bu km/s üstünde geçirilen süre 'dikkatsiz sürüş' sayılır.")]
         [SerializeField] private float carefulSpeedThresholdKph = 90f;
@@ -205,6 +213,10 @@ namespace DeliverySim
 
         public float SurgeMultiplier => surgeMultiplier;
         public event Action<float> OnSurgeChanged;
+
+        private int streak;
+        public int Streak => streak;
+        public event Action<int> OnStreakChanged;
 
         public event Action<IReadOnlyList<OrderOffer>> OnOffersChanged;
         public event Action<OrderData> OnOrderAccepted;
@@ -996,8 +1008,12 @@ namespace DeliverySim
                 ? ReputationManager.Instance.CurrentPaymentMultiplier
                 : 1f;
 
+            // Delivery streak: consecutive good on-time deliveries pay a growing bonus.
+            UpdateStreak(onTime && stars >= streakOnTimeStarThreshold);
+            float streakBonus = Mathf.Min(streak * streakBonusPerLevel, streakBonusMax);
+
             float basePayment = activeOffer != null ? activeOffer.Payment : GetOrderPayment(activeOrder);
-            float payout = basePayment * payFactor * reputationMultiplier;
+            float payout = basePayment * payFactor * reputationMultiplier * (1f + streakBonus);
 
             if (EconomyManager.Instance != null)
             {
@@ -1074,11 +1090,33 @@ namespace DeliverySim
             return 1f;
         }
 
+        /// <summary>Advances or resets the delivery streak and fires the change event. Session-scoped — never saved.</summary>
+        private void UpdateStreak(bool qualifies)
+        {
+            if (qualifies)
+            {
+                streak++;
+                if (streak == 3 || streak == 5 || streak == 10)
+                {
+                    NotificationService.Raise($"🔥 {streak}'li teslimat serisi! Bonus büyüyor.");
+                }
+            }
+            else if (streak > 0)
+            {
+                streak = 0;
+                NotificationService.Raise("Teslimat serisi bozuldu.");
+            }
+
+            OnStreakChanged?.Invoke(streak);
+        }
+
         // ---------- Failure / cleanup ----------
 
         private void FailActiveOrder(string reason, bool registerReputationHit = true)
         {
             OrderData failed = activeOrder;
+
+            UpdateStreak(false);
 
             if (registerReputationHit && ReputationManager.Instance != null)
             {

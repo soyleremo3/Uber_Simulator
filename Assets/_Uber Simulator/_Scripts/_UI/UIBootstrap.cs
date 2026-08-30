@@ -111,12 +111,18 @@ namespace DeliverySim
                 new Color(1f, 0.55f, 0.2f));
             UIFactory.Place((RectTransform)surge.transform, new Vector2(0.5f, 1f), new Vector2(0f, -146f), new Vector2(420f, 32f));
 
+            // Delivery streak: shown once the streak reaches 2.
+            Text streak = UIFactory.CreateText(root, "StreakText", string.Empty, 22, TextAnchor.MiddleCenter,
+                new Color(1f, 0.75f, 0.35f));
+            UIFactory.Place((RectTransform)streak.transform, new Vector2(0.5f, 1f), new Vector2(0f, -176f), new Vector2(420f, 32f));
+
             HUDController hud = gameObject.AddComponent<HUDController>();
             hud.SetTexts(speed, money, fuel, condition, timer, distance, cargo, reputation);
             hud.SetBars(fuelFill, conditionFill, timerFill);
             hud.SetReputationBar(reputationFill);
             hud.SetTurnIndicator(turn);
             hud.SetSurgeText(surge);
+            hud.SetStreakText(streak);
         }
 
         private void BuildPrompt(Transform root)
