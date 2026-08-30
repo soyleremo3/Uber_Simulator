@@ -43,7 +43,8 @@ namespace DeliverySim
         [SerializeField] private List<OrderData> orderPool = new List<OrderData>();
 
         [Header("Offers")]
-        [SerializeField] private int maxOffers = 3;
+        [Tooltip("Panoda aynı anda görünebilecek en fazla teklif (her zaman dolu olmak zorunda değil).")]
+        [SerializeField] private int maxOffers = 10;
         [Tooltip("Seconds between automatic offer refills.")]
         [SerializeField] private float offerRefreshInterval = 15f;
 

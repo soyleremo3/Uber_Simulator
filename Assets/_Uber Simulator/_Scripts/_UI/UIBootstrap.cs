@@ -146,21 +146,21 @@ namespace DeliverySim
         private void BuildOrderPanel(Transform root)
         {
             RectTransform panel = UIFactory.CreatePanel(root, "OrderPanel", UIFactory.PanelColor);
-            UIFactory.Place(panel, new Vector2(1f, 0.5f), new Vector2(-14f, 0f), new Vector2(470f, 480f));
+            UIFactory.Place(panel, new Vector2(1f, 0.5f), new Vector2(-14f, 0f), new Vector2(480f, 620f));
 
             Text title = UIFactory.CreateText(panel, "Title", "SİPARİŞLER [Tab]", 24, TextAnchor.MiddleCenter, UIFactory.AccentColor);
             UIFactory.Place((RectTransform)title.transform, new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(440f, 36f));
 
-            var listGo = new GameObject("OfferList", typeof(RectTransform));
-            listGo.transform.SetParent(panel, false);
-            var list = (RectTransform)listGo.transform;
-            list.anchorMin = new Vector2(0f, 0f);
-            list.anchorMax = new Vector2(1f, 1f);
-            list.offsetMin = new Vector2(8f, 8f);
-            list.offsetMax = new Vector2(-8f, -52f);
+            // Scrollable list — up to maxOffers rows, more than fit on screen.
+            (ScrollRect scroll, RectTransform content) = UIFactory.CreateScrollView(panel, "OfferScroll");
+            RectTransform scrollRect = (RectTransform)scroll.transform;
+            scrollRect.anchorMin = new Vector2(0f, 0f);
+            scrollRect.anchorMax = new Vector2(1f, 1f);
+            scrollRect.offsetMin = new Vector2(8f, 8f);
+            scrollRect.offsetMax = new Vector2(-8f, -52f);
 
             OrderPanelController controller = gameObject.AddComponent<OrderPanelController>();
-            controller.SetReferences(panel.gameObject, list);
+            controller.SetReferences(panel.gameObject, content);
         }
 
         private void BuildShopPanel(Transform root)

@@ -46,7 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeliverySim.OrderManager
   orderPool: []
-  maxOffers: 3
+  maxOffers: 10
   offerRefreshInterval: 15
   useDistanceBasedTimeLimit: 1
   averageSpeedKmh: 40

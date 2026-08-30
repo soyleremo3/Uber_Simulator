@@ -158,6 +158,54 @@ namespace DeliverySim
             return fill;
         }
 
+        /// <summary>
+        /// Vertical scroll view. Returns the ScrollRect and the Content RectTransform
+        /// (a VerticalLayoutGroup + ContentSizeFitter) — add rows as children of
+        /// Content and they lay out + scroll automatically. Place/stretch the returned
+        /// ScrollRect's own RectTransform to size the visible area.
+        /// </summary>
+        public static (ScrollRect scroll, RectTransform content) CreateScrollView(Transform parent, string name)
+        {
+            var rootGo = new GameObject(name, typeof(RectTransform), typeof(ScrollRect));
+            rootGo.transform.SetParent(parent, false);
+            var scroll = rootGo.GetComponent<ScrollRect>();
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 24f;
+
+            var viewportGo = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D), typeof(Image));
+            viewportGo.transform.SetParent(rootGo.transform, false);
+            var viewport = (RectTransform)viewportGo.transform;
+            Stretch(viewport);
+            var viewportImage = viewportGo.GetComponent<Image>();
+            viewportImage.color = new Color(0f, 0f, 0f, 0.004f); // near-invisible, but present so drags register
+            scroll.viewport = viewport;
+
+            var contentGo = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+            contentGo.transform.SetParent(viewportGo.transform, false);
+            var content = (RectTransform)contentGo.transform;
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = new Vector2(1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.anchoredPosition = Vector2.zero;
+            content.sizeDelta = Vector2.zero; // width follows the viewport; ContentSizeFitter drives height
+
+            var layout = contentGo.GetComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.spacing = 8f;
+            layout.padding = new RectOffset(6, 6, 6, 6);
+
+            var fitter = contentGo.GetComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            scroll.content = content;
+
+            return (scroll, content);
+        }
+
         /// <summary>Anchors a RectTransform to fully stretch inside its parent.</summary>
         public static void Stretch(RectTransform rect)
         {

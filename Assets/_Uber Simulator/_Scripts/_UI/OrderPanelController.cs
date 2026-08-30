@@ -109,8 +109,9 @@ namespace DeliverySim
             {
                 Text empty = UIFactory.CreateText(listContainer, "EmptyInfo",
                     "Şu an teklif yok. Birazdan yenileri gelecek...", 20, TextAnchor.MiddleCenter, Color.gray);
-                UIFactory.Place((RectTransform)empty.transform, new Vector2(0.5f, 1f),
-                    new Vector2(0f, -40f), new Vector2(420f, 60f));
+                LayoutElement emptyLe = empty.gameObject.AddComponent<LayoutElement>();
+                emptyLe.preferredHeight = 60f;
+                emptyLe.minHeight = 60f;
                 rows.Add(empty.gameObject);
                 return;
             }
@@ -124,9 +125,11 @@ namespace DeliverySim
         private GameObject BuildRow(OrderData order, int index)
         {
             RectTransform row = UIFactory.CreatePanel(listContainer, $"OrderRow_{index}", UIFactory.RowColor);
-            UIFactory.Place(row, new Vector2(0.5f, 1f),
-                new Vector2(0f, -(index * (rowHeight + rowSpacing)) - rowSpacing),
-                new Vector2(440f, rowHeight));
+            // Height comes from the LayoutElement; the parent VerticalLayoutGroup
+            // handles position + width, so no manual index offset.
+            LayoutElement rowLe = row.gameObject.AddComponent<LayoutElement>();
+            rowLe.preferredHeight = rowHeight;
+            rowLe.minHeight = rowHeight;
 
             // Distance-based estimate (falls back to OrderData's fixed value when disabled).
             float estimatedLimit = OrderManager.Instance != null
