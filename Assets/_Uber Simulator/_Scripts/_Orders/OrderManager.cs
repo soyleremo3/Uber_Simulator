@@ -60,6 +60,19 @@ namespace DeliverySim
         [Tooltip("İş mesafesinin (pickup->delivery) her kilometresi için eklenen ücret.")]
         [SerializeField] private float paymentPerKm = 12f;
 
+        [Header("Pickup Time Limit")]
+        [Tooltip("Sipariş kabul edildikten sonra ALIM noktasına ulaşmak için de ayrı bir süre. Dolarsa sipariş iptal edilir (itibar cezası yok).")]
+        [SerializeField] private bool usePickupTimeLimit = true;
+        [Tooltip("Açıkken alım süresi araç->alım mesafesinden (yukarıdaki averageSpeedKmh / routeFactor ile) hesaplanır; kapalıyken alttaki sabit değer.")]
+        [SerializeField] private bool useDistanceBasedPickupTime = true;
+        [SerializeField] private float pickupTimeLimitSeconds = 120f;
+        [Tooltip("Alım süresine eklenen sabit tampon saniye.")]
+        [SerializeField] private float pickupTimeBufferSeconds = 30f;
+        [Tooltip("Hiçbir alım süresi bunun altına inmez.")]
+        [SerializeField] private float minPickupTimeSeconds = 40f;
+        [Tooltip("Alım süresi bittikten sonra iptalden önce tanınan ek süre (limitin kesri).")]
+        [SerializeField] private float pickupLateGraceFactor = 0.5f;
+
         [Header("Scoring")]
         [Tooltip("Extra late time allowed before the order fails, as a fraction of the time limit. 0.5 = half the limit again.")]
         [SerializeField] private float lateGraceFactor = 0.5f;
@@ -78,7 +91,10 @@ namespace DeliverySim
         private OrderPhase phase = OrderPhase.None;
         private float remainingTime;
         private float activeTimeLimit; // Resolved at accept time (distance-based or OrderData fallback)
+        private float remainingPickupTime;
+        private float activePickupTimeLimit; // Resolved at accept time; 0 = no pickup limit
         private float offerTimer;
+        private VehicleController cachedVehicle;
 
         public event Action<IReadOnlyList<OrderData>> OnOffersChanged;
         public event Action<OrderData> OnOrderAccepted;
@@ -87,6 +103,8 @@ namespace DeliverySim
         public event Action<OrderData> OnOrderFailed;
         /// <summary>Remaining delivery seconds; fires only while the timer runs. Negative = late.</summary>
         public event Action<float> OnTimerTick;
+        /// <summary>Remaining seconds to reach the pickup; fires only during AwaitingPickup when a pickup limit is set. Negative = late.</summary>
+        public event Action<float> OnPickupTimerTick;
 
         public OrderData ActiveOrder => activeOrder;
         public OrderPhase Phase => phase;
@@ -94,6 +112,9 @@ namespace DeliverySim
         public float RemainingTime => remainingTime;
         /// <summary>Time limit resolved at accept time for the active order; 0 when idle. Used by the HUD timer bar.</summary>
         public float ActiveTimeLimit => activeTimeLimit;
+        /// <summary>Seconds allowed to reach the pickup, resolved at accept time; 0 when idle or the pickup limit is disabled.</summary>
+        public float ActivePickupTimeLimit => activePickupTimeLimit;
+        public float RemainingPickupTime => remainingPickupTime;
 
         /// <summary>World position of the current target point (pickup or delivery), null when idle.</summary>
         public Vector3? CurrentTargetPosition
@@ -140,6 +161,18 @@ namespace DeliverySim
             {
                 offerTimer = offerRefreshInterval;
                 RotateOffers();
+            }
+
+            if (phase == OrderPhase.AwaitingPickup && activeOrder != null && activePickupTimeLimit > 0f)
+            {
+                remainingPickupTime -= Time.deltaTime;
+                OnPickupTimerTick?.Invoke(remainingPickupTime);
+
+                float pickupFailThreshold = -activePickupTimeLimit * pickupLateGraceFactor;
+                if (remainingPickupTime < pickupFailThreshold)
+                {
+                    FailActiveOrder("Alım süresi doldu, sipariş iptal edildi!", registerReputationHit: false);
+                }
             }
 
             if (phase == OrderPhase.Delivering && activeOrder != null)
@@ -216,6 +249,40 @@ namespace DeliverySim
             float speedMs = Mathf.Max(1f, averageSpeedKmh / 3.6f);
             float travelTime = distance / speedMs;
             return Mathf.Max(minTimeLimitSeconds, travelTime + timeBufferSeconds);
+        }
+
+        /// <summary>
+        /// Seconds allowed to reach the pickup after accepting. Distance-based
+        /// (vehicle position now -> pickup, same speed/routeFactor as the delivery
+        /// leg) when enabled, else a flat value. Returns 0 when the pickup limit is
+        /// disabled — callers treat 0 as "no limit".
+        /// </summary>
+        private float ResolvePickupTimeLimit(InteractionPoint pickup)
+        {
+            if (!usePickupTimeLimit)
+            {
+                return 0f;
+            }
+
+            if (!useDistanceBasedPickupTime || pickup == null)
+            {
+                return pickupTimeLimitSeconds;
+            }
+
+            Vector3 vehiclePos = GetVehiclePosition(pickup.transform.position);
+            float distance = Vector3.Distance(vehiclePos, pickup.transform.position) * routeFactor;
+            float speedMs = Mathf.Max(1f, averageSpeedKmh / 3.6f);
+            return Mathf.Max(minPickupTimeSeconds, distance / speedMs + pickupTimeBufferSeconds);
+        }
+
+        private Vector3 GetVehiclePosition(Vector3 fallback)
+        {
+            if (cachedVehicle == null)
+            {
+                cachedVehicle = FindFirstObjectByType<VehicleController>();
+            }
+
+            return cachedVehicle != null ? cachedVehicle.transform.position : fallback;
         }
 
         // ---------- Offers ----------
@@ -344,6 +411,8 @@ namespace DeliverySim
             activeOrder = order;
             phase = OrderPhase.AwaitingPickup;
             activeTimeLimit = GetEstimatedTimeLimit(order);
+            activePickupTimeLimit = ResolvePickupTimeLimit(pickup);
+            remainingPickupTime = activePickupTimeLimit;
             currentOffers.Remove(order);
             RememberRecent(order);
 
@@ -471,11 +540,11 @@ namespace DeliverySim
 
         // ---------- Failure / cleanup ----------
 
-        private void FailActiveOrder(string reason)
+        private void FailActiveOrder(string reason, bool registerReputationHit = true)
         {
             OrderData failed = activeOrder;
 
-            if (ReputationManager.Instance != null)
+            if (registerReputationHit && ReputationManager.Instance != null)
             {
                 ReputationManager.Instance.RegisterDelivery(minStars);
             }
@@ -515,6 +584,8 @@ namespace DeliverySim
             phase = OrderPhase.None;
             remainingTime = 0f;
             activeTimeLimit = 0f;
+            remainingPickupTime = 0f;
+            activePickupTimeLimit = 0f;
         }
 
         private InteractionPoint GetCurrentTargetPoint()

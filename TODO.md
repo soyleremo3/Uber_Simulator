@@ -113,6 +113,6 @@ Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sıra
   - [x] Her sipariş satırında artık mesafe + ücret yazıyor (`OrderManager.GetOrderDistance` / `GetOrderPayment`).
   - [ ] maks 10 offer + panel scroll + dinamik spawn/lull pacing — agent önerisi bekleniyor.
 - [ ] **41.** Teslim süresinin uzaklığa göre ayarlanması (NOT: distance-based limit kodda var — gözden geçir).
-- [ ] **42.** Teslim ALMAK için de ayrı bir süre limiti.
+- [x] **42.** Alım için ayrı süre limiti: kabul edilince araç->alım mesafesinden hesaplanan süre başlar (`usePickupTimeLimit`, `useDistanceBasedPickupTime`, buffer/min/grace inspector'da). HUD'da "Alım mm:ss" gösterilir. Süre + grace dolarsa sipariş iptal (itibar cezası YOK). `OnPickupTimerTick` eventi eklendi.
 - [x] **43.** Sipariş kartındaki parantez ile isim alakasız görünüyordu. Sebep: örnek sipariş asset'lerinde `cargoType` çoğu 0 (Food) kalmıştı (Moda Teslimatı → Food vb.). order_002..005 → Paket olarak düzeltildi; ayrıca CargoType artık UI'da Türkçe (`Yemek/Paket/Kırılır`) gösteriliyor.
 - [x] **44.** Ödeme mesafeye göre: `OrderManager.GetOrderPayment` = `baseFare (15) + paymentPerKm (12) × iş mesafesi(km)`. `useDistanceBasedPayment` kapatılırsa eski `OrderData.PaymentAmount`. Gecikme + itibar çarpanı üstüne uygulanıyor. Değerler inspector'da.

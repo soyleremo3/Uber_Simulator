@@ -135,6 +135,7 @@ namespace DeliverySim
             if (OrderManager.Instance != null)
             {
                 OrderManager.Instance.OnTimerTick += HandleTimerTick;
+                OrderManager.Instance.OnPickupTimerTick += HandlePickupTimerTick;
                 OrderManager.Instance.OnOrderAccepted += HandleOrderStateChanged;
                 OrderManager.Instance.OnCargoPickedUp += HandleOrderStateChanged;
                 OrderManager.Instance.OnOrderCompleted += HandleOrderCompleted;
@@ -167,6 +168,7 @@ namespace DeliverySim
             if (OrderManager.Instance != null)
             {
                 OrderManager.Instance.OnTimerTick -= HandleTimerTick;
+                OrderManager.Instance.OnPickupTimerTick -= HandlePickupTimerTick;
                 OrderManager.Instance.OnOrderAccepted -= HandleOrderStateChanged;
                 OrderManager.Instance.OnCargoPickedUp -= HandleOrderStateChanged;
                 OrderManager.Instance.OnOrderCompleted -= HandleOrderCompleted;
@@ -301,6 +303,36 @@ namespace DeliverySim
             }
         }
 
+        private void HandlePickupTimerTick(float remaining)
+        {
+            float limit = OrderManager.Instance != null ? OrderManager.Instance.ActivePickupTimeLimit : 0f;
+            float ratio = limit > 0f ? Mathf.Clamp01(remaining / limit) : 0f;
+
+            if (timerBar != null)
+            {
+                timerBar.fillAmount = ratio;
+                timerBar.color = remaining < 0f ? UIFactory.BarDangerColor : UIFactory.BarColorForRatio(ratio);
+            }
+
+            if (timerText == null)
+            {
+                return;
+            }
+
+            if (remaining >= 0f)
+            {
+                int minutes = Mathf.FloorToInt(remaining / 60f);
+                int seconds = Mathf.FloorToInt(remaining % 60f);
+                timerText.text = $"Alım: {minutes:00}:{seconds:00}";
+                timerText.color = remaining < 20f ? new Color(1f, 0.6f, 0.2f) : Color.white;
+            }
+            else
+            {
+                timerText.text = $"ALIM GECİKME: {Mathf.Abs(remaining):F0} sn";
+                timerText.color = new Color(1f, 0.25f, 0.25f);
+            }
+        }
+
         private void HandleOrderStateChanged(OrderData order)
         {
             RefreshCargoState();
@@ -322,23 +354,29 @@ namespace DeliverySim
 
         private void RefreshCargoState()
         {
-            if (cargoText == null)
-            {
-                return;
-            }
-
             if (OrderManager.Instance == null || OrderManager.Instance.Phase == OrderPhase.None)
             {
-                cargoText.text = "Sipariş yok";
+                if (cargoText != null)
+                {
+                    cargoText.text = "Sipariş yok";
+                }
+
+                ResetTimerDisplay(); // No order -> clear any leftover (pickup/delivery) timer text.
                 return;
             }
 
-            OrderData order = OrderManager.Instance.ActiveOrder;
-            cargoText.text = OrderManager.Instance.Phase == OrderPhase.AwaitingPickup
-                ? $"Alım bekleniyor: {order.OrderName}"
-                : $"Yük: {order.OrderName} ({order.CargoType.Label()})";
+            if (cargoText != null)
+            {
+                OrderData order = OrderManager.Instance.ActiveOrder;
+                cargoText.text = OrderManager.Instance.Phase == OrderPhase.AwaitingPickup
+                    ? $"Alım bekleniyor: {order.OrderName}"
+                    : $"Yük: {order.OrderName} ({order.CargoType.Label()})";
+            }
 
-            if (OrderManager.Instance.Phase == OrderPhase.AwaitingPickup)
+            // During AwaitingPickup the pickup-timer tick drives the timer widget;
+            // only clear it when there is no pickup limit running.
+            if (OrderManager.Instance.Phase == OrderPhase.AwaitingPickup &&
+                OrderManager.Instance.ActivePickupTimeLimit <= 0f)
             {
                 ResetTimerDisplay();
             }
