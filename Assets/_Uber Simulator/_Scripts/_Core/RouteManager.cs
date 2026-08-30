@@ -44,6 +44,14 @@ namespace DeliverySim
         [Tooltip("How far from a point to search for the NavMesh when snapping the vehicle / destination onto it.")]
         [SerializeField] private float navMeshSampleRadius = 8f;
 
+        [Header("Turn Indicator")]
+        [Tooltip("Sıradaki dönüş araçtan bu mesafeden (m) uzaktaysa HUD 'DÜZ GİT' der; yaklaşınca sola/sağa döner.")]
+        [SerializeField] private float turnLookaheadDistance = 55f;
+        [Tooltip("Araca bu mesafeden (m) yakın rota köşeleri yok sayılır — aracın hemen dibindeki açı titreşimini eler.")]
+        [SerializeField] private float turnMinDistance = 5f;
+        [Tooltip("Ardışık iki yol parçası arasındaki açı bu dereceyi (|deg|) geçerse dönüş sayılır; altı yumuşak viraj = düz.")]
+        [SerializeField] private float turnAngleThresholdDegrees = 28f;
+
         [Header("Ground Snapping")]
         [Tooltip("Raycasts each point down onto the ground so the decal hugs road/terrain height instead of floating at a flat Y.")]
         [SerializeField] private bool snapToGround = true;
@@ -364,41 +372,67 @@ namespace DeliverySim
         }
 
         /// <summary>
-        /// Derives the next maneuver from the angle between consecutive route
-        /// segments (the same direction vectors used for chevron orientation above)
-        /// — no new geometry, just reading data already computed each rebuild.
+        /// Derives the NEXT IMMINENT maneuver by walking the route polyline from the
+        /// vehicle, accumulating travelled distance, and reporting the first vertex
+        /// whose heading change (incoming vs outgoing segment) exceeds the turn
+        /// threshold AND falls inside the lookahead window. Anything farther reads as
+        /// "go straight" until the driver approaches it.
+        ///
+        /// The old version scanned the WHOLE path from index 0 and returned the first
+        /// bend anywhere on it — so it announced turns hundreds of metres away, was
+        /// tripped by gentle road curves (20° threshold), and flipped on the noisy
+        /// near-zero-length first segment right under the car. That is the "her şeyi
+        /// yanlış gösteriyor" report.
         /// </summary>
         private void UpdateNextTurn(List<Vector3> points)
         {
-            if (points.Count < 2)
+            if (points.Count < 2 || routeStart == null)
             {
                 nextTurn = TurnDirection.None;
                 return;
             }
 
-            const float turnAngleThresholdDegrees = 20f;
-
-            for (int i = 0; i < points.Count - 2; i++)
+            if (points.Count < 3)
             {
-                Vector3 a = points[i + 1] - points[i];
-                Vector3 b = points[i + 2] - points[i + 1];
-                a.y = 0f;
-                b.y = 0f;
+                nextTurn = TurnDirection.Straight;
+                return;
+            }
 
-                if (a.sqrMagnitude < 0.0001f || b.sqrMagnitude < 0.0001f)
+            nextTurn = TurnDirection.Straight;
+
+            Vector3 vehiclePos = routeStart.position;
+            float travelled = 0f;
+
+            for (int i = 1; i < points.Count - 1; i++)
+            {
+                Vector3 incoming = points[i] - points[i - 1];
+                Vector3 outgoing = points[i + 1] - points[i];
+                incoming.y = 0f;
+                outgoing.y = 0f;
+
+                travelled += incoming.magnitude;
+                if (travelled > turnLookaheadDistance)
                 {
-                    continue;
+                    break; // Next real turn is past the window — keep "Straight".
                 }
 
-                float angle = Vector3.SignedAngle(a, b, Vector3.up);
+                Vector3 flatToVertex = points[i] - vehiclePos;
+                flatToVertex.y = 0f;
+
+                if (flatToVertex.magnitude < turnMinDistance ||
+                    incoming.sqrMagnitude < 0.25f || outgoing.sqrMagnitude < 0.25f)
+                {
+                    continue; // Vertex on top of the car / degenerate segment noise.
+                }
+
+                float angle = Vector3.SignedAngle(incoming, outgoing, Vector3.up);
                 if (Mathf.Abs(angle) >= turnAngleThresholdDegrees)
                 {
+                    // Unity Y-up SignedAngle: forward->right is +90, so positive = right.
                     nextTurn = angle > 0f ? TurnDirection.Right : TurnDirection.Left;
                     return;
                 }
             }
-
-            nextTurn = TurnDirection.Straight;
         }
 
         private static readonly RaycastHit[] groundHitBuffer = new RaycastHit[16];

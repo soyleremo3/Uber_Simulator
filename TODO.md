@@ -101,7 +101,7 @@ Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sıra
 - [ ] **17.** Yol göstergecinin düzenlenmesi + mini map üzerinde gösterilmesi.
 - [ ] **29.** Ters yönden rota göstermemesi.
 - [ ] **30.** Rota göstergecinin yol yönlerine göre ayarlanması.
-- [ ] **31.** HUD'daki "sola dön / sağa dön" göstergesinin düzeltilmesi.
+- [x] **31.** HUD "sola/sağa dön" göstergesi yeniden yazıldı: eskiden tüm rotayı tarayıp yüzlerce metre ilerideki ilk viraja "dön" diyordu, yumuşak viraja takılıyordu, aracın dibindeki gürültülü ilk segmentte zıplıyordu. Artık lookahead penceresi (55 m), araç dibi köşeler elenir, eşik 28°. `RouteManager` inspector'da ayarlanabilir. Playtest ile his ayarı gerekebilir.
 - [ ] **32.** Navigasyon ribbon'unun bina içinden geçmesi bug'ı (ground-snap raycast).
 - [x] **33.** Rotanın en kısa yolu göstermesi. DOĞRULANDI: `RouteManager.FindGraphPath` gerçek Dijkstra (kenar maliyeti = gerçek dünya mesafesi, çift yönlü); NavMesh yolu da optimal. Kod değişmedi.
 
