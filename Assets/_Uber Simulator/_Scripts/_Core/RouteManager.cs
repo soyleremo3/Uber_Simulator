@@ -43,6 +43,8 @@ namespace DeliverySim
         [SerializeField] private bool useNavMesh = true;
         [Tooltip("How far from a point to search for the NavMesh when snapping the vehicle / destination onto it.")]
         [SerializeField] private float navMeshSampleRadius = 8f;
+        [Tooltip("Başlangıç waypoint'i seçilirken 'araç->wp + wp->hedef' toplamı en küçük olan seçilir (aracın arkasındaki waypoint'e geri gitmeyi önler). Aday araç ileri yönündeyse skoruna bu kadar (m) indirim uygulanır.")]
+        [SerializeField] private float startNodeForwardBonus = 18f;
 
         [Header("Turn Indicator")]
         [Tooltip("Sıradaki dönüş araçtan bu mesafeden (m) uzaktaysa HUD 'DÜZ GİT' der; yaklaşınca sola/sağa döner.")]
@@ -504,7 +506,8 @@ namespace DeliverySim
 
             if (waypoints != null && waypoints.Length >= 2)
             {
-                Waypoint startNode = FindNearest(from);
+                Vector3 forward = routeStart != null ? routeStart.forward : (to - from);
+                Waypoint startNode = FindStartNode(from, forward, to);
                 Waypoint endNode = FindNearest(to);
 
                 if (startNode != null && endNode != null && startNode != endNode)
@@ -512,15 +515,119 @@ namespace DeliverySim
                     List<Waypoint> graphPath = FindGraphPath(startNode, endNode);
                     if (graphPath != null)
                     {
-                        foreach (Waypoint w in graphPath)
+                        // If the route still enters via a node BEHIND the vehicle while
+                        // the next node is ahead, skip that first node so the ribbon
+                        // doesn't start with a backward hook toward where you just were.
+                        int skip = 0;
+                        if (graphPath.Count >= 2 && routeStart != null)
                         {
-                            result.Add(w.transform.position);
+                            Vector3 fwd = routeStart.forward;
+                            fwd.y = 0f;
+                            if (fwd.sqrMagnitude > 0.001f)
+                            {
+                                fwd.Normalize();
+                                Vector3 d0 = graphPath[0].transform.position - from;
+                                Vector3 d1 = graphPath[1].transform.position - from;
+                                d0.y = 0f;
+                                d1.y = 0f;
+                                bool firstBehind = d0.sqrMagnitude > 0.01f && Vector3.Dot(d0.normalized, fwd) < -0.3f;
+                                bool secondAhead = d1.sqrMagnitude > 0.01f && Vector3.Dot(d1.normalized, fwd) > 0.1f;
+                                if (firstBehind && secondAhead)
+                                {
+                                    skip = 1;
+                                }
+                            }
+                        }
+
+                        for (int i = skip; i < graphPath.Count; i++)
+                        {
+                            result.Add(graphPath[i].transform.position);
                         }
                     }
                 }
             }
 
             result.Add(to);
+        }
+
+        /// <summary>
+        /// Picks the graph entry node. NOT just the geometrically nearest waypoint —
+        /// that can sit BEHIND the vehicle, so the route then tells the player to turn
+        /// around and drive back to it before heading to the target ("geriden git"
+        /// bug). Among the few nearest candidates, choose the one minimising
+        /// dist(vehicle,wp) + dist(wp,target), with a bonus for waypoints in the
+        /// vehicle's forward direction. Falls back to plain nearest.
+        /// </summary>
+        private Waypoint FindStartNode(Vector3 from, Vector3 forward, Vector3 to)
+        {
+            if (waypoints == null || waypoints.Length == 0)
+            {
+                return null;
+            }
+
+            forward.y = 0f;
+            bool haveForward = forward.sqrMagnitude > 0.0001f;
+            if (haveForward)
+            {
+                forward.Normalize();
+            }
+
+            // Distance of the closest waypoint — candidates must be within a small
+            // multiple of it so we don't jump to a far "on the way" node.
+            float nearestSqr = float.MaxValue;
+            foreach (Waypoint w in waypoints)
+            {
+                if (w == null)
+                {
+                    continue;
+                }
+
+                float sqr = (w.transform.position - from).sqrMagnitude;
+                if (sqr < nearestSqr)
+                {
+                    nearestSqr = sqr;
+                }
+            }
+
+            float maxStartDist = Mathf.Sqrt(nearestSqr) * 3f + 20f;
+
+            Waypoint best = null;
+            float bestScore = float.MaxValue;
+
+            foreach (Waypoint w in waypoints)
+            {
+                if (w == null)
+                {
+                    continue;
+                }
+
+                Vector3 wp = w.transform.position;
+                float dFrom = Vector3.Distance(from, wp);
+                if (dFrom > maxStartDist)
+                {
+                    continue;
+                }
+
+                float score = dFrom + Vector3.Distance(wp, to);
+
+                if (haveForward)
+                {
+                    Vector3 dir = wp - from;
+                    dir.y = 0f;
+                    if (dir.sqrMagnitude > 0.01f && Vector3.Dot(dir.normalized, forward) > 0.25f)
+                    {
+                        score -= startNodeForwardBonus;
+                    }
+                }
+
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    best = w;
+                }
+            }
+
+            return best != null ? best : FindNearest(from);
         }
 
         /// <summary>

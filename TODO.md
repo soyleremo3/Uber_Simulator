@@ -99,8 +99,8 @@ Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sıra
 ### Navigasyon / rota
 
 - [ ] **17.** Yol göstergecinin düzenlenmesi + mini map üzerinde gösterilmesi.
-- [ ] **29.** Ters yönden rota göstermemesi.
-- [ ] **30.** Rota göstergecinin yol yönlerine göre ayarlanması.
+- [x] **29.** Ters yönden rota göstermemesi. `RouteManager.FindStartNode`: başlangıç waypoint'i artık sadece "en yakın" değil, `araç→wp + wp→hedef` en küçük + araç ileri yönündekine bonus → aracın arkasındaki waypoint'e geri kanca atmıyor. Ayrıca kalan geri-kanca guard'ı (ilk node arkada + ikinci önde ise ilki atlanır). Play test: alımdan sonra teslime dönük 15 noktalı şerit tamamen ileri. Hedef gerçekten arkadaysa (araç geçtiyse) yine en kısa = geri gösterir (kullanıcı onayladı).
+- [ ] **30.** Rota göstergecinin yol yönlerine göre ayarlanması. (#29 kısmen kapsıyor; tam tek-yön/şerit yönü desteği waypoint graph verisi ister.)
 - [x] **31.** HUD "sola/sağa dön" göstergesi yeniden yazıldı: eskiden tüm rotayı tarayıp yüzlerce metre ilerideki ilk viraja "dön" diyordu, yumuşak viraja takılıyordu, aracın dibindeki gürültülü ilk segmentte zıplıyordu. Artık lookahead penceresi (55 m), araç dibi köşeler elenir, eşik 28°. `RouteManager` inspector'da ayarlanabilir. Playtest ile his ayarı gerekebilir.
 - [ ] **32.** Navigasyon ribbon'unun bina içinden geçmesi bug'ı (ground-snap raycast).
 - [x] **33.** Rotanın en kısa yolu göstermesi. DOĞRULANDI: `RouteManager.FindGraphPath` gerçek Dijkstra (kenar maliyeti = gerçek dünya mesafesi, çift yönlü); NavMesh yolu da optimal. Kod değişmedi.
