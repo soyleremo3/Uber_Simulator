@@ -17,16 +17,37 @@ namespace DeliverySim
         public int level;
     }
 
+    /// <summary>A "regular customer" record (order-board redesign, spec D). JsonUtility-friendly.</summary>
+    [Serializable]
+    public class CustomerRegularEntry
+    {
+        public string customerId;
+        public string displayName;
+        public int completed;
+    }
+
     [Serializable]
     public class SaveData
     {
         /// <summary>Kayıt formatı sürümü — alan eklenince artır, eski kayıtlar Migrate() ile taşınır.</summary>
         public int saveVersion;
         public float balance;
+
+        // --- Reputation (redesign): reputationScore is now "Recent Form"; RP + level are the progression. ---
         public float reputationScore;
         public List<float> recentDeliveryScores;
+        public int reputationPoints;
+        public int reputationLevel;
+
         public List<string> ownedVehicleIds;
         public List<UpgradeEntry> upgrades;
+
+        // --- Order board (redesign): regenerated from the clock on load; live offers + streak are NOT saved. ---
+        public List<CustomerRegularEntry> regularCustomers;
+        public int currentDayIndex;
+        public float clockHours;
+        public int lifetimeDeliveries;
+
         public string lastSaveTimestamp;
 
         public SaveData()
@@ -35,8 +56,14 @@ namespace DeliverySim
             balance = 0f;
             reputationScore = 0f;
             recentDeliveryScores = new List<float>();
+            reputationPoints = 0;
+            reputationLevel = 1;
             ownedVehicleIds = new List<string>();
             upgrades = new List<UpgradeEntry>();
+            regularCustomers = new List<CustomerRegularEntry>();
+            currentDayIndex = 0;
+            clockHours = 6f; // in-game day starts at 06:00
+            lifetimeDeliveries = 0;
             lastSaveTimestamp = string.Empty;
         }
     }
@@ -50,7 +77,7 @@ namespace DeliverySim
         public static SaveSystem Instance { get; private set; }
 
         /// <summary>Güncel kayıt formatı sürümü. SaveData'ya alan eklenince artır.</summary>
-        public const int CurrentSaveVersion = 2;
+        public const int CurrentSaveVersion = 3;
 
         private const string SaveFileName = "deliverysim_save.json";
         private string SaveFilePath => Path.Combine(Application.persistentDataPath, SaveFileName);
@@ -78,8 +105,10 @@ namespace DeliverySim
 
             if (ReputationManager.Instance != null)
             {
-                data.reputationScore = ReputationManager.Instance.AverageScore;
+                data.reputationScore = ReputationManager.Instance.AverageScore; // = Recent Form
                 data.recentDeliveryScores = ReputationManager.Instance.GetScoresSnapshot();
+                data.reputationPoints = ReputationManager.Instance.GetReputationPoints();
+                data.reputationLevel = ReputationManager.Instance.CurrentLevel;
             }
 
             if (ShopManager.Instance != null)
@@ -128,7 +157,7 @@ namespace DeliverySim
 
                 if (ReputationManager.Instance != null)
                 {
-                    ReputationManager.Instance.RestoreScores(data.recentDeliveryScores);
+                    ReputationManager.Instance.RestoreReputation(data.reputationPoints, data.recentDeliveryScores);
                 }
 
                 if (ShopManager.Instance != null)
@@ -170,6 +199,34 @@ namespace DeliverySim
             if (data.upgrades == null)
             {
                 data.upgrades = new List<UpgradeEntry>();
+            }
+
+            // Version 2 -> 3: reputation redesign (RP + level) + order-board fields.
+            if (data.saveVersion < 3)
+            {
+                // Old saves stored only a rolling average. Seed RP so a returning
+                // player isn't reset to zero (rough mapping, see spec D).
+                if (data.reputationPoints <= 0)
+                {
+                    data.reputationPoints =
+                        data.reputationScore >= 4f ? 3000 :
+                        data.reputationScore >= 3f ? 800 : 0;
+                }
+
+                if (data.reputationLevel <= 0)
+                {
+                    data.reputationLevel = 1;
+                }
+
+                if (data.regularCustomers == null)
+                {
+                    data.regularCustomers = new List<CustomerRegularEntry>();
+                }
+
+                if (data.clockHours <= 0f)
+                {
+                    data.clockHours = 6f;
+                }
             }
 
             Debug.Log($"[SaveSystem] Kayıt version {data.saveVersion} -> {CurrentSaveVersion} taşındı.");
