@@ -26,6 +26,7 @@ namespace DeliverySim
         [SerializeField] private Image fuelBar;
         [SerializeField] private Image conditionBar;
         [SerializeField] private Image timerBar;
+        [SerializeField] private Image reputationBar;
 
         [Header("Refresh")]
         [Tooltip("Seconds between speed/distance refreshes.")]
@@ -54,6 +55,11 @@ namespace DeliverySim
             fuelBar = fuel;
             conditionBar = condition;
             timerBar = timer;
+        }
+
+        public void SetReputationBar(Image reputation)
+        {
+            reputationBar = reputation;
         }
 
         public void SetTurnIndicator(Text turn)
@@ -145,6 +151,7 @@ namespace DeliverySim
             if (ReputationManager.Instance != null)
             {
                 ReputationManager.Instance.OnReputationChanged += HandleReputationChanged;
+                ReputationManager.Instance.OnReputationProgress += HandleReputationProgress;
             }
 
             if (vehicleFuel != null)
@@ -178,6 +185,7 @@ namespace DeliverySim
             if (ReputationManager.Instance != null)
             {
                 ReputationManager.Instance.OnReputationChanged -= HandleReputationChanged;
+                ReputationManager.Instance.OnReputationProgress -= HandleReputationProgress;
             }
 
             if (vehicleFuel != null)
@@ -202,6 +210,10 @@ namespace DeliverySim
             {
                 HandleReputationChanged(
                     ReputationManager.Instance.AverageScore, ReputationManager.Instance.CurrentTier);
+                HandleReputationProgress(
+                    ReputationManager.Instance.CurrentLevel,
+                    ReputationManager.Instance.RPIntoCurrentLevel,
+                    ReputationManager.Instance.RPForNextLevel);
             }
 
             if (vehicleFuel != null)
@@ -348,7 +360,18 @@ namespace DeliverySim
         {
             if (reputationText != null)
             {
-                reputationText.text = $"★ {average:F1} ({ReputationManager.TierDisplayName(tier)})";
+                int level = ReputationManager.Instance != null ? ReputationManager.Instance.CurrentLevel : 1;
+                reputationText.text = $"Sv{level} {ReputationManager.TierDisplayName(tier)} ★{average:F1}";
+            }
+        }
+
+        private void HandleReputationProgress(int level, int rpIntoLevel, int rpForNextLevel)
+        {
+            if (reputationBar != null)
+            {
+                reputationBar.fillAmount = rpForNextLevel > 0
+                    ? Mathf.Clamp01((float)rpIntoLevel / rpForNextLevel)
+                    : 0f;
             }
         }
 

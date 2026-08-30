@@ -60,7 +60,13 @@ namespace DeliverySim
 
             Text reputation = UIFactory.CreateText(hudPanel, "ReputationText", string.Empty, 16, TextAnchor.MiddleRight,
                 new Color(1f, 0.85f, 0.4f));
-            UIFactory.Place((RectTransform)reputation.transform, new Vector2(1f, 1f), new Vector2(-14f, -16f), new Vector2(120f, 28f));
+            UIFactory.Place((RectTransform)reputation.transform, new Vector2(1f, 1f), new Vector2(-14f, -14f), new Vector2(150f, 22f));
+
+            // Reputation XP progress toward the next level.
+            Image reputationFill = UIFactory.CreateBar(hudPanel, "ReputationBar", UIFactory.BarBackgroundColor, UIFactory.AccentColor);
+            RectTransform reputationBarRoot = (RectTransform)reputationFill.transform.parent;
+            UIFactory.Place(reputationBarRoot, new Vector2(1f, 1f), new Vector2(-14f, -40f), new Vector2(150f, 7f));
+            reputationFill.fillAmount = 0f;
 
             Image fuelFill = UIFactory.CreateBar(hudPanel, "FuelBar", UIFactory.BarBackgroundColor, UIFactory.BarGoodColor);
             RectTransform fuelBarRoot = (RectTransform)fuelFill.transform.parent;
@@ -103,6 +109,7 @@ namespace DeliverySim
             HUDController hud = gameObject.AddComponent<HUDController>();
             hud.SetTexts(speed, money, fuel, condition, timer, distance, cargo, reputation);
             hud.SetBars(fuelFill, conditionFill, timerFill);
+            hud.SetReputationBar(reputationFill);
             hud.SetTurnIndicator(turn);
         }
 
