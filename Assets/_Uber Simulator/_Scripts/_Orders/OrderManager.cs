@@ -97,12 +97,18 @@ namespace DeliverySim
         [SerializeField] private float minTimeLimitSeconds = 45f;
 
         [Header("Payment (distance-based)")]
-        [Tooltip("Açıkken ödeme = taban ücret + km başına ücret × iş mesafesi. Kapalıyken OrderData.PaymentAmount kullanılır.")]
+        [Tooltip("Açıkken ödeme = (taban ücret + km başına ücret × iş mesafesi) × kargo çarpanı + Fragile handling. Kapalıyken OrderData.PaymentAmount.")]
         [SerializeField] private bool useDistanceBasedPayment = true;
-        [Tooltip("Her işin sabit taban ücreti (mesafeden bağımsız).")]
-        [SerializeField] private float baseFare = 15f;
-        [Tooltip("İş mesafesinin (pickup->delivery) her kilometresi için eklenen ücret.")]
-        [SerializeField] private float paymentPerKm = 12f;
+        [Tooltip("Her işin sabit taban (kapıya gelme) ücreti.")]
+        [SerializeField] private float baseFare = 20f;
+        [Tooltip("İş mesafesinin her kilometresi için eklenen ücret.")]
+        [SerializeField] private float paymentPerKm = 14f;
+        [Tooltip("Kargo tipi ödeme çarpanı — indeks: Food, Package, Fragile.")]
+        [SerializeField] private float[] cargoPayMultiplier = { 1.0f, 1.05f, 1.25f };
+        [Tooltip("Fragile kargoya eklenen sabit elleçleme ücreti.")]
+        [SerializeField] private float fragileHandlingFee = 15f;
+        [Tooltip("Rush (ACİL) bayraklı siparişin ödeme çarpanı.")]
+        [SerializeField] private float rushPayMultiplier = 1.3f;
 
         [Header("Pickup Time Limit")]
         [Tooltip("Sipariş kabul edildikten sonra ALIM noktasına ulaşmak için de ayrı bir süre. Dolarsa sipariş iptal edilir (itibar cezası yok).")]
@@ -651,9 +657,67 @@ namespace DeliverySim
             };
 
             offer.DistanceMeters = Mathf.Max(0f, GetOrderDistance(template));
-            offer.TimeLimit = GetEstimatedTimeLimit(template);
-            offer.Payment = GetOrderPayment(template);
+            offer.TimeLimit = ResolveOfferTimeLimit(offer);
+            offer.Payment = ResolveOfferPayment(offer);
             return offer;
+        }
+
+        /// <summary>
+        /// Distance-derived delivery time for an offer (order-board-redesign.md C):
+        /// travel time (distance already includes routeFactor) + buffer, scaled by
+        /// the difficulty time factor, floored at minTimeLimitSeconds. Falls back to
+        /// the template's fixed value when distance can't be resolved.
+        /// </summary>
+        private float ResolveOfferTimeLimit(OrderOffer offer)
+        {
+            if (!useDistanceBasedTimeLimit || offer.DistanceMeters <= 0f)
+            {
+                return offer.Template != null ? offer.Template.TimeLimitSeconds : minTimeLimitSeconds;
+            }
+
+            float speedMs = Mathf.Max(1f, averageSpeedKmh / 3.6f);
+            float travelTime = offer.DistanceMeters / speedMs;
+            float difficultyTimeFactor = 1f; // difficulty flags feed this in a later step
+            return Mathf.Max(minTimeLimitSeconds, (travelTime + timeBufferSeconds) * difficultyTimeFactor);
+        }
+
+        /// <summary>
+        /// Distance-derived payout for an offer BEFORE lateness / reputation / surge
+        /// multipliers (order-board-redesign.md C): (base fare + per-km × effKm) ×
+        /// cargo multiplier × rush multiplier + Fragile handling fee.
+        /// </summary>
+        private float ResolveOfferPayment(OrderOffer offer)
+        {
+            if (!useDistanceBasedPayment)
+            {
+                return offer.Template != null ? offer.Template.PaymentAmount : 0f;
+            }
+
+            float effKm = Mathf.Max(0.3f, offer.DistanceMeters / 1000f);
+            float amount = baseFare + paymentPerKm * effKm;
+            amount *= CargoPayMultiplier(offer.CargoType);
+            if (offer.HasFlag(OfferFlags.Rush))
+            {
+                amount *= rushPayMultiplier;
+            }
+
+            if (offer.CargoType == CargoType.Fragile)
+            {
+                amount += fragileHandlingFee;
+            }
+
+            return amount;
+        }
+
+        private float CargoPayMultiplier(CargoType type)
+        {
+            int i = (int)type;
+            if (cargoPayMultiplier != null && i >= 0 && i < cargoPayMultiplier.Length)
+            {
+                return cargoPayMultiplier[i];
+            }
+
+            return 1f;
         }
 
         private void RememberRecent(OrderData order)
