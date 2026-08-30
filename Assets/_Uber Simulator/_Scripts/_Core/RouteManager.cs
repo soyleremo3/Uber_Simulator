@@ -69,6 +69,15 @@ namespace DeliverySim
         private Material routeMaterial;
 
         private Waypoint[] waypoints = new Waypoint[0];
+
+        // Symmetric adjacency, built once from Waypoint.neighbors. The Inspector links
+        // are declared one-directional but documented as bidirectional, so we mirror
+        // every link here. Doing it once kills the old per-query O(n^2) reverse scan
+        // in EnumerateNeighbors (which, called once per Dijkstra expansion, made the
+        // whole path search O(n^3) every frame — a real frame hitch on 89 nodes) and
+        // its double-yield of already-listed neighbours.
+        private Dictionary<Waypoint, List<Waypoint>> adjacency;
+
         private Vector3? destination;
         private TurnDirection nextTurn = TurnDirection.None;
 
@@ -82,6 +91,25 @@ namespace DeliverySim
         private readonly List<Vector3> meshVertices = new List<Vector3>(64);
         private readonly List<Vector2> meshUvs = new List<Vector2>(64);
         private readonly List<int> meshTriangles = new List<int>(192);
+
+        // Dijkstra working sets — reused (Clear() keeps capacity) so the every-frame
+        // rebuild doesn't allocate three collections per frame.
+        private readonly Dictionary<Waypoint, float> graphDist = new Dictionary<Waypoint, float>(128);
+        private readonly Dictionary<Waypoint, Waypoint> graphCameFrom = new Dictionary<Waypoint, Waypoint>(128);
+        private readonly HashSet<Waypoint> graphVisited = new HashSet<Waypoint>();
+        private readonly List<Waypoint> graphPathScratch = new List<Waypoint>(32);
+
+        // Last Y a ground raycast actually resolved this rebuild — used as the snap
+        // fallback instead of the flat fallbackGroundY, so a point that misses the
+        // narrow "Road" mask (over a sidewalk/plaza/driveway collider on another
+        // layer) follows the road height it had a moment ago instead of dropping to
+        // y=0 and punching through building bases.
+        private float lastGroundY;
+
+        // Hoisted so GroundSnap doesn't allocate a fresh comparer delegate for every
+        // path point, every frame.
+        private static readonly IComparer<RaycastHit> groundHitDistanceComparer =
+            Comparer<RaycastHit>.Create((a, b) => a.distance.CompareTo(b.distance));
 
         public Vector3? CurrentDestination => destination;
 
@@ -126,6 +154,7 @@ namespace DeliverySim
         private void Start()
         {
             waypoints = FindObjectsByType<Waypoint>(FindObjectsSortMode.None);
+            BuildAdjacency();
 
             if (routeStart == null)
             {
@@ -137,8 +166,76 @@ namespace DeliverySim
             }
         }
 
+        /// <summary>
+        /// Builds the symmetric neighbour map from every Waypoint.neighbors list.
+        /// A link A->B also becomes B->A here, matching Waypoint's documented
+        /// "links are bidirectional" contract even when only one side was wired up
+        /// in the Inspector. Nulls and self-links are dropped; duplicates collapsed.
+        /// </summary>
+        private void BuildAdjacency()
+        {
+            adjacency = new Dictionary<Waypoint, List<Waypoint>>(waypoints.Length);
+
+            foreach (Waypoint w in waypoints)
+            {
+                if (w == null)
+                {
+                    continue;
+                }
+
+                if (!adjacency.ContainsKey(w))
+                {
+                    adjacency[w] = new List<Waypoint>(4);
+                }
+            }
+
+            foreach (Waypoint w in waypoints)
+            {
+                if (w == null || w.neighbors == null)
+                {
+                    continue;
+                }
+
+                foreach (Waypoint n in w.neighbors)
+                {
+                    if (n == null || n == w)
+                    {
+                        continue;
+                    }
+
+                    LinkAdjacency(w, n);
+                    LinkAdjacency(n, w);
+                }
+            }
+        }
+
+        private void LinkAdjacency(Waypoint from, Waypoint to)
+        {
+            if (!adjacency.TryGetValue(from, out List<Waypoint> list))
+            {
+                list = new List<Waypoint>(4);
+                adjacency[from] = list;
+            }
+
+            if (!list.Contains(to))
+            {
+                list.Add(to);
+            }
+        }
+
         private void Update()
         {
+            if (routeStart == null)
+            {
+                // Vehicle may have been spawned after this manager's Start() (async
+                // load / pooled player) — keep trying so the route isn't dead forever.
+                VehicleController vehicle = FindFirstObjectByType<VehicleController>();
+                if (vehicle != null)
+                {
+                    routeStart = vehicle.transform;
+                }
+            }
+
             if (destination == null || routeStart == null)
             {
                 SetRouteVisible(false);
@@ -286,6 +383,10 @@ namespace DeliverySim
             pathPoints.Clear();
             BuildPath(routeStart.position, destination.Value, pathPoints);
 
+            // Seed the ground-snap fallback with the configured flat height; the
+            // first point that resolves a real road hit replaces it for the rest.
+            lastGroundY = fallbackGroundY;
+
             snappedPoints.Clear();
             for (int i = 0; i < pathPoints.Count; i++)
             {
@@ -403,6 +504,14 @@ namespace DeliverySim
             nextTurn = TurnDirection.Straight;
 
             Vector3 vehiclePos = routeStart.position;
+            Vector3 vehicleFwd = routeStart.forward;
+            vehicleFwd.y = 0f;
+            bool haveFwd = vehicleFwd.sqrMagnitude > 0.001f;
+            if (haveFwd)
+            {
+                vehicleFwd.Normalize();
+            }
+
             float travelled = 0f;
 
             for (int i = 1; i < points.Count - 1; i++)
@@ -420,6 +529,15 @@ namespace DeliverySim
 
                 Vector3 flatToVertex = points[i] - vehiclePos;
                 flatToVertex.y = 0f;
+
+                // Never announce a maneuver at a vertex that's BEHIND the vehicle: if
+                // a stray backward corner slipped past BuildPath's trim, the ~180°
+                // heading change there would otherwise fire a bogus "SOLA/SAĞA DÖN".
+                if (haveFwd && flatToVertex.sqrMagnitude > 0.01f &&
+                    Vector3.Dot(flatToVertex.normalized, vehicleFwd) < -0.25f)
+                {
+                    continue;
+                }
 
                 if (flatToVertex.magnitude < turnMinDistance ||
                     incoming.sqrMagnitude < 0.25f || outgoing.sqrMagnitude < 0.25f)
@@ -455,8 +573,7 @@ namespace DeliverySim
                 int hitCount = Physics.RaycastNonAlloc(rayOrigin, Vector3.down, groundHitBuffer,
                     maxDistance, groundLayerMask, QueryTriggerInteraction.Ignore);
 
-                System.Array.Sort(groundHitBuffer, 0, hitCount,
-                    Comparer<RaycastHit>.Create((a, b) => a.distance.CompareTo(b.distance)));
+                System.Array.Sort(groundHitBuffer, 0, hitCount, groundHitDistanceComparer);
 
                 bool snapped = false;
                 for (int i = 0; i < hitCount; i++)
@@ -478,16 +595,20 @@ namespace DeliverySim
                     }
 
                     point.y = groundHitBuffer[i].point.y;
+                    lastGroundY = point.y; // remember for points that miss the narrow Road mask
                     snapped = true;
                     break;
                 }
 
                 if (!snapped)
                 {
-                    // No usable ground collider under this point — fall back to a known ground
-                    // height instead of leaving the point's raw Y (which for the vehicle end is
-                    // its chassis pivot, well above the road).
-                    point.y = fallbackGroundY;
+                    // No usable ground collider under this point — it's over a
+                    // sidewalk/plaza/driveway collider on some other layer, or the
+                    // waypoint sits just off the road mesh. Follow the last road
+                    // height we actually resolved rather than slamming to
+                    // fallbackGroundY (usually 0), which drops the ribbon through
+                    // building bases on any map that isn't built at y=0.
+                    point.y = lastGroundY;
                 }
             }
 
@@ -504,50 +625,163 @@ namespace DeliverySim
                 return;
             }
 
-            if (waypoints != null && waypoints.Length >= 2)
+            // No NavMesh path — route along the Waypoint road graph. Everything below
+            // only inserts intermediate corners; result stays bracketed by the real
+            // from/to, and RebuildMesh's dedup pass drops any that coincide.
+            if (waypoints == null || waypoints.Length < 2)
             {
-                Vector3 forward = routeStart != null ? routeStart.forward : (to - from);
-                Waypoint startNode = FindStartNode(from, forward, to);
-                Waypoint endNode = FindNearest(to);
+                result.Add(to);
+                return;
+            }
 
-                if (startNode != null && endNode != null && startNode != endNode)
+            float straightDist = Vector3.Distance(from, to);
+
+            Vector3 forward = routeStart != null ? routeStart.forward : (to - from);
+            Waypoint startNode = FindStartNode(from, forward, to);
+            Waypoint endNode = FindEndNode(to, startNode != null ? startNode.transform.position : from);
+            Waypoint nearestStart = FindNearest(from);
+            Waypoint nearestEnd = FindNearest(to);
+
+            // start == end node: the vehicle and a nearby target snap to the SAME
+            // waypoint. The old code added nothing here, leaving result = [from, to] —
+            // a straight diagonal that, for a short target, slices through whatever
+            // building sits between them (the reported "through the house"). Route
+            // from -> sharedNode -> to instead, but only when that node genuinely
+            // lies on the way; otherwise it just bolts on a sideways dog-leg that
+            // reads as the ribbon curling off to one side.
+            if (startNode != null && startNode == endNode)
+            {
+                Vector3 nodePos = startNode.transform.position;
+                float viaLen = Vector3.Distance(from, nodePos) + Vector3.Distance(nodePos, to);
+                if (viaLen <= straightDist * 1.6f + 8f)
                 {
-                    List<Waypoint> graphPath = FindGraphPath(startNode, endNode);
-                    if (graphPath != null)
-                    {
-                        // If the route still enters via a node BEHIND the vehicle while
-                        // the next node is ahead, skip that first node so the ribbon
-                        // doesn't start with a backward hook toward where you just were.
-                        int skip = 0;
-                        if (graphPath.Count >= 2 && routeStart != null)
-                        {
-                            Vector3 fwd = routeStart.forward;
-                            fwd.y = 0f;
-                            if (fwd.sqrMagnitude > 0.001f)
-                            {
-                                fwd.Normalize();
-                                Vector3 d0 = graphPath[0].transform.position - from;
-                                Vector3 d1 = graphPath[1].transform.position - from;
-                                d0.y = 0f;
-                                d1.y = 0f;
-                                bool firstBehind = d0.sqrMagnitude > 0.01f && Vector3.Dot(d0.normalized, fwd) < -0.3f;
-                                bool secondAhead = d1.sqrMagnitude > 0.01f && Vector3.Dot(d1.normalized, fwd) > 0.1f;
-                                if (firstBehind && secondAhead)
-                                {
-                                    skip = 1;
-                                }
-                            }
-                        }
+                    result.Add(nodePos);
+                }
 
-                        for (int i = skip; i < graphPath.Count; i++)
-                        {
-                            result.Add(graphPath[i].transform.position);
-                        }
-                    }
+                result.Add(to);
+                return;
+            }
+
+            // Try the forward/target-biased pair first. If either biased node sits on
+            // its own disconnected graph island, retry with the plain-nearest nodes
+            // before giving up — a slightly off entry node still beats a straight line
+            // through a wall.
+            List<Waypoint> graphPath = null;
+            float graphLen = 0f;
+            if (TryGraphPath(startNode, endNode, ref graphPath, ref graphLen) ||
+                TryGraphPath(nearestStart, endNode, ref graphPath, ref graphLen) ||
+                TryGraphPath(startNode, nearestEnd, ref graphPath, ref graphLen) ||
+                TryGraphPath(nearestStart, nearestEnd, ref graphPath, ref graphLen))
+            {
+                // Reject an absurd detour: a 300 m loop for a 40 m target means the
+                // two graph endpoints simply aren't linked on the near side (a
+                // missing cross-link in the scene's Waypoint graph — a data fix, not
+                // a code one). A straight line at least points the right way. The
+                // factor is generous so a genuinely winding city route still passes.
+                if (graphLen <= straightDist * 3f + 50f)
+                {
+                    AppendTrimmedGraphPath(from, to, graphPath, result);
                 }
             }
 
             result.Add(to);
+        }
+
+        /// <summary>
+        /// Runs one Dijkstra attempt. Returns false (leaving <paramref name="path"/>
+        /// untouched) for a null/degenerate pair or when the nodes aren't connected.
+        /// The path buffer is reused by FindGraphPath, so a caller must consume it
+        /// before the next attempt — the short-circuiting || chain in BuildPath does.
+        /// </summary>
+        private bool TryGraphPath(Waypoint start, Waypoint end, ref List<Waypoint> path, ref float length)
+        {
+            if (start == null || end == null || start == end)
+            {
+                return false;
+            }
+
+            List<Waypoint> found = FindGraphPath(start, end, out float len);
+            if (found == null || found.Count < 2)
+            {
+                return false;
+            }
+
+            path = found;
+            length = len;
+            return true;
+        }
+
+        /// <summary>
+        /// Appends the graph path's node positions to <paramref name="result"/>,
+        /// first trimming a run of leading nodes that sit behind the vehicle (so the
+        /// ribbon never starts with a backward hook) and a trailing node that
+        /// overshoots the target (so it never ends on a hairpin). At least one node
+        /// always survives.
+        /// </summary>
+        private void AppendTrimmedGraphPath(Vector3 from, Vector3 to, List<Waypoint> graphPath, List<Vector3> result)
+        {
+            int first = 0;
+            int last = graphPath.Count - 1;
+
+            // "Forward" reference: the vehicle's facing when we have a meaningful one,
+            // else straight at the target.
+            Vector3 refDir = Vector3.zero;
+            if (routeStart != null)
+            {
+                refDir = routeStart.forward;
+                refDir.y = 0f;
+            }
+
+            if (refDir.sqrMagnitude < 0.001f)
+            {
+                refDir = to - from;
+                refDir.y = 0f;
+            }
+
+            bool haveRef = refDir.sqrMagnitude > 0.001f;
+            if (haveRef)
+            {
+                refDir.Normalize();
+
+                // Drop a RUN of leading nodes behind the vehicle (old code dropped at
+                // most one, and only when node[1] was already ahead — a two-node
+                // backward hook survived and both curled the ribbon and tripped a
+                // bogus HUD turn).
+                while (first < last)
+                {
+                    Vector3 d = graphPath[first].transform.position - from;
+                    d.y = 0f;
+                    if (d.sqrMagnitude > 0.01f && Vector3.Dot(d.normalized, refDir) < -0.25f)
+                    {
+                        first++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+            // Drop a trailing node that overshoots the target: if, on arriving at the
+            // last node, reaching the target means doubling back opposite to the way
+            // you came in, that node is past the target and only adds a hairpin.
+            if (last - first >= 1)
+            {
+                Vector3 arrive = graphPath[last].transform.position - graphPath[last - 1].transform.position;
+                Vector3 onward = to - graphPath[last].transform.position;
+                arrive.y = 0f;
+                onward.y = 0f;
+                if (arrive.sqrMagnitude > 0.01f && onward.sqrMagnitude > 0.01f &&
+                    Vector3.Dot(arrive.normalized, onward.normalized) < -0.25f)
+                {
+                    last--;
+                }
+            }
+
+            for (int i = first; i <= last; i++)
+            {
+                result.Add(graphPath[i].transform.position);
+            }
         }
 
         /// <summary>
@@ -631,6 +865,72 @@ namespace DeliverySim
         }
 
         /// <summary>
+        /// Picks the graph EXIT node near the target. NOT just the geometrically
+        /// nearest waypoint to the target — that one can sit on the far side of it
+        /// (across the street, behind a wall), so the final graph hop and the last
+        /// leg to the target double back on themselves ("geriye kıvrılıyor"). Among
+        /// waypoints close to the target, choose the one minimising
+        /// dist(wp,target) + dist(wp,entryPos): a wrong-side node is farther from the
+        /// entry point, so this favours the near-side approach. Falls back to plain
+        /// nearest.
+        /// </summary>
+        private Waypoint FindEndNode(Vector3 to, Vector3 entryPos)
+        {
+            if (waypoints == null || waypoints.Length == 0)
+            {
+                return null;
+            }
+
+            float nearestSqr = float.MaxValue;
+            foreach (Waypoint w in waypoints)
+            {
+                if (w == null)
+                {
+                    continue;
+                }
+
+                float sqr = (w.transform.position - to).sqrMagnitude;
+                if (sqr < nearestSqr)
+                {
+                    nearestSqr = sqr;
+                }
+            }
+
+            // Tight band: the exit node may be a little farther from the target than
+            // the closest waypoint (to get to the correct side of the street) but not
+            // so much farther that the final endNode->target leg becomes a long line
+            // through whatever's between them.
+            float maxEndDist = Mathf.Sqrt(nearestSqr) * 1.5f + 12f;
+
+            Waypoint best = null;
+            float bestScore = float.MaxValue;
+
+            foreach (Waypoint w in waypoints)
+            {
+                if (w == null)
+                {
+                    continue;
+                }
+
+                Vector3 wp = w.transform.position;
+                float dTo = Vector3.Distance(wp, to);
+                if (dTo > maxEndDist)
+                {
+                    continue;
+                }
+
+                float score = dTo + Vector3.Distance(wp, entryPos);
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    best = w;
+                }
+            }
+
+            return best != null ? best : FindNearest(to);
+        }
+
+        /// <summary>
         /// Appends the interior corners of a NavMesh path between <paramref name="from"/>
         /// and <paramref name="to"/> to <paramref name="result"/>. The NavMesh is baked
         /// with buildings/fences as obstacles, so this path can never cut through a wall
@@ -691,26 +991,43 @@ namespace DeliverySim
 
         /// <summary>
         /// Dijkstra over the waypoint graph (links treated as bidirectional), edge cost
-        /// = real world distance between linked nodes. Returns null when no path exists.
+        /// = real world distance between linked nodes. Returns null when no path exists
+        /// (disconnected graph / start on its own island). <paramref name="pathLength"/>
+        /// receives the real travelled distance start->end (0 when no path).
+        ///
         /// Was plain BFS (minimizes hop COUNT) — on an uneven graph that could surface a
         /// route with fewer hops but a longer real distance than the alternative; this
         /// guarantees the shortest actual route. Node counts here are small (tens, not
         /// thousands), so a linear "pick closest unvisited" scan per step is plenty fast
-        /// without needing a binary-heap priority queue.
+        /// without needing a binary-heap priority queue. Working sets are reused fields
+        /// (Clear() keeps capacity) so the every-frame rebuild doesn't allocate.
+        ///
+        /// The returned list is a REUSED buffer — consume it before calling this again.
         /// </summary>
-        private List<Waypoint> FindGraphPath(Waypoint start, Waypoint end)
+        private List<Waypoint> FindGraphPath(Waypoint start, Waypoint end, out float pathLength)
         {
-            var dist = new Dictionary<Waypoint, float> { { start, 0f } };
-            var cameFrom = new Dictionary<Waypoint, Waypoint> { { start, null } };
-            var visited = new HashSet<Waypoint>();
+            pathLength = 0f;
+
+            if (start == null || end == null)
+            {
+                return null;
+            }
+
+            graphDist.Clear();
+            graphCameFrom.Clear();
+            graphVisited.Clear();
+            graphPathScratch.Clear();
+
+            graphDist[start] = 0f;
+            graphCameFrom[start] = null;
 
             while (true)
             {
                 Waypoint current = null;
                 float bestDist = float.MaxValue;
-                foreach (KeyValuePair<Waypoint, float> candidate in dist)
+                foreach (KeyValuePair<Waypoint, float> candidate in graphDist)
                 {
-                    if (!visited.Contains(candidate.Key) && candidate.Value < bestDist)
+                    if (!graphVisited.Contains(candidate.Key) && candidate.Value < bestDist)
                     {
                         bestDist = candidate.Value;
                         current = candidate.Key;
@@ -722,59 +1039,62 @@ namespace DeliverySim
                     break;
                 }
 
-                visited.Add(current);
+                graphVisited.Add(current);
 
                 foreach (Waypoint next in EnumerateNeighbors(current))
                 {
-                    if (next == null || visited.Contains(next))
+                    if (next == null || graphVisited.Contains(next))
                     {
                         continue;
                     }
 
-                    float candidateDist = dist[current] + Vector3.Distance(
+                    float candidateDist = graphDist[current] + Vector3.Distance(
                         current.transform.position, next.transform.position);
 
-                    if (!dist.TryGetValue(next, out float existingDist) || candidateDist < existingDist)
+                    if (!graphDist.TryGetValue(next, out float existingDist) || candidateDist < existingDist)
                     {
-                        dist[next] = candidateDist;
-                        cameFrom[next] = current;
+                        graphDist[next] = candidateDist;
+                        graphCameFrom[next] = current;
                     }
                 }
             }
 
-            if (!cameFrom.ContainsKey(end))
+            if (!graphCameFrom.ContainsKey(end))
             {
                 return null;
             }
 
-            var path = new List<Waypoint>();
-            for (Waypoint node = end; node != null; node = cameFrom[node])
+            // cameFrom can't hold a cycle with non-negative edge costs, but cap the
+            // walk anyway so a corrupt map can never spin here.
+            int guard = waypoints.Length + 2;
+            for (Waypoint node = end; node != null && guard-- > 0; node = graphCameFrom[node])
             {
-                path.Add(node);
+                graphPathScratch.Add(node);
             }
 
-            path.Reverse();
-            return path;
+            graphPathScratch.Reverse();
+            pathLength = graphDist.TryGetValue(end, out float d) ? d : 0f;
+            return graphPathScratch;
         }
 
-        private IEnumerable<Waypoint> EnumerateNeighbors(Waypoint node)
+        private static readonly List<Waypoint> emptyNeighbors = new List<Waypoint>(0);
+
+        /// <summary>
+        /// Directly reachable neighbours of <paramref name="node"/>, from the
+        /// pre-built symmetric adjacency map (both directions of every Inspector
+        /// link, deduped, no nulls). O(1) lookup — the old version rescanned all
+        /// waypoints and did a List.Contains per node on every call.
+        /// </summary>
+        private List<Waypoint> EnumerateNeighbors(Waypoint node)
         {
-            if (node.neighbors != null)
+            if (adjacency == null)
             {
-                foreach (Waypoint n in node.neighbors)
-                {
-                    yield return n;
-                }
+                BuildAdjacency();
             }
 
-            // Reverse links: nodes that list "node" as a neighbor are reachable too.
-            foreach (Waypoint other in waypoints)
-            {
-                if (other != null && other != node && other.neighbors != null && other.neighbors.Contains(node))
-                {
-                    yield return other;
-                }
-            }
+            return node != null && adjacency.TryGetValue(node, out List<Waypoint> list)
+                ? list
+                : emptyNeighbors;
         }
     }
 }
