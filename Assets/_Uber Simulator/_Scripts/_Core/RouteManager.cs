@@ -251,6 +251,14 @@ namespace DeliverySim
             // that desync was the "bazen gözükmüyor" flicker bug.
             RebuildMesh();
 
+            // Diagnostic: press F9 while a route is shown to dump the exact path to
+            // the console (car pose, destination, every ribbon point + the turn cue).
+            // Use it to report a "route sends me the wrong way" spot precisely.
+            if (Input.GetKeyDown(KeyCode.F9))
+            {
+                DumpRouteDiagnostic();
+            }
+
             if (routeMaterial != null && scrollSpeed != 0f && meshRenderer != null && meshRenderer.enabled)
             {
                 // Tiles scroll from the player toward the destination for a GPS "flow" cue.
@@ -258,6 +266,28 @@ namespace DeliverySim
                 offset.x -= scrollSpeed * Time.deltaTime;
                 routeMaterial.mainTextureOffset = offset;
             }
+        }
+
+        /// <summary>F9 diagnostic — logs the full current route so a bad spot can be reported exactly.</summary>
+        private void DumpRouteDiagnostic()
+        {
+            var sb = new System.Text.StringBuilder();
+            Vector3 carPos = routeStart != null ? routeStart.position : Vector3.zero;
+            Vector3 carFwd = routeStart != null ? routeStart.forward : Vector3.forward;
+            sb.AppendLine("[RouteDiag] ---- press F9 route dump ----");
+            sb.AppendLine($"[RouteDiag] car pos {carPos:F1}  fwd {carFwd:F2}  dest {(destination.HasValue ? destination.Value.ToString("F1") : "none")}  useNavMesh={useNavMesh}  NextTurn={nextTurn}");
+            sb.AppendLine($"[RouteDiag] ribbon points ({snappedPoints.Count}):");
+            for (int i = 0; i < snappedPoints.Count; i++)
+            {
+                Vector3 p = snappedPoints[i];
+                Vector3 fromCar = p - carPos;
+                fromCar.y = 0f;
+                Vector3 seg = i > 0 ? (snappedPoints[i] - snappedPoints[i - 1]) : Vector3.zero;
+                seg.y = 0f;
+                sb.AppendLine($"[RouteDiag]   p{i} ({p.x:F0},{p.z:F0})  {fromCar.magnitude:F0}m from car  seg {(i > 0 ? seg.magnitude.ToString("F0") + "m" : "-")}");
+            }
+
+            Debug.Log(sb.ToString());
         }
 
         public void SetDestination(Vector3 worldPosition)
