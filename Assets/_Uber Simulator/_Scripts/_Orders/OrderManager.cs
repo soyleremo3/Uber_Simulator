@@ -102,6 +102,9 @@ namespace DeliverySim
         [SerializeField] private float closeCallPenalty = 0.3f;
         [Tooltip("Kargo tipi hassasiyeti — indeks: Food, Package, Fragile.")]
         [SerializeField] private float[] cargoSensitivity = { 1.0f, 0.6f, 1.6f };
+        [Tooltip("Son N tamamlanan rota (alım>teslim) hatırlanır; aynı rotayı tekrarlarsan RP çarpanı 1/(1+k*routeRepeatPenalty) ile düşer (farm önleme).")]
+        [SerializeField] private int routeRepeatWindow = 5;
+        [SerializeField] private float routeRepeatPenalty = 0.6f;
 
         [Header("Variety")]
         [Tooltip("How many recently accepted/rotated-out orders are avoided when refilling offers (as long as other candidates exist).")]
@@ -125,6 +128,9 @@ namespace DeliverySim
         private float deliveryStartTime;
         private float speedingSeconds;
         private float peakSpeedKph;
+
+        // Anti-farm: last few completed "pickupId>deliveryId" routes; repeating one damps its RP.
+        private readonly List<string> recentRoutes = new List<string>();
 
         public event Action<IReadOnlyList<OrderData>> OnOffersChanged;
         public event Action<OrderData> OnOrderAccepted;
@@ -574,6 +580,25 @@ namespace DeliverySim
             float stars = ScoreDelivery(lateT, onTime, collisions, conditionLost);
             float distanceFactor = Mathf.Clamp(jobDistance / 250f, 0.5f, 2f);
 
+            // Anti-farm: repeating the exact same route damps its RP (spec E2).
+            string routeKey = activeOrder.PickupPointId + ">" + activeOrder.DeliveryPointId;
+            int routeRepeats = 0;
+            for (int i = 0; i < recentRoutes.Count; i++)
+            {
+                if (recentRoutes[i] == routeKey)
+                {
+                    routeRepeats++;
+                }
+            }
+
+            float routeRepeatFactor = 1f / (1f + Mathf.Max(0f, routeRepeatPenalty) * routeRepeats);
+
+            recentRoutes.Add(routeKey);
+            while (recentRoutes.Count > Mathf.Max(1, routeRepeatWindow))
+            {
+                recentRoutes.RemoveAt(0);
+            }
+
             float reputationMultiplier = ReputationManager.Instance != null
                 ? ReputationManager.Instance.CurrentPaymentMultiplier
                 : 1f;
@@ -587,7 +612,7 @@ namespace DeliverySim
 
             if (ReputationManager.Instance != null)
             {
-                ReputationManager.Instance.RegisterDelivery(stars, distanceFactor, 1f);
+                ReputationManager.Instance.RegisterDelivery(stars, distanceFactor, routeRepeatFactor);
             }
 
             var result = new DeliveryResult
