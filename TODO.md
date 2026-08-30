@@ -111,8 +111,18 @@ Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sıra
 - [ ] **27.** Sipariş + sipariş eden çeşitliliği. `docs/design/order-board-redesign.md` D bölümü.
   - [x] `CustomerPoolData` SO (40 ad × 30 soyad + 15 işletme) + `CustomerPool.asset`; her sipariş `BuildOffer`'da rastgele müşteri (birey %72 / işletme) alır; panel satırında "Kime: Ayşe Y." gösterilir. Play test OK.
   - [ ] Prosedürel sipariş kompozisyonu (rastgele nokta çifti, `namePatterns`, `weightByTier`, Regular müşteri kalıcılığı) — asset/nokta az olduğu için ertelendi. ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK**.
-- [ ] **28.** Tab panelinde maks 10 sipariş, dalgalı akış, oyuncuyu tutan sistem. ONAYLANDI → `docs/design/order-board-redesign.md` (hybrid şablon + Poisson λ(t) + 4 kanca). Adım adım uygulanıyor. ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK**.
-  - [x] Her sipariş satırında mesafe + ücret yazıyor (`OrderManager.GetOrderDistance` / `GetOrderPayment`).
+- [x] **28.** Tab panelinde maks 10 sipariş + dalgalı akış + oyuncuyu tutan sistem. `docs/design/order-board-redesign.md` 10 adım uygulandı, hepsi play-test edildi:
+  1. Kaydırılabilir panel (`UIFactory.CreateScrollView`) + maxOffers 10.
+  2. `OrderOffer`/`CustomerInstance` modeli, per-offer TTL (75-150s).
+  3. `GameClock` (1 gün=20 dk, 06:00 başlar) + zamana bağlı Poisson akış (λ rush/lull) + gündüz tabanı, gece 0.
+  4. Cluster gelişleri (%35 → 3-8 sn'de 1-2 ekstra).
+  5. Ücret/süre formülü: `20+14×km` × kargo çarpanı, Fragile +15.
+  6. Müşteri çeşitliliği (`CustomerPoolData`, satırda "Kime: X").
+  7. Surge (talep/kıtlık → yeni teklifler daha pahalı, HUD banner + ⚡ tag).
+  8. Teslimat serisi (üst üste ≥4★ → +%4/teslimat, maks %40, 🔥×n).
+  9. Öncelikli/VIP (%4, Gümüş+, ödeme ×2.2-3.5, kısa TTL, altın satır).
+  10. Sadık müşteri (2 zamanında → Regular, +%15, daha sık gelir, kaydedilir) + günlük hedef (6 teslimat → +₺250).
+  ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK** — sayılar playtest ile ayarlanacak; prosedürel nokta eşleştirme + `weightByTier` + `namePatterns` #27 alt-maddesinde ertelendi.
 - [ ] **41.** Teslim süresinin uzaklığa göre ayarlanması (NOT: distance-based limit kodda var — gözden geçir).
 - [x] **42.** Alım için ayrı süre limiti: kabul edilince araç->alım mesafesinden hesaplanan süre başlar (`usePickupTimeLimit`, `useDistanceBasedPickupTime`, buffer/min/grace inspector'da). HUD'da "Alım mm:ss" gösterilir. Süre + grace dolarsa sipariş iptal (itibar cezası YOK). `OnPickupTimerTick` eventi eklendi.
 - [x] **43.** Sipariş kartındaki parantez ile isim alakasız görünüyordu. Sebep: örnek sipariş asset'lerinde `cargoType` çoğu 0 (Food) kalmıştı (Moda Teslimatı → Food vb.). order_002..005 → Paket olarak düzeltildi; ayrıca CargoType artık UI'da Türkçe (`Yemek/Paket/Kırılır`) gösteriliyor.

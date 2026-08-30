@@ -84,6 +84,10 @@ namespace DeliverySim
                 new Color(0.85f, 0.9f, 1f));
             UIFactory.Place((RectTransform)cargo.transform, new Vector2(0f, 1f), new Vector2(14f, -122f), new Vector2(272f, 56f));
 
+            Text daily = UIFactory.CreateText(hudPanel, "DailyText", string.Empty, 14, TextAnchor.LowerLeft,
+                new Color(0.8f, 0.85f, 0.7f));
+            UIFactory.Place((RectTransform)daily.transform, new Vector2(0f, 1f), new Vector2(14f, -178f), new Vector2(272f, 20f));
+
             // Speedometer: bottom-right, big — dashboard convention for driving games.
             Text speed = UIFactory.CreateText(root, "SpeedText", "0 km/s", 46, TextAnchor.LowerRight, Color.white);
             UIFactory.Place((RectTransform)speed.transform, new Vector2(1f, 0f), new Vector2(-24f, 24f), new Vector2(260f, 56f));
@@ -123,6 +127,7 @@ namespace DeliverySim
             hud.SetTurnIndicator(turn);
             hud.SetSurgeText(surge);
             hud.SetStreakText(streak);
+            hud.SetDailyText(daily);
         }
 
         private void BuildPrompt(Transform root)

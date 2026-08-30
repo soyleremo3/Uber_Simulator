@@ -23,6 +23,7 @@ namespace DeliverySim
         [SerializeField] private Text turnText;
         [SerializeField] private Text surgeText;
         [SerializeField] private Text streakText;
+        [SerializeField] private Text dailyText;
 
         [Header("Bars (all optional)")]
         [SerializeField] private Image fuelBar;
@@ -77,6 +78,11 @@ namespace DeliverySim
         public void SetStreakText(Text streak)
         {
             streakText = streak;
+        }
+
+        public void SetDailyText(Text daily)
+        {
+            dailyText = daily;
         }
 
         private void Start()
@@ -160,6 +166,7 @@ namespace DeliverySim
                 OrderManager.Instance.OnOrderFailed += HandleOrderStateChanged;
                 OrderManager.Instance.OnSurgeChanged += HandleSurgeChanged;
                 OrderManager.Instance.OnStreakChanged += HandleStreakChanged;
+                OrderManager.Instance.OnDailyProgress += HandleDailyProgress;
             }
 
             if (ReputationManager.Instance != null)
@@ -196,6 +203,7 @@ namespace DeliverySim
                 OrderManager.Instance.OnOrderFailed -= HandleOrderStateChanged;
                 OrderManager.Instance.OnSurgeChanged -= HandleSurgeChanged;
                 OrderManager.Instance.OnStreakChanged -= HandleStreakChanged;
+                OrderManager.Instance.OnDailyProgress -= HandleDailyProgress;
             }
 
             if (ReputationManager.Instance != null)
@@ -374,6 +382,14 @@ namespace DeliverySim
             if (streakText != null)
             {
                 streakText.text = streak >= 2 ? $"🔥 ×{streak}" : string.Empty;
+            }
+        }
+
+        private void HandleDailyProgress(int done, int target)
+        {
+            if (dailyText != null)
+            {
+                dailyText.text = target > 0 ? $"Günlük: {done}/{target}" : string.Empty;
             }
         }
 

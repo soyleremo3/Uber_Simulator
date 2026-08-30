@@ -148,7 +148,11 @@ namespace DeliverySim
             string customerLine = offer.Customer != null && !string.IsNullOrEmpty(offer.Customer.DisplayName)
                 ? $"Kime: {offer.Customer.DisplayName}   •   "
                 : string.Empty;
-            string tag = priority ? "⭐ ÖNCELİKLİ  " : (offer.SurgeMultiplier > 1.01f ? "⚡ " : string.Empty);
+            string tag = priority
+                ? "⭐ ÖNCELİKLİ  "
+                : offer.HasFlag(OfferFlags.RegularCustomer)
+                    ? "★ Sadık  "
+                    : (offer.SurgeMultiplier > 1.01f ? "⚡ " : string.Empty);
 
             Text info = UIFactory.CreateText(row, "Info",
                 $"{tag}{offer.DisplayName}  ({offer.CargoType.Label()})\n{customerLine}₺{offer.Payment:F0}  •  {distanceText}  •  {timeLimitMinutes:00}:{timeLimitSeconds:00}",

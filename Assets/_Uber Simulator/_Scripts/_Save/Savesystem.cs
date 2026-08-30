@@ -117,6 +117,17 @@ namespace DeliverySim
                 data.upgrades = ShopManager.Instance.GetUpgradeSnapshot();
             }
 
+            if (OrderManager.Instance != null)
+            {
+                data.regularCustomers = OrderManager.Instance.GetRegularsSnapshot();
+            }
+
+            if (GameClock.Instance != null)
+            {
+                data.clockHours = GameClock.Instance.GetClockHours();
+                data.currentDayIndex = GameClock.Instance.GetDayIndex();
+            }
+
             try
             {
                 string json = JsonUtility.ToJson(data, true);
@@ -163,6 +174,16 @@ namespace DeliverySim
                 if (ShopManager.Instance != null)
                 {
                     ShopManager.Instance.RestoreState(data.upgrades, data.ownedVehicleIds);
+                }
+
+                if (OrderManager.Instance != null)
+                {
+                    OrderManager.Instance.RestoreRegulars(data.regularCustomers);
+                }
+
+                if (GameClock.Instance != null)
+                {
+                    GameClock.Instance.RestoreClock(data.clockHours, data.currentDayIndex);
                 }
 
                 return data;

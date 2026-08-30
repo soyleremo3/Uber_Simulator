@@ -161,6 +161,20 @@ namespace DeliverySim
         [Tooltip("Fraction of the payment still paid at the very last late moment.")]
         [Range(0f, 1f)][SerializeField] private float latePayFraction = 0.4f;
 
+        [Header("Regular customers (saved)")]
+        [SerializeField] private bool useRegularCustomers = true;
+        [Tooltip("Aynı müşteriye bu kadar zamanında teslimat → 'sadık müşteri'.")]
+        [SerializeField] private int regularThreshold = 2;
+        [Tooltip("Yeni sipariş için taze isim yerine mevcut bir sadık müşteriyi seçme olasılığı.")]
+        [Range(0f, 1f)][SerializeField] private float regularRecurChance = 0.25f;
+        [SerializeField] private float regularPayBonus = 1.15f;
+        [SerializeField] private float regularTtlBonus = 1.5f;
+
+        [Header("Daily target")]
+        [SerializeField] private bool useDailyTarget = true;
+        [SerializeField] private int dailyTargetDeliveries = 6;
+        [SerializeField] private float dailyBonus = 250f;
+
         [Header("Delivery Streak (session-scoped, not saved)")]
         [Tooltip("Üst üste zamanında ve ≥ bu yıldız olan teslimatlar seriyi büyütür; geç/başarısız teslimat sıfırlar.")]
         [SerializeField] private float streakOnTimeStarThreshold = 4f;
@@ -234,6 +248,14 @@ namespace DeliverySim
 
         private float lastPriorityTime = -999f;
 
+        // Regulars: customerId -> stored instance (with completed count). Saved.
+        private readonly Dictionary<string, CustomerInstance> regulars = new Dictionary<string, CustomerInstance>();
+
+        private int dailyDeliveries;
+        private bool dailyBonusClaimed;
+        /// <summary>(deliveries this in-game day, target).</summary>
+        public event Action<int, int> OnDailyProgress;
+
         public event Action<IReadOnlyList<OrderOffer>> OnOffersChanged;
         public event Action<OrderData> OnOrderAccepted;
         public event Action<OrderData> OnCargoPickedUp;
@@ -278,10 +300,22 @@ namespace DeliverySim
 
         private void OnDestroy()
         {
+            if (GameClock.Instance != null)
+            {
+                GameClock.Instance.OnDayRolled -= HandleDayRolled;
+            }
+
             if (Instance == this)
             {
                 Instance = null;
             }
+        }
+
+        private void HandleDayRolled(int newDay)
+        {
+            dailyDeliveries = 0;
+            dailyBonusClaimed = false;
+            OnDailyProgress?.Invoke(0, dailyTargetDeliveries);
         }
 
         private void Start()
@@ -292,6 +326,11 @@ namespace DeliverySim
             if (cachedVehicle != null)
             {
                 cachedVehicleCondition = cachedVehicle.GetComponent<VehicleCondition>();
+            }
+
+            if (GameClock.Instance != null)
+            {
+                GameClock.Instance.OnDayRolled += HandleDayRolled;
             }
 
             if (useArrivals)
@@ -773,11 +812,12 @@ namespace DeliverySim
             offer.TimeLimit = ResolveOfferTimeLimit(offer);
             offer.Payment = ResolveOfferPayment(offer);
 
-            if (customerPool != null && customerPool.HasContent)
+            offer.Customer = RollCustomer();
+            if (offer.Customer != null && offer.Customer.IsRegular)
             {
-                offer.Customer = UnityEngine.Random.value < individualRecipientChance
-                    ? customerPool.RollIndividual()
-                    : customerPool.RollBusiness();
+                offer.Flags |= OfferFlags.RegularCustomer;
+                offer.Payment *= regularPayBonus;
+                offer.Ttl *= regularTtlBonus;
             }
 
             // Surge: an offer that arrives while prices are surging pays more.
@@ -882,6 +922,118 @@ namespace DeliverySim
             lastPriorityTime = Time.time;
 
             NotificationService.Raise($"⭐ ÖNCELİKLİ sipariş! {offer.DisplayName} — ₺{offer.Payment:F0}, sadece {priorityTtl:F0} sn panoda.");
+        }
+
+        /// <summary>
+        /// Picks the customer for a new offer. With a chance (and if any exist) reuses
+        /// a saved "regular" so they actually recur; otherwise rolls a fresh name.
+        /// </summary>
+        private CustomerInstance RollCustomer()
+        {
+            if (customerPool == null || !customerPool.HasContent)
+            {
+                return null;
+            }
+
+            if (useRegularCustomers && regulars.Count > 0 && UnityEngine.Random.value < regularRecurChance)
+            {
+                int idx = UnityEngine.Random.Range(0, regulars.Count);
+                foreach (KeyValuePair<string, CustomerInstance> kv in regulars)
+                {
+                    if (idx-- == 0)
+                    {
+                        return CloneCustomer(kv.Value, isRegular: true);
+                    }
+                }
+            }
+
+            return UnityEngine.Random.value < individualRecipientChance
+                ? customerPool.RollIndividual()
+                : customerPool.RollBusiness();
+        }
+
+        private static CustomerInstance CloneCustomer(CustomerInstance src, bool isRegular)
+        {
+            return new CustomerInstance
+            {
+                DisplayName = src.DisplayName,
+                Type = src.Type,
+                CustomerId = src.CustomerId,
+                CompletedForThisCustomer = src.CompletedForThisCustomer,
+                IsRegular = isRegular
+            };
+        }
+
+        /// <summary>Records an on-time delivery for a customer; promotes them to "regular" at the threshold.</summary>
+        private void RegisterCustomerDelivery(CustomerInstance customer)
+        {
+            if (!useRegularCustomers || customer == null || string.IsNullOrEmpty(customer.CustomerId))
+            {
+                return;
+            }
+
+            if (!regulars.TryGetValue(customer.CustomerId, out CustomerInstance stored))
+            {
+                stored = new CustomerInstance
+                {
+                    DisplayName = customer.DisplayName,
+                    Type = customer.Type,
+                    CustomerId = customer.CustomerId
+                };
+                regulars[customer.CustomerId] = stored;
+            }
+
+            stored.CompletedForThisCustomer++;
+            bool wasRegular = stored.IsRegular;
+            stored.IsRegular = stored.CompletedForThisCustomer >= regularThreshold;
+
+            if (stored.IsRegular && !wasRegular)
+            {
+                NotificationService.Raise($"{stored.DisplayName} artık sadık müşterin! (+%{(regularPayBonus - 1f) * 100f:F0} ödeme, daha sık gelir)");
+            }
+        }
+
+        // ---------- Save/Load API ----------
+
+        public List<CustomerRegularEntry> GetRegularsSnapshot()
+        {
+            var list = new List<CustomerRegularEntry>();
+            foreach (KeyValuePair<string, CustomerInstance> kv in regulars)
+            {
+                list.Add(new CustomerRegularEntry
+                {
+                    customerId = kv.Key,
+                    displayName = kv.Value.DisplayName,
+                    completed = kv.Value.CompletedForThisCustomer
+                });
+            }
+
+            return list;
+        }
+
+        public void RestoreRegulars(List<CustomerRegularEntry> saved)
+        {
+            regulars.Clear();
+            if (saved == null)
+            {
+                return;
+            }
+
+            foreach (CustomerRegularEntry e in saved)
+            {
+                if (e == null || string.IsNullOrEmpty(e.customerId))
+                {
+                    continue;
+                }
+
+                regulars[e.customerId] = new CustomerInstance
+                {
+                    DisplayName = e.displayName,
+                    CustomerId = e.customerId,
+                    CompletedForThisCustomer = e.completed,
+                    IsRegular = e.completed >= regularThreshold
+                };
+            }
         }
 
         private bool BoardHasPriority()
@@ -1090,6 +1242,26 @@ namespace DeliverySim
             if (ReputationManager.Instance != null)
             {
                 ReputationManager.Instance.RegisterDelivery(stars, distanceFactor, routeRepeatFactor);
+            }
+
+            // Regular customers: on-time deliveries build a relationship with this customer.
+            if (onTime && activeOffer != null)
+            {
+                RegisterCustomerDelivery(activeOffer.Customer);
+            }
+
+            // Daily target: count deliveries per in-game day, pay a bonus on hitting it.
+            dailyDeliveries++;
+            OnDailyProgress?.Invoke(dailyDeliveries, dailyTargetDeliveries);
+            if (useDailyTarget && !dailyBonusClaimed && dailyDeliveries >= dailyTargetDeliveries)
+            {
+                dailyBonusClaimed = true;
+                if (EconomyManager.Instance != null)
+                {
+                    EconomyManager.Instance.AddMoney(dailyBonus);
+                }
+
+                NotificationService.Raise($"Günlük hedef tamam ({dailyTargetDeliveries} teslimat)! +₺{dailyBonus:F0} bonus.");
             }
 
             var result = new DeliveryResult
