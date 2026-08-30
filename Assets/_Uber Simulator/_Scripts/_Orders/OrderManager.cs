@@ -15,10 +15,17 @@ namespace DeliverySim
     public class DeliveryResult
     {
         public OrderData Order;
-        public float Stars;   // 1..5
+        public float Stars;   // 1..5 (final, jitter applied)
+        public float RawStars; // pre-round score (for a future results card)
         public float Payout;  // Final amount added to balance
         public bool OnTime;
         public bool Failed;   // True when the order timed out entirely
+
+        // Star-rating inputs (see docs/design/reputation-redesign.md A).
+        public int Collisions;         // impacts during this delivery
+        public float ConditionLost;    // vehicle condition drop pickup -> delivery
+        public float PeakSpeedKph;
+        public float JobDistanceMeters;
     }
 
     /// <summary>
@@ -81,6 +88,21 @@ namespace DeliverySim
         [Tooltip("Fraction of the payment still paid at the very last late moment.")]
         [Range(0f, 1f)][SerializeField] private float latePayFraction = 0.4f;
 
+        [Header("Star Rating (multi-factor — see reputation-redesign.md A)")]
+        [Tooltip("Bu km/s üstünde geçirilen süre 'dikkatsiz sürüş' sayılır.")]
+        [SerializeField] private float carefulSpeedThresholdKph = 90f;
+        [Tooltip("Teslimat sırasındaki her çarpışma için yıldız cezası (kargo hassasiyetiyle çarpılır).")]
+        [SerializeField] private float crashStarPenalty = 0.8f;
+        [Tooltip("Kaybedilen her 1 condition puanı için yıldız cezası.")]
+        [SerializeField] private float damageStarPenaltyPerPoint = 0.05f;
+        [Tooltip("Aşırı hızdan gelebilecek en fazla yıldız cezası.")]
+        [SerializeField] private float speedStarPenaltyMax = 0.6f;
+        [Tooltip("Zamanında ama 'kıl payı' sayılan kalan-süre oranı (bunun altındaysa küçük ceza).")]
+        [SerializeField] private float closeCallMarginFraction = 0.08f;
+        [SerializeField] private float closeCallPenalty = 0.3f;
+        [Tooltip("Kargo tipi hassasiyeti — indeks: Food, Package, Fragile.")]
+        [SerializeField] private float[] cargoSensitivity = { 1.0f, 0.6f, 1.6f };
+
         [Header("Variety")]
         [Tooltip("How many recently accepted/rotated-out orders are avoided when refilling offers (as long as other candidates exist).")]
         [SerializeField] private int recentHistoryLimit = 3;
@@ -95,6 +117,14 @@ namespace DeliverySim
         private float activePickupTimeLimit; // Resolved at accept time; 0 = no pickup limit
         private float offerTimer;
         private VehicleController cachedVehicle;
+        private VehicleCondition cachedVehicleCondition;
+
+        // Per-delivery star-rating snapshot (taken at pickup, diffed at delivery).
+        private float conditionAtPickup = -1f;
+        private int collisionsAtPickup;
+        private float deliveryStartTime;
+        private float speedingSeconds;
+        private float peakSpeedKph;
 
         public event Action<IReadOnlyList<OrderData>> OnOffersChanged;
         public event Action<OrderData> OnOrderAccepted;
@@ -148,6 +178,13 @@ namespace DeliverySim
         private void Start()
         {
             offerTimer = offerRefreshInterval;
+
+            cachedVehicle = FindFirstObjectByType<VehicleController>();
+            if (cachedVehicle != null)
+            {
+                cachedVehicleCondition = cachedVehicle.GetComponent<VehicleCondition>();
+            }
+
             RefreshOffers();
         }
 
@@ -179,6 +216,21 @@ namespace DeliverySim
             {
                 remainingTime -= Time.deltaTime;
                 OnTimerTick?.Invoke(remainingTime);
+
+                // Careful-driving sampling for the star rating.
+                if (cachedVehicle != null)
+                {
+                    float kph = cachedVehicle.CurrentSpeedKph;
+                    if (kph > peakSpeedKph)
+                    {
+                        peakSpeedKph = kph;
+                    }
+
+                    if (kph > carefulSpeedThresholdKph)
+                    {
+                        speedingSeconds += Time.deltaTime;
+                    }
+                }
 
                 float failThreshold = -activeTimeLimit * lateGraceFactor;
                 if (remainingTime < failThreshold)
@@ -465,6 +517,13 @@ namespace DeliverySim
             phase = OrderPhase.Delivering;
             remainingTime = activeTimeLimit;
 
+            // Star-rating snapshot: everything measured over the delivery leg.
+            conditionAtPickup = cachedVehicleCondition != null ? cachedVehicleCondition.CurrentCondition : -1f;
+            collisionsAtPickup = cachedVehicleCondition != null ? cachedVehicleCondition.CollisionCount : 0;
+            deliveryStartTime = Time.time;
+            speedingSeconds = 0f;
+            peakSpeedKph = 0f;
+
             point.SetMarkerActive(false);
             if (InteractionPoint.TryGetPoint(activeOrder.DeliveryPointId, out InteractionPoint delivery))
             {
@@ -487,22 +546,33 @@ namespace DeliverySim
             }
 
             bool onTime = remainingTime >= 0f;
-            float stars;
-            float payFactor;
 
+            // payFactor stays purely time-based (money balance is a separate open
+            // TODO); the star rating now carries the quality signal.
+            float payFactor;
+            float lateT;
             if (onTime)
             {
-                stars = maxStars;
                 payFactor = 1f;
+                lateT = 0f;
             }
             else
             {
-                // Linear falloff across the late-grace window.
                 float lateWindow = Mathf.Max(0.01f, activeTimeLimit * lateGraceFactor);
-                float lateT = Mathf.Clamp01(-remainingTime / lateWindow);
-                stars = Mathf.Lerp(maxStars, minStars, lateT);
+                lateT = Mathf.Clamp01(-remainingTime / lateWindow);
                 payFactor = Mathf.Lerp(1f, latePayFraction, lateT);
             }
+
+            int collisions = cachedVehicleCondition != null
+                ? Mathf.Max(0, cachedVehicleCondition.CollisionCount - collisionsAtPickup)
+                : 0;
+            float conditionLost = (conditionAtPickup >= 0f && cachedVehicleCondition != null)
+                ? Mathf.Max(0f, conditionAtPickup - cachedVehicleCondition.CurrentCondition)
+                : 0f;
+            float jobDistance = Mathf.Max(0f, GetOrderDistance(activeOrder));
+
+            float stars = ScoreDelivery(lateT, onTime, collisions, conditionLost);
+            float distanceFactor = Mathf.Clamp(jobDistance / 250f, 0.5f, 2f);
 
             float reputationMultiplier = ReputationManager.Instance != null
                 ? ReputationManager.Instance.CurrentPaymentMultiplier
@@ -517,16 +587,21 @@ namespace DeliverySim
 
             if (ReputationManager.Instance != null)
             {
-                ReputationManager.Instance.RegisterDelivery(stars);
+                ReputationManager.Instance.RegisterDelivery(stars, distanceFactor, 1f);
             }
 
             var result = new DeliveryResult
             {
                 Order = activeOrder,
                 Stars = stars,
+                RawStars = stars,
                 Payout = payout,
                 OnTime = onTime,
-                Failed = false
+                Failed = false,
+                Collisions = collisions,
+                ConditionLost = conditionLost,
+                PeakSpeedKph = peakSpeedKph,
+                JobDistanceMeters = jobDistance
             };
 
             NotificationService.Raise(onTime
@@ -536,6 +611,45 @@ namespace DeliverySim
             ClearActiveOrder();
             OnOrderCompleted?.Invoke(result);
             RefreshOffers();
+        }
+
+        /// <summary>
+        /// Multi-factor delivery star score (docs/design/reputation-redesign.md A):
+        /// start at max, subtract lateness + close-call + cargo-weighted
+        /// crash/damage/speeding penalties, clamp, then a small picky-customer jitter
+        /// so a clean run averages ~4.9 rather than a guaranteed 5.
+        /// </summary>
+        private float ScoreDelivery(float lateT, bool onTime, int collisions, float conditionLost)
+        {
+            float sens = CargoSensitivity(activeOrder != null ? activeOrder.CargoType : CargoType.Package);
+
+            float latePenalty = lateT * 4f;
+
+            float margin = activeTimeLimit > 0f ? remainingTime / activeTimeLimit : 1f;
+            float closeCall = (onTime && margin < closeCallMarginFraction) ? closeCallPenalty : 0f;
+
+            float crashDed = Mathf.Min(2f, collisions * crashStarPenalty);
+            float damageDed = Mathf.Min(2f, conditionLost * damageStarPenaltyPerPoint);
+
+            float deliveryDuration = Mathf.Max(0.01f, Time.time - deliveryStartTime);
+            float spdFrac = Mathf.Clamp01(speedingSeconds / deliveryDuration);
+            float speedDed = Mathf.Min(speedStarPenaltyMax, spdFrac * 1.2f);
+
+            float stars = maxStars - latePenalty - closeCall - sens * (crashDed + damageDed + speedDed);
+            stars = Mathf.Clamp(stars, minStars, maxStars);
+            stars += UnityEngine.Random.Range(-0.15f, 0.10f);
+            return Mathf.Clamp(stars, minStars, maxStars);
+        }
+
+        private float CargoSensitivity(CargoType type)
+        {
+            int i = (int)type;
+            if (cargoSensitivity != null && i >= 0 && i < cargoSensitivity.Length)
+            {
+                return cargoSensitivity[i];
+            }
+
+            return 1f;
         }
 
         // ---------- Failure / cleanup ----------
