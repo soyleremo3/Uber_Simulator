@@ -52,6 +52,14 @@ namespace DeliverySim
         [Tooltip("No order gets less time than this.")]
         [SerializeField] private float minTimeLimitSeconds = 45f;
 
+        [Header("Payment (distance-based)")]
+        [Tooltip("Açıkken ödeme = taban ücret + km başına ücret × iş mesafesi. Kapalıyken OrderData.PaymentAmount kullanılır.")]
+        [SerializeField] private bool useDistanceBasedPayment = true;
+        [Tooltip("Her işin sabit taban ücreti (mesafeden bağımsız).")]
+        [SerializeField] private float baseFare = 15f;
+        [Tooltip("İş mesafesinin (pickup->delivery) her kilometresi için eklenen ücret.")]
+        [SerializeField] private float paymentPerKm = 12f;
+
         [Header("Scoring")]
         [Tooltip("Extra late time allowed before the order fails, as a fraction of the time limit. 0.5 = half the limit again.")]
         [SerializeField] private float lateGraceFactor = 0.5f;
@@ -148,6 +156,45 @@ namespace DeliverySim
         }
 
         /// <summary>
+        /// Approx. real road distance (metres) of the job pickup->delivery: straight
+        /// line inflated by routeFactor. Returns -1 when the scene points can't be
+        /// resolved. Shared by the time-limit estimate, the payout calc and the
+        /// offer card so all three agree on "how far is this job".
+        /// </summary>
+        public float GetOrderDistance(OrderData order)
+        {
+            if (order == null ||
+                !InteractionPoint.TryGetPoint(order.PickupPointId, out InteractionPoint pickup) ||
+                !InteractionPoint.TryGetPoint(order.DeliveryPointId, out InteractionPoint delivery))
+            {
+                return -1f;
+            }
+
+            return Vector3.Distance(pickup.transform.position, delivery.transform.position) * routeFactor;
+        }
+
+        /// <summary>
+        /// Payout for an order BEFORE lateness and reputation multipliers.
+        /// Distance-based when enabled (base fare + per-km × job distance), otherwise
+        /// the authored OrderData.PaymentAmount. Also used by the offer card.
+        /// </summary>
+        public float GetOrderPayment(OrderData order)
+        {
+            if (order == null)
+            {
+                return 0f;
+            }
+
+            float distance = GetOrderDistance(order);
+            if (!useDistanceBasedPayment || distance < 0f)
+            {
+                return order.PaymentAmount;
+            }
+
+            return baseFare + paymentPerKm * (distance / 1000f);
+        }
+
+        /// <summary>
         /// Time limit for an order: real pickup->delivery distance / expected speed
         /// (+ buffer), clamped to a minimum. Falls back to OrderData's fixed value
         /// when disabled or when the scene points can't be resolved. Also used by
@@ -160,16 +207,14 @@ namespace DeliverySim
                 return 0f;
             }
 
-            if (!useDistanceBasedTimeLimit ||
-                !InteractionPoint.TryGetPoint(order.PickupPointId, out InteractionPoint pickup) ||
-                !InteractionPoint.TryGetPoint(order.DeliveryPointId, out InteractionPoint delivery))
+            float distance = GetOrderDistance(order);
+            if (!useDistanceBasedTimeLimit || distance < 0f)
             {
                 return order.TimeLimitSeconds;
             }
 
-            float distance = Vector3.Distance(pickup.transform.position, delivery.transform.position);
             float speedMs = Mathf.Max(1f, averageSpeedKmh / 3.6f);
-            float travelTime = distance * routeFactor / speedMs;
+            float travelTime = distance / speedMs;
             return Mathf.Max(minTimeLimitSeconds, travelTime + timeBufferSeconds);
         }
 
@@ -394,7 +439,7 @@ namespace DeliverySim
                 ? ReputationManager.Instance.CurrentPaymentMultiplier
                 : 1f;
 
-            float payout = activeOrder.PaymentAmount * payFactor * reputationMultiplier;
+            float payout = GetOrderPayment(activeOrder) * payFactor * reputationMultiplier;
 
             if (EconomyManager.Instance != null)
             {

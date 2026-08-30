@@ -109,8 +109,10 @@ Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sıra
 
 - [ ] **25.** İtibarın (Gümüş vb. tier) hemen yükselmemesi — kademeli olsun.
 - [ ] **27.** Siparişlerin ve sipariş eden kişilerin çeşitlenmesi / değişmesi.
-- [ ] **28.** Aynı anda 3'ten fazla sipariş olabilmesi.
+- [ ] **28.** Tab panelinde 3'ten fazla sipariş görünsün (maks 10, her zaman 10 değil — gerçek hayat gibi dalgalı akış). Oyuncuyu oyunda tutan sistem. Araştırma agent'ında.
+  - [x] Her sipariş satırında artık mesafe + ücret yazıyor (`OrderManager.GetOrderDistance` / `GetOrderPayment`).
+  - [ ] maks 10 offer + panel scroll + dinamik spawn/lull pacing — agent önerisi bekleniyor.
 - [ ] **41.** Teslim süresinin uzaklığa göre ayarlanması (NOT: distance-based limit kodda var — gözden geçir).
 - [ ] **42.** Teslim ALMAK için de ayrı bir süre limiti.
 - [x] **43.** Sipariş kartındaki parantez ile isim alakasız görünüyordu. Sebep: örnek sipariş asset'lerinde `cargoType` çoğu 0 (Food) kalmıştı (Moda Teslimatı → Food vb.). order_002..005 → Paket olarak düzeltildi; ayrıca CargoType artık UI'da Türkçe (`Yemek/Paket/Kırılır`) gösteriliyor.
-- [ ] **44.** Ödemenin mesafeye göre hesaplanması.
+- [x] **44.** Ödeme mesafeye göre: `OrderManager.GetOrderPayment` = `baseFare (15) + paymentPerKm (12) × iş mesafesi(km)`. `useDistanceBasedPayment` kapatılırsa eski `OrderData.PaymentAmount`. Gecikme + itibar çarpanı üstüne uygulanıyor. Değerler inspector'da.

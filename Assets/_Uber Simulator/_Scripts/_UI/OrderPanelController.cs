@@ -134,8 +134,19 @@ namespace DeliverySim
                 : order.TimeLimitSeconds;
             int timeLimitMinutes = Mathf.FloorToInt(estimatedLimit / 60f);
             int timeLimitSeconds = Mathf.FloorToInt(estimatedLimit % 60f);
+
+            float payment = OrderManager.Instance != null
+                ? OrderManager.Instance.GetOrderPayment(order)
+                : order.PaymentAmount;
+            float distanceM = OrderManager.Instance != null
+                ? OrderManager.Instance.GetOrderDistance(order)
+                : -1f;
+            string distanceText = distanceM < 0f
+                ? "—"
+                : (distanceM >= 1000f ? $"{distanceM / 1000f:0.0} km" : $"{distanceM:0} m");
+
             Text info = UIFactory.CreateText(row, "Info",
-                $"{order.OrderName}  ({order.CargoType.Label()})\n₺{order.PaymentAmount:F0}  •  Süre: {timeLimitMinutes:00}:{timeLimitSeconds:00}",
+                $"{order.OrderName}  ({order.CargoType.Label()})\n₺{payment:F0}  •  {distanceText}  •  Süre: {timeLimitMinutes:00}:{timeLimitSeconds:00}",
                 18, TextAnchor.UpperLeft, Color.white);
             UIFactory.Place((RectTransform)info.transform, new Vector2(0f, 1f),
                 new Vector2(12f, -8f), new Vector2(280f, rowHeight - 16f));
