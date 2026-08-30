@@ -45,8 +45,11 @@ namespace DeliverySim
         [Header("Offers")]
         [Tooltip("Panoda aynı anda görünebilecek en fazla teklif (her zaman dolu olmak zorunda değil).")]
         [SerializeField] private int maxOffers = 10;
-        [Tooltip("Seconds between automatic offer refills.")]
+        [Tooltip("Seconds between automatic offer refills (backfill; replaced by Poisson arrivals in a later step).")]
         [SerializeField] private float offerRefreshInterval = 15f;
+        [Tooltip("Her teklif kendi TTL'i (sn) kadar panoda kalır, sonra kendiliğinden düşer.")]
+        [SerializeField] private float offerTtlMin = 75f;
+        [SerializeField] private float offerTtlMax = 150f;
 
         [Header("Time Limit (distance-based)")]
         [Tooltip("When on, the delivery time limit is computed from the real pickup->delivery distance instead of OrderData's fixed value.")]
@@ -111,9 +114,10 @@ namespace DeliverySim
         [Tooltip("How many recently accepted/rotated-out orders are avoided when refilling offers (as long as other candidates exist).")]
         [SerializeField] private int recentHistoryLimit = 3;
 
-        private readonly List<OrderData> currentOffers = new List<OrderData>();
+        private readonly List<OrderOffer> currentOffers = new List<OrderOffer>();
         private readonly List<OrderData> recentHistory = new List<OrderData>();
-        private OrderData activeOrder;
+        private OrderData activeOrder;      // the accepted offer's template
+        private OrderOffer activeOffer;     // the accepted offer instance (resolved points, pay, time)
         private OrderPhase phase = OrderPhase.None;
         private float remainingTime;
         private float activeTimeLimit; // Resolved at accept time (distance-based or OrderData fallback)
@@ -133,7 +137,7 @@ namespace DeliverySim
         // Anti-farm: last few completed "pickupId>deliveryId" routes; repeating one damps its RP.
         private readonly List<string> recentRoutes = new List<string>();
 
-        public event Action<IReadOnlyList<OrderData>> OnOffersChanged;
+        public event Action<IReadOnlyList<OrderOffer>> OnOffersChanged;
         public event Action<OrderData> OnOrderAccepted;
         public event Action<OrderData> OnCargoPickedUp;
         public event Action<DeliveryResult> OnOrderCompleted;
@@ -144,8 +148,9 @@ namespace DeliverySim
         public event Action<float> OnPickupTimerTick;
 
         public OrderData ActiveOrder => activeOrder;
+        public OrderOffer ActiveOffer => activeOffer;
         public OrderPhase Phase => phase;
-        public IReadOnlyList<OrderData> CurrentOffers => currentOffers;
+        public IReadOnlyList<OrderOffer> CurrentOffers => currentOffers;
         public float RemainingTime => remainingTime;
         /// <summary>Time limit resolved at accept time for the active order; 0 when idle. Used by the HUD timer bar.</summary>
         public float ActiveTimeLimit => activeTimeLimit;
@@ -197,14 +202,16 @@ namespace DeliverySim
 
         private void Update()
         {
-            // Periodic rotation so the board keeps moving even if the player
-            // never accepts/rejects anything — RefreshOffers alone only fills
-            // empty slots, so untouched offers would otherwise sit forever.
+            // Each offer leaves the board on its own TTL (the board "churns"), then a
+            // periodic backfill tops the count back up. The old fixed 15s "retire the
+            // oldest" rotation is gone; Poisson arrivals replace the backfill later.
+            TickOfferTtl();
+
             offerTimer -= Time.deltaTime;
             if (offerTimer <= 0f)
             {
                 offerTimer = offerRefreshInterval;
-                RotateOffers();
+                RefreshOffers();
             }
 
             if (phase == OrderPhase.AwaitingPickup && activeOrder != null && activePickupTimeLimit > 0f)
@@ -346,6 +353,38 @@ namespace DeliverySim
 
         // ---------- Offers ----------
 
+        /// <summary>Counts down each offer's TTL; drops any that expire and refills.</summary>
+        private void TickOfferTtl()
+        {
+            bool removed = false;
+
+            for (int i = currentOffers.Count - 1; i >= 0; i--)
+            {
+                OrderOffer offer = currentOffers[i];
+                if (offer == null)
+                {
+                    currentOffers.RemoveAt(i);
+                    removed = true;
+                    continue;
+                }
+
+                offer.Ttl -= Time.deltaTime;
+                if (offer.Ttl <= 0f)
+                {
+                    RememberRecent(offer.Template);
+                    currentOffers.RemoveAt(i);
+                    removed = true;
+                }
+            }
+
+            if (removed)
+            {
+                OnOffersChanged?.Invoke(currentOffers);
+                RefreshOffers();
+            }
+        }
+
+        /// <summary>Backfills the board toward maxOffers from the template pool. (Poisson arrivals replace this in a later step.)</summary>
         public void RefreshOffers()
         {
             bool changed = false;
@@ -362,7 +401,7 @@ namespace DeliverySim
             var candidates = new List<OrderData>();
             foreach (OrderData order in orderPool)
             {
-                if (order == null || order == activeOrder || currentOffers.Contains(order))
+                if (order == null || order == activeOrder || OffersContainTemplate(order))
                 {
                     continue;
                 }
@@ -376,9 +415,8 @@ namespace DeliverySim
                 candidates.Add(order);
             }
 
-            // Prefer orders outside recent history so the same offer doesn't
-            // instantly reappear the moment its slot frees up; fall back to the
-            // full candidate list when there isn't enough variety left.
+            // Prefer templates outside recent history so the same offer doesn't
+            // instantly reappear; fall back to the full list when variety runs out.
             var preferred = new List<OrderData>();
             foreach (OrderData candidate in candidates)
             {
@@ -394,7 +432,7 @@ namespace DeliverySim
                 int index = UnityEngine.Random.Range(0, pool.Count);
                 OrderData picked = pool[index];
 
-                currentOffers.Add(picked);
+                currentOffers.Add(BuildOffer(picked));
                 candidates.Remove(picked);
                 preferred.Remove(picked);
                 changed = true;
@@ -406,27 +444,39 @@ namespace DeliverySim
             }
         }
 
-        /// <summary>Retires the longest-standing offer and tries to replace it with a fresh candidate. Called on a timer, independent of player accept/reject.</summary>
-        public void RotateOffers()
+        private bool OffersContainTemplate(OrderData template)
         {
-            if (currentOffers.Count == 0)
+            for (int i = 0; i < currentOffers.Count; i++)
             {
-                RefreshOffers();
-                return;
+                if (currentOffers[i] != null && currentOffers[i].Template == template)
+                {
+                    return true;
+                }
             }
 
-            OrderData rotatedOut = currentOffers[0];
-            currentOffers.RemoveAt(0);
-            RememberRecent(rotatedOut);
+            return false;
+        }
 
-            RefreshOffers();
-
-            if (currentOffers.Count < maxOffers)
+        /// <summary>
+        /// Builds a concrete offer from a template. Step 2: points come straight from
+        /// the template; pay/time/distance are derived; TTL is randomised. Later steps
+        /// add runtime point selection, a customer and difficulty rolls here.
+        /// </summary>
+        private OrderOffer BuildOffer(OrderData template)
+        {
+            var offer = new OrderOffer
             {
-                // No fresh candidate available (small pool) — keep the offer count stable.
-                currentOffers.Add(rotatedOut);
-                OnOffersChanged?.Invoke(currentOffers);
-            }
+                Template = template,
+                PickupPointId = template.PickupPointId,
+                DeliveryPointId = template.DeliveryPointId,
+                DisplayName = template.OrderName,
+                Ttl = UnityEngine.Random.Range(offerTtlMin, offerTtlMax)
+            };
+
+            offer.DistanceMeters = Mathf.Max(0f, GetOrderDistance(template));
+            offer.TimeLimit = GetEstimatedTimeLimit(template);
+            offer.Payment = GetOrderPayment(template);
+            return offer;
         }
 
         private void RememberRecent(OrderData order)
@@ -445,9 +495,9 @@ namespace DeliverySim
             }
         }
 
-        public void AcceptOffer(OrderData order)
+        public void AcceptOffer(OrderOffer offer)
         {
-            if (order == null || !currentOffers.Contains(order))
+            if (offer == null || !currentOffers.Contains(offer))
             {
                 return;
             }
@@ -458,22 +508,23 @@ namespace DeliverySim
                 return;
             }
 
-            if (!InteractionPoint.TryGetPoint(order.PickupPointId, out InteractionPoint pickup) ||
-                !InteractionPoint.TryGetPoint(order.DeliveryPointId, out InteractionPoint delivery))
+            if (!InteractionPoint.TryGetPoint(offer.PickupPointId, out InteractionPoint pickup) ||
+                !InteractionPoint.TryGetPoint(offer.DeliveryPointId, out InteractionPoint delivery))
             {
-                Debug.LogError($"[OrderManager] '{order.OrderId}' için sahnede nokta bulunamadı " +
-                               $"(pickup: '{order.PickupPointId}', delivery: '{order.DeliveryPointId}').");
+                Debug.LogError($"[OrderManager] '{offer.DisplayName}' için sahnede nokta bulunamadı " +
+                               $"(pickup: '{offer.PickupPointId}', delivery: '{offer.DeliveryPointId}').");
                 NotificationService.Raise("Sipariş noktaları sahnede eksik!");
                 return;
             }
 
-            activeOrder = order;
+            activeOffer = offer;
+            activeOrder = offer.Template;
             phase = OrderPhase.AwaitingPickup;
-            activeTimeLimit = GetEstimatedTimeLimit(order);
+            activeTimeLimit = offer.TimeLimit;
             activePickupTimeLimit = ResolvePickupTimeLimit(pickup);
             remainingPickupTime = activePickupTimeLimit;
-            currentOffers.Remove(order);
-            RememberRecent(order);
+            currentOffers.Remove(offer);
+            RememberRecent(offer.Template);
 
             pickup.SetMarkerActive(true);
             delivery.SetMarkerActive(false);
@@ -488,13 +539,13 @@ namespace DeliverySim
             }
 
             OnOffersChanged?.Invoke(currentOffers);
-            OnOrderAccepted?.Invoke(order);
-            NotificationService.Raise($"Sipariş kabul edildi: {order.OrderName}. Alım noktasına git!");
+            OnOrderAccepted?.Invoke(activeOrder);
+            NotificationService.Raise($"Sipariş kabul edildi: {offer.DisplayName}. Alım noktasına git!");
         }
 
-        public void RejectOffer(OrderData order)
+        public void RejectOffer(OrderOffer offer)
         {
-            if (order != null && currentOffers.Remove(order))
+            if (offer != null && currentOffers.Remove(offer))
             {
                 OnOffersChanged?.Invoke(currentOffers);
             }
@@ -504,14 +555,14 @@ namespace DeliverySim
 
         public bool IsCurrentPickupTarget(PickupPoint point)
         {
-            return activeOrder != null && phase == OrderPhase.AwaitingPickup &&
-                   point != null && point.PointId == activeOrder.PickupPointId;
+            return activeOffer != null && phase == OrderPhase.AwaitingPickup &&
+                   point != null && point.PointId == activeOffer.PickupPointId;
         }
 
         public bool IsCurrentDeliveryTarget(DeliveryPoint point)
         {
-            return activeOrder != null && phase == OrderPhase.Delivering &&
-                   point != null && point.PointId == activeOrder.DeliveryPointId;
+            return activeOffer != null && phase == OrderPhase.Delivering &&
+                   point != null && point.PointId == activeOffer.DeliveryPointId;
         }
 
         public void TryPickup(PickupPoint point)
@@ -532,7 +583,7 @@ namespace DeliverySim
             peakSpeedKph = 0f;
 
             point.SetMarkerActive(false);
-            if (InteractionPoint.TryGetPoint(activeOrder.DeliveryPointId, out InteractionPoint delivery))
+            if (InteractionPoint.TryGetPoint(activeOffer.DeliveryPointId, out InteractionPoint delivery))
             {
                 delivery.SetMarkerActive(true);
                 if (RouteManager.Instance != null)
@@ -576,13 +627,15 @@ namespace DeliverySim
             float conditionLost = (conditionAtPickup >= 0f && cachedVehicleCondition != null)
                 ? Mathf.Max(0f, conditionAtPickup - cachedVehicleCondition.CurrentCondition)
                 : 0f;
-            float jobDistance = Mathf.Max(0f, GetOrderDistance(activeOrder));
+            float jobDistance = activeOffer != null
+                ? activeOffer.DistanceMeters
+                : Mathf.Max(0f, GetOrderDistance(activeOrder));
 
             float stars = ScoreDelivery(lateT, onTime, collisions, conditionLost);
             float distanceFactor = Mathf.Clamp(jobDistance / 250f, 0.5f, 2f);
 
             // Anti-farm: repeating the exact same route damps its RP (spec E2).
-            string routeKey = activeOrder.PickupPointId + ">" + activeOrder.DeliveryPointId;
+            string routeKey = activeOffer.PickupPointId + ">" + activeOffer.DeliveryPointId;
             int routeRepeats = 0;
             for (int i = 0; i < recentRoutes.Count; i++)
             {
@@ -604,7 +657,8 @@ namespace DeliverySim
                 ? ReputationManager.Instance.CurrentPaymentMultiplier
                 : 1f;
 
-            float payout = GetOrderPayment(activeOrder) * payFactor * reputationMultiplier;
+            float basePayment = activeOffer != null ? activeOffer.Payment : GetOrderPayment(activeOrder);
+            float payout = basePayment * payFactor * reputationMultiplier;
 
             if (EconomyManager.Instance != null)
             {
@@ -697,14 +751,14 @@ namespace DeliverySim
 
         private void ClearActiveOrder()
         {
-            if (activeOrder != null)
+            if (activeOffer != null)
             {
-                if (InteractionPoint.TryGetPoint(activeOrder.PickupPointId, out InteractionPoint pickup))
+                if (InteractionPoint.TryGetPoint(activeOffer.PickupPointId, out InteractionPoint pickup))
                 {
                     pickup.SetMarkerActive(false);
                 }
 
-                if (InteractionPoint.TryGetPoint(activeOrder.DeliveryPointId, out InteractionPoint delivery))
+                if (InteractionPoint.TryGetPoint(activeOffer.DeliveryPointId, out InteractionPoint delivery))
                 {
                     delivery.SetMarkerActive(false);
                 }
@@ -721,6 +775,7 @@ namespace DeliverySim
             }
 
             activeOrder = null;
+            activeOffer = null;
             phase = OrderPhase.None;
             remainingTime = 0f;
             activeTimeLimit = 0f;
@@ -730,14 +785,14 @@ namespace DeliverySim
 
         private InteractionPoint GetCurrentTargetPoint()
         {
-            if (activeOrder == null)
+            if (activeOffer == null)
             {
                 return null;
             }
 
             string targetId = phase == OrderPhase.AwaitingPickup
-                ? activeOrder.PickupPointId
-                : activeOrder.DeliveryPointId;
+                ? activeOffer.PickupPointId
+                : activeOffer.DeliveryPointId;
 
             InteractionPoint point;
             return InteractionPoint.TryGetPoint(targetId, out point) ? point : null;

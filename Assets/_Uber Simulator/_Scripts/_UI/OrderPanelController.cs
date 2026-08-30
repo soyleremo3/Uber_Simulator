@@ -78,7 +78,7 @@ namespace DeliverySim
             }
         }
 
-        private void HandleOffersChanged(IReadOnlyList<OrderData> offers)
+        private void HandleOffersChanged(IReadOnlyList<OrderOffer> offers)
         {
             if (panelRoot != null && panelRoot.activeSelf)
             {
@@ -103,7 +103,7 @@ namespace DeliverySim
                 return;
             }
 
-            IReadOnlyList<OrderData> offers = OrderManager.Instance.CurrentOffers;
+            IReadOnlyList<OrderOffer> offers = OrderManager.Instance.CurrentOffers;
 
             if (offers.Count == 0)
             {
@@ -122,7 +122,7 @@ namespace DeliverySim
             }
         }
 
-        private GameObject BuildRow(OrderData order, int index)
+        private GameObject BuildRow(OrderOffer offer, int index)
         {
             RectTransform row = UIFactory.CreatePanel(listContainer, $"OrderRow_{index}", UIFactory.RowColor);
             // Height comes from the LayoutElement; the parent VerticalLayoutGroup
@@ -131,36 +131,28 @@ namespace DeliverySim
             rowLe.preferredHeight = rowHeight;
             rowLe.minHeight = rowHeight;
 
-            // Distance-based estimate (falls back to OrderData's fixed value when disabled).
-            float estimatedLimit = OrderManager.Instance != null
-                ? OrderManager.Instance.GetEstimatedTimeLimit(order)
-                : order.TimeLimitSeconds;
-            int timeLimitMinutes = Mathf.FloorToInt(estimatedLimit / 60f);
-            int timeLimitSeconds = Mathf.FloorToInt(estimatedLimit % 60f);
+            int timeLimitMinutes = Mathf.FloorToInt(offer.TimeLimit / 60f);
+            int timeLimitSeconds = Mathf.FloorToInt(offer.TimeLimit % 60f);
 
-            float payment = OrderManager.Instance != null
-                ? OrderManager.Instance.GetOrderPayment(order)
-                : order.PaymentAmount;
-            float distanceM = OrderManager.Instance != null
-                ? OrderManager.Instance.GetOrderDistance(order)
-                : -1f;
-            string distanceText = distanceM < 0f
+            float distanceM = offer.DistanceMeters;
+            string distanceText = distanceM <= 0f
                 ? "—"
                 : (distanceM >= 1000f ? $"{distanceM / 1000f:0.0} km" : $"{distanceM:0} m");
 
             Text info = UIFactory.CreateText(row, "Info",
-                $"{order.OrderName}  ({order.CargoType.Label()})\n₺{payment:F0}  •  {distanceText}  •  Süre: {timeLimitMinutes:00}:{timeLimitSeconds:00}",
+                $"{offer.DisplayName}  ({offer.CargoType.Label()})\n₺{offer.Payment:F0}  •  {distanceText}  •  Süre: {timeLimitMinutes:00}:{timeLimitSeconds:00}",
                 18, TextAnchor.UpperLeft, Color.white);
             UIFactory.Place((RectTransform)info.transform, new Vector2(0f, 1f),
                 new Vector2(12f, -8f), new Vector2(280f, rowHeight - 16f));
 
+            OrderOffer captured = offer;
             Button accept = UIFactory.CreateButton(row, "AcceptButton", "Kabul", UIFactory.AcceptColor,
-                () => OrderManager.Instance?.AcceptOffer(order));
+                () => OrderManager.Instance?.AcceptOffer(captured));
             UIFactory.Place((RectTransform)accept.transform, new Vector2(1f, 0.5f),
                 new Vector2(-96f, 0f), new Vector2(80f, 40f));
 
             Button reject = UIFactory.CreateButton(row, "RejectButton", "Reddet", UIFactory.RejectColor,
-                () => OrderManager.Instance?.RejectOffer(order));
+                () => OrderManager.Instance?.RejectOffer(captured));
             UIFactory.Place((RectTransform)reject.transform, new Vector2(1f, 0.5f),
                 new Vector2(-8f, 0f), new Vector2(80f, 40f));
 
