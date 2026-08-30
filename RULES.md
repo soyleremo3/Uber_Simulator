@@ -109,3 +109,7 @@ If something the user asks for doesn't make sense or looks wrong, investigate it
 ## 10. When any part is unclear — ask, don't guess
 
 If anything about a task is not fully clear, stop and ask the user before acting. Ask as many questions as needed — the user would rather answer every question than have the wrong thing built. Getting it right after asking always beats guessing and getting it wrong. If the user's answer raises a new uncertainty, ask again — repeat until it is fully clear, then do it right.
+
+## 11. Announce each TODO before starting it — some are the user's job
+
+Before starting any TODO item, first tell the user which item is next (number + one line) and wait for a go-ahead. Some items are the user's own responsibility, not Claude's — asset creation, placing/moving objects in the scene, licensing, external tool/account setup, and feel-tuning decisions that need playtesting. The user will say "that one's mine, skip it" or "go ahead". Never begin an item until it's clear it belongs to Claude.
