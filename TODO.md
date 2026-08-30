@@ -107,11 +107,10 @@ Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sıra
 
 ### Ekonomi / sipariş
 
-- [ ] **25.** İtibarın (Gümüş vb. tier) hemen yükselmemesi — kademeli olsun.
-- [ ] **27.** Siparişlerin ve sipariş eden kişilerin çeşitlenmesi / değişmesi.
-- [ ] **28.** Tab panelinde 3'ten fazla sipariş görünsün (maks 10, her zaman 10 değil — gerçek hayat gibi dalgalı akış). Oyuncuyu oyunda tutan sistem. Araştırma agent'ında.
-  - [x] Her sipariş satırında artık mesafe + ücret yazıyor (`OrderManager.GetOrderDistance` / `GetOrderPayment`).
-  - [ ] maks 10 offer + panel scroll + dinamik spawn/lull pacing — agent önerisi bekleniyor.
+- [ ] **25.** İtibar kademeli olsun. ONAYLANDI → `docs/design/reputation-redesign.md` (XP/level "RP" + çok faktörlü yıldız). Adım adım uygulanıyor. ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK** (ilk geçiş sonrası).
+- [ ] **27.** Sipariş + sipariş eden çeşitliliği. ONAYLANDI → `docs/design/order-board-redesign.md` D bölümü (`CustomerPoolData`, Regular müşteri). ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK**.
+- [ ] **28.** Tab panelinde maks 10 sipariş, dalgalı akış, oyuncuyu tutan sistem. ONAYLANDI → `docs/design/order-board-redesign.md` (hybrid şablon + Poisson λ(t) + 4 kanca). Adım adım uygulanıyor. ⚠️ **TEKRAR GÖZDEN GEÇİRİLECEK**.
+  - [x] Her sipariş satırında mesafe + ücret yazıyor (`OrderManager.GetOrderDistance` / `GetOrderPayment`).
 - [ ] **41.** Teslim süresinin uzaklığa göre ayarlanması (NOT: distance-based limit kodda var — gözden geçir).
 - [x] **42.** Alım için ayrı süre limiti: kabul edilince araç->alım mesafesinden hesaplanan süre başlar (`usePickupTimeLimit`, `useDistanceBasedPickupTime`, buffer/min/grace inspector'da). HUD'da "Alım mm:ss" gösterilir. Süre + grace dolarsa sipariş iptal (itibar cezası YOK). `OnPickupTimerTick` eventi eklendi.
 - [x] **43.** Sipariş kartındaki parantez ile isim alakasız görünüyordu. Sebep: örnek sipariş asset'lerinde `cargoType` çoğu 0 (Food) kalmıştı (Moda Teslimatı → Food vb.). order_002..005 → Paket olarak düzeltildi; ayrıca CargoType artık UI'da Türkçe (`Yemek/Paket/Kırılır`) gösteriliyor.
