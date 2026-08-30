@@ -18,6 +18,6 @@ MonoBehaviour:
   deliveryPointId: delivery_B
   paymentAmount: 90
   timeLimitSeconds: 270
-  cargoType: 0
+  cargoType: 1
   description: 
   minReputationTier: 0

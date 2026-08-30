@@ -9,6 +9,21 @@ namespace DeliverySim
         Fragile
     }
 
+    /// <summary>Player-facing Turkish labels for CargoType — the UI is Turkish, the raw enum names are not.</summary>
+    public static class CargoTypeExtensions
+    {
+        public static string Label(this CargoType type)
+        {
+            switch (type)
+            {
+                case CargoType.Food: return "Yemek";
+                case CargoType.Package: return "Paket";
+                case CargoType.Fragile: return "Kırılır";
+                default: return type.ToString();
+            }
+        }
+    }
+
     /// <summary>
     /// Bir teslimat siparişinin tüm verisini tutan ScriptableObject.
     /// Inventory sistemindeki ItemData ile aynı mimari mantığı izler:

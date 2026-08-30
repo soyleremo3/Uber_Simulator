@@ -135,7 +135,7 @@ namespace DeliverySim
             int timeLimitMinutes = Mathf.FloorToInt(estimatedLimit / 60f);
             int timeLimitSeconds = Mathf.FloorToInt(estimatedLimit % 60f);
             Text info = UIFactory.CreateText(row, "Info",
-                $"{order.OrderName}  ({order.CargoType})\n₺{order.PaymentAmount:F0}  •  Süre: {timeLimitMinutes:00}:{timeLimitSeconds:00}",
+                $"{order.OrderName}  ({order.CargoType.Label()})\n₺{order.PaymentAmount:F0}  •  Süre: {timeLimitMinutes:00}:{timeLimitSeconds:00}",
                 18, TextAnchor.UpperLeft, Color.white);
             UIFactory.Place((RectTransform)info.transform, new Vector2(0f, 1f),
                 new Vector2(12f, -8f), new Vector2(280f, rowHeight - 16f));

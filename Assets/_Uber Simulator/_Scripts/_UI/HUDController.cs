@@ -336,7 +336,7 @@ namespace DeliverySim
             OrderData order = OrderManager.Instance.ActiveOrder;
             cargoText.text = OrderManager.Instance.Phase == OrderPhase.AwaitingPickup
                 ? $"Alım bekleniyor: {order.OrderName}"
-                : $"Yük: {order.OrderName} ({order.CargoType})";
+                : $"Yük: {order.OrderName} ({order.CargoType.Label()})";
 
             if (OrderManager.Instance.Phase == OrderPhase.AwaitingPickup)
             {

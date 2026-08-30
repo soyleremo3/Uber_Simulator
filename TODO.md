@@ -103,7 +103,7 @@ Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sıra
 - [ ] **30.** Rota göstergecinin yol yönlerine göre ayarlanması.
 - [ ] **31.** HUD'daki "sola dön / sağa dön" göstergesinin düzeltilmesi.
 - [ ] **32.** Navigasyon ribbon'unun bina içinden geçmesi bug'ı (ground-snap raycast).
-- [ ] **33.** Rotanın en kısa yolu göstermesi (NOT: Dijkstra hâlihazırda mesafe-ağırlıklı — doğrula).
+- [x] **33.** Rotanın en kısa yolu göstermesi. DOĞRULANDI: `RouteManager.FindGraphPath` gerçek Dijkstra (kenar maliyeti = gerçek dünya mesafesi, çift yönlü); NavMesh yolu da optimal. Kod değişmedi.
 
 ### Ekonomi / sipariş
 
@@ -112,5 +112,5 @@ Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sıra
 - [ ] **28.** Aynı anda 3'ten fazla sipariş olabilmesi.
 - [ ] **41.** Teslim süresinin uzaklığa göre ayarlanması (NOT: distance-based limit kodda var — gözden geçir).
 - [ ] **42.** Teslim ALMAK için de ayrı bir süre limiti.
-- [ ] **43.** Sipariş listesinde yazan isim ile kabul sonrası görünen isim uyuşmazlığı bug'ı.
+- [x] **43.** Sipariş kartındaki parantez ile isim alakasız görünüyordu. Sebep: örnek sipariş asset'lerinde `cargoType` çoğu 0 (Food) kalmıştı (Moda Teslimatı → Food vb.). order_002..005 → Paket olarak düzeltildi; ayrıca CargoType artık UI'da Türkçe (`Yemek/Paket/Kırılır`) gösteriliyor.
 - [ ] **44.** Ödemenin mesafeye göre hesaplanması.
