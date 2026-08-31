@@ -127,3 +127,50 @@ Sadece kayıt. Bu turda uygulanmayacak. Numaralar kullanıcının verdiği sıra
 - [x] **42.** Alım için ayrı süre limiti: kabul edilince araç->alım mesafesinden hesaplanan süre başlar (`usePickupTimeLimit`, `useDistanceBasedPickupTime`, buffer/min/grace inspector'da). HUD'da "Alım mm:ss" gösterilir. Süre + grace dolarsa sipariş iptal (itibar cezası YOK). `OnPickupTimerTick` eventi eklendi.
 - [x] **43.** Sipariş kartındaki parantez ile isim alakasız görünüyordu. Sebep: örnek sipariş asset'lerinde `cargoType` çoğu 0 (Food) kalmıştı (Moda Teslimatı → Food vb.). order_002..005 → Paket olarak düzeltildi; ayrıca CargoType artık UI'da Türkçe (`Yemek/Paket/Kırılır`) gösteriliyor.
 - [x] **44.** Ödeme mesafeye göre: `OrderManager.GetOrderPayment` = `baseFare (15) + paymentPerKm (12) × iş mesafesi(km)`. `useDistanceBasedPayment` kapatılırsa eski `OrderData.PaymentAmount`. Gecikme + itibar çarpanı üstüne uygulanıyor. Değerler inspector'da.
+
+## Yapılacaklar — kullanıcı listesi (eklendi 2026-08-31)
+
+Sadece kayıt. Bu turda uygulanmayacak — kullanıcı "ekle, yapma" dedi. Numaralar 45'ten devam.
+
+### Başlangıç durumu (yeni oyun)
+
+- [ ] **45.** Başlangıçta para **0** olsun. Şu an `EconomyManager.startingBalance = 100f`
+  (`_Scripts/_Managers/EconomyManager.cs:14`, `CurrentBalance = startingBalance` satır 40).
+  Sahne/prefab kopyalarında da `startingBalance: 100` var: `Prefabs/_Managers.prefab`,
+  `Prefabs/Gameplay/_Managers.prefab`, `Scenes/Map Scene.unity`, `Scenes/MainScene.unity`.
+  Değeri 0'a çek — kaydedilmiş oyun yoksa oyuncu ilk siparişe borçsuz-parasız başlar.
+  NOT: para 0 + yakıt düşük (madde 47) => ilk siparişi bitirene kadar benzin alamama
+  riski; ekonomi dengesi (madde 44 / genel #Economy) ile birlikte gözden geçirilmeli.
+- [ ] **46.** Başlangıçta "altın" **0** olsun. ⚠️ Kodda ayrı bir altın/premium para birimi
+  **yok** — `gold` eşleşmeleri hep itibar "Gold" tier'ı (`ReputationTier`). İki olası niyet:
+  (a) eklenecek yeni premium kur => sıfır başlasın (yeni sistem, tasarlanacak),
+  (b) itibar/yıldız maxed başlamasın => şu an HUD "★ 5.0 (Elmas)" gösteriyor;
+  #25 redesign'da "Bronz L1 başlar" deniyor ama gerçek başlangıç yıldızı doğrulanmalı
+  (`ReputationManager` — son N teslimatın ortalaması, teslimat yokken varsayılan?).
+  Uygulamadan önce kullanıcıya (a) mı (b) mi diye sor.
+- [ ] **47.** Başlangıç yakıtı çok dolu olmasın. Şu an `VehicleFuel.startingFuel = 45f`
+  ve `Capacity` de ~45 => depo full başlıyor (`_Scripts/_Vehicles/VehicleFuel.cs:17,41`).
+  Sahne/prefab: `Scenes/MainScene.unity`, `Prefabs/Gameplay/PlayerVehicle.prefab` → `startingFuel: 45`.
+  Daha düşük bir başlangıç değeri ver (örn. kapasitenin ~%30-40'ı) — ilk benzin
+  istasyonu ziyaretini erkenden anlamlı kıl. Madde 45 ile etkileşimine dikkat.
+
+### Araç / pert ekranı
+
+- [ ] **48.** Araç pert olunca (Game Over ekranı) mouse hareketi kamera açısını
+  değiştirmesin. Akış: `VehicleCondition.OnVehicleTotaled`
+  (`_Scripts/_Vehicles/VehicleCondition.cs:115`) → `GameOverController.HandleVehicleTotaled`
+  (`_Scripts/_UI/GameOverController.cs:39`) → `GameManager.SetGameState(GameState.GameOver)`
+  → `Time.timeScale = 0f` (`_Scripts/_Managers/GameManager.cs:55-58`).
+  `SmoothMouseLook` muhtemelen `Update` içinde `Time.timeScale`'den bağımsız fare deltası
+  okuyor, o yüzden donmuş ekranda kamera hâlâ dönüyor. Çözüm: GameOver'a girince
+  `SmoothMouseLook`'u disable et (Pause menüsündeki mevcut cursor/`CameraModeController`
+  disable mantığı örnek — `_Scripts/_Vehicles/CameraModeController.cs:21,37`), veya
+  `SmoothMouseLook` `unscaledTime`/state kontrolü yapsın. Cursor da görünür + serbest
+  yapılmalı (buton tıklaması için).
+
+### Navigasyon / rota (tekrar açıldı)
+
+- [ ] **49.** Rota ters yolu göstermesin — kullanıcı oyunda hâlâ görüyor.
+  #29 ve #32 ile aynı kök sorun (`RouteManager` deep fix yapıldı, sentetik testler
+  geçti, gerçek kavşakta hâlâ yanlış). `F9` diagnostic (`RouteManager.DumpRouteDiagnostic`)
+  ile kullanıcının tam bad-spot çıktısı alınıp oradan devam edilecek. Bkz. madde 29/30/32.
